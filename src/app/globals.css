@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+@theme {
+  --color-azul-noite: #0F1D24;
+  --color-azul-noite-hover: #1E3440;
+  --color-azul-rodape: #0A1419;
+  --color-vinho: #78323D;
+  --color-grafite: #414042;
+  --color-texto-secundario: #555456;
+  --color-cinza: #6D6E71;
+  --color-prata: #C9C9C9;
+  --color-areia: #E7E4DC;
+  --color-areia-quadro: #DDD6CA;
+  --color-fundo: #F6F4F0;
+  --color-fundo-hero: #FBFAF7;
+
+  --font-serif: var(--font-dm-serif), serif;
+  --font-sans: var(--font-montserrat), sans-serif;
+
+  /* A referência não fixa line-height nos tamanhos; vale o "normal" da fonte. */
+  --text-xs--line-height: normal;
+  --text-sm--line-height: normal;
+  --text-base--line-height: normal;
+  --text-lg--line-height: normal;
+  --text-xl--line-height: normal;
+}
+
+@layer base {
+  /* O preflight usa line-height 1.5; a referência usa o "normal" do navegador. */
+  body {
+    margin: 0;
+    background: var(--color-fundo);
+    color: var(--color-grafite);
+    font-family: var(--font-sans);
+    line-height: normal;
+  }
+
+  a {
+    color: var(--color-azul-noite);
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: var(--color-vinho);
+  }
+
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible {
+    outline: 2px solid var(--color-azul-noite);
+    outline-offset: 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+  }
+}
