@@ -6,13 +6,15 @@ import { routes } from "@/lib/routes";
 
 const label = "text-[10px] tracking-[0.22em] text-cinza";
 
+/** Oportunidade de hoje: o imóvel que o ADMIN escolhe no painel. Sem escolha, a seção não aparece. */
 export async function FeaturedProperty() {
   const d = await getDestaque();
+  if (!d) return null;
   const specs = [
     { label: "ÁREA", value: d.area },
     { label: "QUARTOS", value: d.quartos },
     { label: "VAGAS", value: d.vagas },
-  ];
+  ].filter((s): s is { label: string; value: string } => Boolean(s.value));
 
   return (
     <section aria-labelledby="destaque-titulo" className="mx-auto box-content max-w-310 px-6 pt-30">
@@ -37,7 +39,7 @@ export async function FeaturedProperty() {
             {d.local}
           </div>
           <p className="m-0 text-[15px] leading-[1.75] text-texto-secundario">{d.descricao}</p>
-          <div className="grid grid-cols-3 border-y border-areia">
+          <div className="grid border-y border-areia" style={{ gridTemplateColumns: `repeat(${specs.length}, minmax(0, 1fr))` }}>
             {specs.map((s, i) => (
               <div key={s.label} className={`flex flex-col gap-1 py-4 ${i > 0 ? "border-l border-areia pl-4" : ""}`}>
                 <span className={label}>{s.label}</span>

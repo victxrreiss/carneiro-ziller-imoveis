@@ -46,15 +46,15 @@ async function Conteudo({ params, searchParams }: PageProps<"/imovel/[id]">) {
   if (r.situacao === "indisponivel") {
     return (
       <SiteChrome current="imoveis">
-        <ImovelAusente tipo="indisponivel" codigo={r.codigo} volta={contextoVolta(de, "venda")} veioDoGrid={de !== undefined} />
+        <ImovelAusente tipo="indisponivel" codigo={r.codigo} volta={contextoVolta(de, false)} veioDoGrid={de !== undefined} />
       </SiteChrome>
     );
   }
 
   const { imovel } = r;
   return (
-    <SiteChrome current={imovel.finalidade === "lancamento" ? "lancamentos" : "imoveis"} className="im-has-bar">
-      <ImovelTela imovel={imovel} volta={contextoVolta(de, imovel.finalidade)} />
+    <SiteChrome current={imovel.lancamento ? "lancamentos" : "imoveis"} className="im-has-bar">
+      <ImovelTela imovel={imovel} volta={contextoVolta(de, imovel.lancamento)} />
     </SiteChrome>
   );
 }

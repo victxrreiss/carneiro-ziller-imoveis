@@ -13,17 +13,21 @@ const ID_PREFIX = "sel";
 const panelId = (id: Listagem) => `painel-${id}`;
 
 export function SelectedTabs({ venda, locacao }: { venda: ImovelCard[]; locacao: ImovelCard[] }) {
-  const [selected, setSelected] = useState<Listagem>("venda");
-  const panels: { id: Listagem; label: string; items: ImovelCard[] }[] = [
-    { id: "venda", label: "VENDA", items: venda },
-    { id: "locacao", label: "LOCAÇÃO", items: locacao },
-  ];
+  // Aba sem imóvel publicado fica oculta.
+  const panels = (
+    [
+      { id: "venda", label: "VENDA", items: venda },
+      { id: "locacao", label: "LOCAÇÃO", items: locacao },
+    ] satisfies { id: Listagem; label: string; items: ImovelCard[] }[]
+  ).filter((p) => p.items.length > 0);
+  const [escolhida, setSelected] = useState<Listagem>(panels[0]?.id ?? "venda");
+  const selected = panels.some((p) => p.id === escolhida) ? escolhida : (panels[0]?.id ?? "venda");
 
   return (
     <>
       <SectionHeader
         id="sel-titulo"
-        label="SELECIONADOS"
+        label="MAIS RECENTES"
         title="Imóveis em destaque"
         gapClass="gap-5"
         aside={

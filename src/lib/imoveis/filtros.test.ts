@@ -73,7 +73,7 @@ describe("rótulos e títulos", () => {
 
 describe("contextoVolta", () => {
   test("com filtros do grid: volta com eles e mostra o resumo", () => {
-    expect(contextoVolta("finalidade=comprar&q=belvedere&quartos=3", "venda")).toEqual({
+    expect(contextoVolta("finalidade=comprar&q=belvedere&quartos=3", false)).toEqual({
       href: "/imoveis?finalidade=comprar&q=belvedere&quartos=3",
       rotulo: "VOLTAR AOS RESULTADOS",
       resumo: "Comprar · “belvedere” · 3+ quartos",
@@ -81,7 +81,7 @@ describe("contextoVolta", () => {
   });
 
   test("vindo do grid de lançamentos: rótulo próprio, sem resumo", () => {
-    expect(contextoVolta("finalidade=lancamentos", "lancamento")).toEqual({
+    expect(contextoVolta("finalidade=lancamentos", true)).toEqual({
       href: "/imoveis?finalidade=lancamentos",
       rotulo: "VOLTAR AOS LANÇAMENTOS",
       resumo: undefined,
@@ -89,12 +89,12 @@ describe("contextoVolta", () => {
   });
 
   test("grid sem filtros", () => {
-    expect(contextoVolta("", "venda")).toEqual({ href: "/imoveis", rotulo: "VOLTAR AOS RESULTADOS", resumo: undefined });
+    expect(contextoVolta("", false)).toEqual({ href: "/imoveis", rotulo: "VOLTAR AOS RESULTADOS", resumo: undefined });
   });
 
   test("acesso direto", () => {
-    expect(contextoVolta(undefined, "venda")).toEqual({ href: "/imoveis", rotulo: "VER TODOS OS IMÓVEIS", resumo: undefined });
-    expect(contextoVolta(undefined, "lancamento")).toEqual({
+    expect(contextoVolta(undefined, false)).toEqual({ href: "/imoveis", rotulo: "VER TODOS OS IMÓVEIS", resumo: undefined });
+    expect(contextoVolta(undefined, true)).toEqual({
       href: "/imoveis?finalidade=lancamentos",
       rotulo: "VOLTAR AOS LANÇAMENTOS",
       resumo: undefined,
@@ -102,10 +102,10 @@ describe("contextoVolta", () => {
   });
 
   test("descarta parâmetros desconhecidos do de", () => {
-    expect(contextoVolta("finalidade=comprar&redirect=https://x.com", "venda").href).toBe("/imoveis?finalidade=comprar");
+    expect(contextoVolta("finalidade=comprar&redirect=https://x.com", false).href).toBe("/imoveis?finalidade=comprar");
   });
 
   test("mantém a página do grid", () => {
-    expect(contextoVolta("finalidade=comprar&pagina=2", "venda").href).toBe("/imoveis?finalidade=comprar&pagina=2");
+    expect(contextoVolta("finalidade=comprar&pagina=2", false).href).toBe("/imoveis?finalidade=comprar&pagina=2");
   });
 });

@@ -1,4 +1,5 @@
-export type Finalidade = "venda" | "locacao" | "lancamento";
+export type { Finalidade } from "@/lib/dados/tipos";
+import type { Finalidade } from "@/lib/dados/tipos";
 
 export type Foto = {
   src: string;
@@ -13,6 +14,8 @@ export type ImovelResumo = {
   id: string;
   codigo: string;
   finalidade: Finalidade;
+  /** Marcação do imóvel, independente da finalidade: filtro Lançamentos e etiqueta LANÇAMENTO. */
+  lancamento: boolean;
   tipo: string;
   titulo: string;
   bairro: string;
@@ -65,18 +68,19 @@ export type Regiao = {
   img: string;
 };
 
+/** Bloco "Oportunidade de hoje" da Home: o imóvel que o ADMIN escolhe no painel. */
 export type Destaque = {
   /** Anúncio para onde o AGENDAR VISITA leva. */
   id: string;
-  /** Código exibido. O handoff mostra PI0316, fora do padrão CZ#### (pendência do cliente). */
   codigo: string;
   tipo: string;
   titulo: string;
   local: string;
   descricao: string;
   area: string;
-  quartos: string;
-  vagas: string;
+  /** Só as especificações que existem (terreno e sala não têm quartos/vagas). */
+  quartos?: string;
+  vagas?: string;
   valor: string;
   img: string;
   alt: string;

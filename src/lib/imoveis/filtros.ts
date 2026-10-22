@@ -2,7 +2,7 @@
 // (?finalidade=&q=&tipo=&preco=&area=&quartos=&vagas=&pagina=), para o link ser
 // compartilhável e para o "Voltar aos resultados" da tela do imóvel.
 import { routes } from "@/lib/routes";
-import type { Finalidade } from "./types";
+import type { ImovelResumo } from "./types";
 
 export type FinalidadeFiltro = "comprar" | "alugar" | "lancamentos";
 
@@ -29,11 +29,15 @@ export const FINALIDADES: readonly { valor: FinalidadeFiltro | undefined; rotulo
   { valor: "lancamentos", rotulo: "LANÇAMENTOS" },
 ];
 
-export const finalidadeDoFiltro: Record<FinalidadeFiltro, Finalidade> = {
-  comprar: "venda",
-  alugar: "locacao",
-  lancamentos: "lancamento",
-};
+/**
+ * Lançamento não é finalidade: é uma marcação do imóvel. "Comprar" e "Alugar"
+ * filtram pela finalidade; "Lançamentos" filtra pela marcação.
+ */
+export function combinaFinalidade(filtro: FinalidadeFiltro | undefined, i: Pick<ImovelResumo, "finalidade" | "lancamento">): boolean {
+  if (!filtro) return true;
+  if (filtro === "lancamentos") return i.lancamento;
+  return i.finalidade === (filtro === "comprar" ? "venda" : "locacao");
+}
 
 const rotuloChipFinalidade: Record<FinalidadeFiltro, string> = {
   comprar: "Comprar",
@@ -182,9 +186,9 @@ export type ContextoVolta = { href: string; rotulo: string; resumo: string | und
  * veio (`/imovel/cz1009?de=...`); é entrada externa, então só os filtros
  * conhecidos sobrevivem e o destino é sempre o grid.
  */
-export function contextoVolta(de: string | undefined, finalidadeImovel: Finalidade): ContextoVolta {
+export function contextoVolta(de: string | undefined, lancamento: boolean): ContextoVolta {
   if (de === undefined) {
-    return finalidadeImovel === "lancamento"
+    return lancamento
       ? { href: routes.lancamentos, rotulo: "VOLTAR AOS LANÇAMENTOS", resumo: undefined }
       : { href: routes.imoveis, rotulo: "VER TODOS OS IMÓVEIS", resumo: undefined };
   }

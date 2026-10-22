@@ -3,6 +3,8 @@ import { SelectedTabs } from "./SelectedTabs";
 
 export async function Selected() {
   const [venda, locacao] = await Promise.all([getImoveisVenda(), getImoveisLocacao()]);
+  // Automática: os mais recentes de cada finalidade. Sem nenhum, a seção não aparece.
+  if (!venda.length && !locacao.length) return null;
 
   return (
     // pb de 120px: o respiro que a seção CTA (removida) dava antes do rodapé.

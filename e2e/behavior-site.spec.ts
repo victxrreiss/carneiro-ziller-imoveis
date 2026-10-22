@@ -28,7 +28,7 @@ test.describe("navegação entre as telas", () => {
     await page.getByRole("button", { name: "Buscar" }).click();
     await page.waitForURL(/\/imoveis\?/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Imóveis à venda");
-    await expect(page.locator(".r-count")).toHaveText("6 imóveis encontrados");
+    await expect(page.locator(".r-count")).toHaveText("9 imóveis encontrados");
   });
 
   test("grid → imóvel → voltar mantém filtros, página e rolagem", async ({ page }) => {
@@ -111,7 +111,7 @@ test.describe("filtros do grid", () => {
     await page.goto("/imoveis?finalidade=alugar&tipo=Terreno");
     await page.locator(".notice").getByRole("button", { name: "LIMPAR FILTROS" }).click();
     await page.waitForURL(/\/imoveis$/);
-    await expect(page.locator(".r-count")).toHaveText("35 imóveis encontrados");
+    await expect(page.locator(".r-count")).toHaveText("34 imóveis encontrados");
   });
 });
 

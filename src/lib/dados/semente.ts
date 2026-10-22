@@ -1,8 +1,11 @@
-// Mock do catálogo, montado a partir dos dados-exemplo.json do handoff
-// (carneiro-ziller-site-handoff/imoveis e /imovel). 22 dos 35 anúncios são
-// fictícios e todas as fotos são provisórias. A fonte real (GranCRM) entra no
-// lugar deste arquivo, atrás das funções de ./index.ts.
-import type { Finalidade, Foto, Imovel } from "./types";
+// Semente da base em memória. Imóveis vindos dos dados-exemplo.json do handoff
+// (22 dos 35 anúncios são fictícios e todas as fotos são provisórias) e os
+// usuários do painel. Somente desenvolvimento: some quando houver banco real.
+import { gerarHashSenha } from "@/lib/seguranca/senha";
+import type { Finalidade, FotoRegistro, RegistroImovel, RegistroUsuario } from "./tipos";
+
+/** Senha de todos os usuários ativos da semente (somente mock). */
+export const SENHA_DEMO = "carneiro-ziller-2026";
 
 const DIR = "/images/imoveis";
 
@@ -35,12 +38,13 @@ const DIMENSOES: Record<string, [number, number]> = {
   "fb93739e7184d00c58fed8564f56afa2": [1600, 900],
 };
 
-function foto(arquivo: string, alt: string): Foto {
+function foto(arquivo: string, alt: string): FotoRegistro {
   const [largura, altura] = DIMENSOES[arquivo];
-  return { src: `${DIR}/${arquivo}.jpg`, alt, largura, altura };
+  return { id: arquivo, src: `${DIR}/${arquivo}.jpg`, alt, largura, altura };
 }
 
-const FIN: Record<string, Finalidade> = { l: "lancamento", c: "venda", a: "locacao" };
+// Finalidade: c venda, a locação; l = venda marcada como lançamento.
+const FIN: Record<string, [Finalidade, boolean]> = { l: ["venda", true], c: ["venda", false], a: ["locacao", false] };
 
 // [código, finalidade, tipo, título, bairro, cidade, valor, área, quartos, vagas, foto do card]
 // Quartos/vagas 0 = não informado.
@@ -138,35 +142,76 @@ const FICHAS: Record<string, { descricao: string[]; fotos: string[] }> = {
   },
 };
 
-/**
- * Vendidos, alugados ou retirados. Os dois handoffs divergem sobre o CZ1021:
- * no grid ele aparece à venda; na tela do imóvel é o exemplo de indisponível.
- * O mock reproduz cada tela como foi desenhada; a fonte real não terá isso.
- */
-export const INDISPONIVEIS = new Set(["cz1021"]);
+/** Vendido, alugado ou retirado: fora do grid, página com o aviso de indisponível. */
+const INDISPONIVEIS = new Set(["cz1021"]);
 
-function fotosNumeradas(titulo: string, arquivos: string[]): Foto[] {
-  return arquivos.map((a, i) => foto(a, `${titulo} — foto ${i + 1} de ${arquivos.length}`));
+/** Responsável de cada anúncio; os demais seguem RODIZIO. */
+const RESPONSAVEIS: Record<string, string> = { cz1009: "u3", cz1015: "u4", cz1030: "u3", cz1021: "u5" };
+const RODIZIO = ["u1", "u3", "u4", "u3", "u4", "u5"];
+
+const DIA = 24 * 60 * 60 * 1000;
+/** Publicação mais recente primeiro na ordem do código (define as seções automáticas da Home). */
+const BASE = Date.parse("2026-10-20T10:00:00-03:00");
+
+export function sementeImoveis(): RegistroImovel[] {
+  return LINHAS.map(([codigo, fin, tipo, titulo, bairro, cidade, valor, area, quartos, vagas, capa], i) => {
+    const id = codigo.toLowerCase();
+    const ficha = FICHAS[id];
+    const [finalidade, lancamento] = FIN[fin];
+    const arquivos = ficha?.fotos ?? [capa];
+    const publicadoEm = new Date(BASE - i * DIA).toISOString();
+    return {
+      id,
+      codigo,
+      finalidade,
+      lancamento,
+      tipo,
+      titulo,
+      bairro,
+      cidade,
+      uf: "MG",
+      valor,
+      area,
+      quartos: quartos || null,
+      vagas: vagas || null,
+      descricao: (ficha?.descricao ?? []).join("\n\n"),
+      fotos: arquivos.map((a, n) => foto(a, `${titulo} — foto ${n + 1} de ${arquivos.length}`)),
+      situacao: INDISPONIVEIS.has(id) ? "indisponivel" : "publicado",
+      responsavelId: RESPONSAVEIS[id] ?? RODIZIO[i % RODIZIO.length],
+      criadoEm: new Date(BASE - i * DIA - 2 * DIA).toISOString(),
+      alteradoEm: publicadoEm,
+      alteradoPorId: RESPONSAVEIS[id] ?? RODIZIO[i % RODIZIO.length],
+      publicadoEm,
+    };
+  });
 }
 
-export const IMOVEIS: Imovel[] = LINHAS.map(([codigo, fin, tipo, titulo, bairro, cidade, valor, area, quartos, vagas, capa]) => {
-  const id = codigo.toLowerCase();
-  const ficha = FICHAS[id];
-  return {
+/** Imóvel da Oportunidade de hoje na semente. */
+export const OPORTUNIDADE_INICIAL = "cz1009";
+
+export function sementeUsuarios(): RegistroUsuario[] {
+  const hash = gerarHashSenha(SENHA_DEMO);
+  const u = (id: string, nome: string, email: string, extra: Partial<RegistroUsuario>): RegistroUsuario => ({
     id,
-    codigo,
-    finalidade: FIN[fin],
-    tipo,
-    titulo,
-    bairro,
-    cidade,
-    uf: "MG",
-    valor,
-    area,
-    quartos: quartos || null,
-    vagas: vagas || null,
-    foto: foto(capa, titulo),
-    descricao: ficha?.descricao ?? [],
-    fotos: fotosNumeradas(titulo, ficha?.fotos ?? [capa]),
-  };
-});
+    nome,
+    email,
+    papel: "corretor",
+    situacao: "ativo",
+    senhaHash: hash,
+    ultimoAcesso: null,
+    conviteEnviadoEm: null,
+    ...extra,
+  });
+  return [
+    // Único ADMIN. E-mail da unidade Ziller (rodapé do site); os demais são fictícios.
+    u("u1", "André Ziller", "andre@zillerimoveis.com.br", { papel: "admin", ultimoAcesso: "2026-10-21T14:40:00-03:00" }),
+    u("u3", "Mariana Costa", "mariana.costa@carneiroziller.com.br", { ultimoAcesso: "2026-10-21T13:58:00-03:00" }),
+    u("u4", "Ricardo Alves", "ricardo.alves@carneiroziller.com.br", { ultimoAcesso: "2026-10-20T18:21:00-03:00" }),
+    u("u6", "Juliana Prado", "juliana.prado@carneiroziller.com.br", {
+      situacao: "pendente",
+      senhaHash: null,
+      conviteEnviadoEm: "2026-10-19T14:53:00-03:00",
+    }),
+    u("u5", "Paulo Menezes", "paulo.menezes@carneiroziller.com.br", { situacao: "desativado", ultimoAcesso: "2026-09-02T17:05:00-03:00" }),
+  ];
+}

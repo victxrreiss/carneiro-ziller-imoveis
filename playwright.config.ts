@@ -12,7 +12,11 @@ export default defineConfig({
     baseURL: `http://localhost:${APP_PORT}`,
     trace: "retain-on-failure",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    { name: "chromium", use: { ...devices["Desktop Chrome"] }, testIgnore: /painel\.spec\.ts/ },
+    // O painel altera a base em memória que o site lê: roda depois dos testes do site.
+    { name: "painel", use: { ...devices["Desktop Chrome"] }, testMatch: /painel\.spec\.ts/, dependencies: ["chromium"] },
+  ],
   webServer: {
     command: `npm run build && npm run start -- -p ${APP_PORT}`,
     url: `http://localhost:${APP_PORT}`,
