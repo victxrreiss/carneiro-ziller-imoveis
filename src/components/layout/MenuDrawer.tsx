@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { Portal } from "@/components/ui/Portal";
 import { useDialog } from "@/components/ui/useDialog";
+import { painel } from "@/lib/routes";
 import { crecis, unidades } from "@/lib/site";
 
 export type MenuItem = { label: string; href: string; current: boolean };
@@ -61,6 +62,9 @@ export function MenuDrawer({ items, buttonClassName }: { items: MenuItem[]; butt
                 ))}
               </ul>
             </nav>
+            <Link href={painel.entrar} className="btn-corretor" onClick={fechar}>
+              SOU CORRETOR
+            </Link>
             <div className="menu-contacts">
               {unidades.carneiro.nome} · {unidades.carneiro.telefone}
               <br />

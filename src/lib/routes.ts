@@ -25,7 +25,7 @@ export const routes = {
 } as const;
 
 /**
- * Painel interno. O site não tem link para ele: a equipe acessa pelo endereço.
+ * Painel interno. O site só leva ao login, pelo SOU CORRETOR do header.
  * Hoje sob /painel; um subdomínio próprio é configuração de hospedagem.
  */
 export const painel = {

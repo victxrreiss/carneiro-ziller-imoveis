@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { navItems, routes, type NavKey } from "@/lib/routes";
+import { navItems, painel, routes, type NavKey } from "@/lib/routes";
 import { crecis, unidades } from "@/lib/site";
 import { Footer } from "./Footer";
 import { Logo } from "./Logo";
@@ -39,6 +39,9 @@ export function SiteHeader({ current }: { current: NavKey }) {
             </Link>
           ))}
         </nav>
+        <Link href={painel.entrar} className="btn-corretor">
+          SOU CORRETOR
+        </Link>
         <MenuDrawer items={items} buttonClassName="menu-btn" />
       </div>
     </header>
