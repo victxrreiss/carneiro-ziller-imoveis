@@ -1,13 +1,7 @@
-// Semente da base em memória. Imóveis vindos dos dados-exemplo.json do handoff
-// (22 dos 35 anúncios são fictícios e todas as fotos são provisórias) e os
-// usuários do painel. Somente desenvolvimento: some quando houver banco real.
-import { gerarHashSenha } from "@/lib/seguranca/senha";
-import type { Finalidade, FotoRegistro, RegistroImovel, RegistroUsuario } from "./tipos";
-
-/** Senha de todos os usuários ativos da semente (somente mock). */
-export const SENHA_DEMO = "carneiro-ziller-2026";
-
-const DIR = "/images/imoveis";
+// Dados de desenvolvimento: os 35 imóveis do handoff (22 dos 35 anúncios são
+// fictícios e todas as fotos são provisórias). Usado por `npm run db:semente` e
+// pelos testes. Nunca roda em produção, que começa vazia. Sem usuários nem senhas.
+import type { Finalidade, SituacaoImovel } from "../src/lib/dados/tipos";
 
 /** Dimensões reais dos arquivos em public/images/imoveis, para o next/image. */
 const DIMENSOES: Record<string, [number, number]> = {
@@ -38,9 +32,11 @@ const DIMENSOES: Record<string, [number, number]> = {
   "fb93739e7184d00c58fed8564f56afa2": [1600, 900],
 };
 
-function foto(arquivo: string, alt: string): FotoRegistro {
+export type SementeFoto = { arquivo: string; alt: string; largura: number; altura: number };
+
+function foto(arquivo: string, alt: string): SementeFoto {
   const [largura, altura] = DIMENSOES[arquivo];
-  return { id: arquivo, src: `${DIR}/${arquivo}.jpg`, alt, largura, altura };
+  return { arquivo, alt, largura, altura };
 }
 
 // Finalidade: c venda, a locação; l = venda marcada como lançamento.
@@ -145,21 +141,43 @@ const FICHAS: Record<string, { descricao: string[]; fotos: string[] }> = {
 /** Vendido, alugado ou retirado: fora do grid, página com o aviso de indisponível. */
 const INDISPONIVEIS = new Set(["cz1021"]);
 
-/** Responsável de cada anúncio; os demais seguem RODIZIO. */
-const RESPONSAVEIS: Record<string, string> = { cz1009: "u3", cz1015: "u4", cz1030: "u3", cz1021: "u5" };
-const RODIZIO = ["u1", "u3", "u4", "u3", "u4", "u5"];
-
 const DIA = 24 * 60 * 60 * 1000;
 /** Publicação mais recente primeiro na ordem do código (define as seções automáticas da Home). */
 const BASE = Date.parse("2026-10-20T10:00:00-03:00");
 
-export function sementeImoveis(): RegistroImovel[] {
+export type SementeImovel = {
+  id: string;
+  codigo: string;
+  finalidade: Finalidade;
+  lancamento: boolean;
+  tipo: string;
+  titulo: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  valor: number;
+  area: number;
+  quartos: number | null;
+  vagas: number | null;
+  descricao: string;
+  fotos: SementeFoto[];
+  situacao: SituacaoImovel;
+  criadoEm: Date;
+  publicadoEm: Date;
+};
+
+/** Anúncios sem ficha do handoff recebem uma descrição montada só com os dados que já temos. */
+function descricaoPadrao(tipo: string, area: number, bairro: string, cidade: string, quartos: number, vagas: number): string {
+  const extras = [quartos ? `${quartos} quartos` : "", vagas ? `${vagas} vagas de garagem` : ""].filter(Boolean).join(" e ");
+  return `${tipo} de ${area} m² em ${bairro}, ${cidade}${extras ? `, com ${extras}` : ""}.`;
+}
+
+export function sementeImoveis(): SementeImovel[] {
   return LINHAS.map(([codigo, fin, tipo, titulo, bairro, cidade, valor, area, quartos, vagas, capa], i) => {
     const id = codigo.toLowerCase();
     const ficha = FICHAS[id];
     const [finalidade, lancamento] = FIN[fin];
     const arquivos = ficha?.fotos ?? [capa];
-    const publicadoEm = new Date(BASE - i * DIA).toISOString();
     return {
       id,
       codigo,
@@ -174,44 +192,14 @@ export function sementeImoveis(): RegistroImovel[] {
       area,
       quartos: quartos || null,
       vagas: vagas || null,
-      descricao: (ficha?.descricao ?? []).join("\n\n"),
+      descricao: ficha ? ficha.descricao.join("\n\n") : descricaoPadrao(tipo, area, bairro, cidade, quartos, vagas),
       fotos: arquivos.map((a, n) => foto(a, `${titulo} — foto ${n + 1} de ${arquivos.length}`)),
       situacao: INDISPONIVEIS.has(id) ? "indisponivel" : "publicado",
-      responsavelId: RESPONSAVEIS[id] ?? RODIZIO[i % RODIZIO.length],
-      criadoEm: new Date(BASE - i * DIA - 2 * DIA).toISOString(),
-      alteradoEm: publicadoEm,
-      alteradoPorId: RESPONSAVEIS[id] ?? RODIZIO[i % RODIZIO.length],
-      publicadoEm,
+      criadoEm: new Date(BASE - i * DIA - 2 * DIA),
+      publicadoEm: new Date(BASE - i * DIA),
     };
   });
 }
 
 /** Imóvel da Oportunidade de hoje na semente. */
 export const OPORTUNIDADE_INICIAL = "cz1009";
-
-export function sementeUsuarios(): RegistroUsuario[] {
-  const hash = gerarHashSenha(SENHA_DEMO);
-  const u = (id: string, nome: string, email: string, extra: Partial<RegistroUsuario>): RegistroUsuario => ({
-    id,
-    nome,
-    email,
-    papel: "corretor",
-    situacao: "ativo",
-    senhaHash: hash,
-    ultimoAcesso: null,
-    conviteEnviadoEm: null,
-    ...extra,
-  });
-  return [
-    // Único ADMIN. E-mail da unidade Ziller (rodapé do site); os demais são fictícios.
-    u("u1", "André Ziller", "andre@zillerimoveis.com.br", { papel: "admin", ultimoAcesso: "2026-10-21T14:40:00-03:00" }),
-    u("u3", "Mariana Costa", "mariana.costa@carneiroziller.com.br", { ultimoAcesso: "2026-10-21T13:58:00-03:00" }),
-    u("u4", "Ricardo Alves", "ricardo.alves@carneiroziller.com.br", { ultimoAcesso: "2026-10-20T18:21:00-03:00" }),
-    u("u6", "Juliana Prado", "juliana.prado@carneiroziller.com.br", {
-      situacao: "pendente",
-      senhaHash: null,
-      conviteEnviadoEm: "2026-10-19T14:53:00-03:00",
-    }),
-    u("u5", "Paulo Menezes", "paulo.menezes@carneiroziller.com.br", { situacao: "desativado", ultimoAcesso: "2026-09-02T17:05:00-03:00" }),
-  ];
-}

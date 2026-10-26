@@ -16,10 +16,10 @@ const MOTIVO = {
 
 export default async function ImoveisPainelPage() {
   const u = await exigirUsuario(painel.imoveis);
-  const linhas: LinhaLista[] = listarImoveis(u).map((l) => ({ ...l, data: data(l.alteradoEm), hora: hora(l.alteradoEm) }));
+  const linhas: LinhaLista[] = (await listarImoveis(u)).map((l) => ({ ...l, data: data(l.alteradoEm), hora: hora(l.alteradoEm) }));
 
   // Oportunidade de hoje vazia: aviso só para o ADMIN.
-  const a = avisoOportunidadeVazia(u);
+  const a = await avisoOportunidadeVazia(u);
   let avisoOportunidade: string | null = null;
   if (a) {
     if (a.aviso) {

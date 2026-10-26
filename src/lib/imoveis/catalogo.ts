@@ -1,7 +1,11 @@
-// Consultas do site sobre a base (lib/dados). Só entram imóveis publicados;
-// indisponíveis existem apenas para a página com o aviso. Funções puras, sem
-// cache: ./index.ts as expõe com "use cache" para as páginas.
-import { banco } from "@/lib/dados/banco";
+// Consultas do site sobre o banco (lib/dados). Só entram imóveis publicados;
+// indisponíveis existem apenas para a página com o aviso. Sem cache: ./index.ts
+// as expõe com "use cache" para as páginas. O último parâmetro é o banco
+// (padrão: conexão do app; os testes passam um PGlite).
+import { eq } from "drizzle-orm";
+import { conexao, type Db } from "@/lib/dados/conexao";
+import { carregarImovel, carregarImoveis } from "@/lib/dados/consultas";
+import { configuracaoSite, imoveis } from "@/lib/dados/esquema";
 import type { RegistroImovel } from "@/lib/dados/tipos";
 import { FAIXAS_AREA, combinaFinalidade, faixasPreco, type Filtros } from "./filtros";
 import { formatarArea, formatarPreco, formatarQuartos, formatarReais, rotuloEtiqueta } from "./formato";
@@ -55,10 +59,13 @@ function paraImovel(r: Completo): Imovel {
 }
 
 /** Publicados, na ordem do código. */
-function publicados(): Completo[] {
-  return [...banco().imoveis.values()]
-    .filter((r): r is Completo => r.situacao === "publicado" && completo(r))
-    .sort((a, b) => a.codigo.localeCompare(b.codigo));
+async function publicados(db: Db): Promise<Completo[]> {
+  return (await carregarImoveis(db, eq(imoveis.situacao, "publicado"))).filter(completo);
+}
+
+async function oportunidadeId(db: Db): Promise<string | null> {
+  const [c] = await db.select({ id: configuracaoSite.oportunidadeId }).from(configuracaoSite).where(eq(configuracaoSite.id, 1)).limit(1);
+  return c?.id ?? null;
 }
 
 function resumo(i: Imovel): ImovelResumo {
@@ -66,11 +73,11 @@ function resumo(i: Imovel): ImovelResumo {
   return { id, codigo, finalidade, lancamento, tipo, titulo, bairro, cidade, valor, area, quartos, vagas, foto };
 }
 
-function filtrar(filtros: Filtros): Imovel[] {
+async function filtrar(filtros: Filtros, db: Db): Promise<Imovel[]> {
   const q = filtros.q ? normalizar(filtros.q) : "";
   const preco = faixasPreco(filtros.finalidade).find(([v]) => v === filtros.preco);
   const area = FAIXAS_AREA.find(([v]) => v === filtros.area);
-  return publicados()
+  return (await publicados(db))
     .map(paraImovel)
     .filter(
       (i) =>
@@ -84,8 +91,8 @@ function filtrar(filtros: Filtros): Imovel[] {
     );
 }
 
-export function buscarImoveis(filtros: Filtros): PaginaImoveis {
-  const lista = filtrar(filtros);
+export async function buscarImoveis(filtros: Filtros, db: Db = conexao()): Promise<PaginaImoveis> {
+  const lista = await filtrar(filtros, db);
   const paginas = Math.max(1, Math.ceil(lista.length / POR_PAGINA));
   const pagina = Math.min(Math.max(1, filtros.pagina), paginas);
   return {
@@ -96,20 +103,21 @@ export function buscarImoveis(filtros: Filtros): PaginaImoveis {
   };
 }
 
-export function contarImoveis(filtros: Filtros): number {
-  return filtrar(filtros).length;
+export async function contarImoveis(filtros: Filtros, db: Db = conexao()): Promise<number> {
+  return (await filtrar(filtros, db)).length;
 }
 
-export function obterImovel(id: string): ResultadoImovel {
-  const r = banco().imoveis.get(id);
+export async function obterImovel(id: string, db: Db = conexao()): Promise<ResultadoImovel> {
+  const r = await carregarImovel(db, id);
   if (!r || r.situacao === "rascunho") return { situacao: "inexistente" };
   if (r.situacao === "indisponivel" || !completo(r)) return { situacao: "indisponivel", codigo: r.codigo };
   return { situacao: "disponivel", imovel: paraImovel(r) };
 }
 
 /** Páginas a pré-renderizar: publicados e indisponíveis (estes respondem com o aviso). */
-export function listarIdsImoveis(): string[] {
-  return [...banco().imoveis.values()].filter((r) => r.situacao !== "rascunho").map((r) => r.id);
+export async function listarIdsImoveis(db: Db = conexao()): Promise<string[]> {
+  const todos = await carregarImoveis(db);
+  return todos.filter((r) => r.situacao !== "rascunho").map((r) => r.id);
 }
 
 // ---------- Home ----------
@@ -129,9 +137,9 @@ function card(i: Imovel): ImovelCard {
 }
 
 /** Oportunidade de hoje: escolha manual do ADMIN. Sem imóvel publicado escolhido, a seção some. */
-export function oportunidadeDeHoje(): Destaque | null {
-  const id = banco().oportunidadeId;
-  const r = id ? banco().imoveis.get(id) : undefined;
+export async function oportunidadeDeHoje(db: Db = conexao()): Promise<Destaque | null> {
+  const id = await oportunidadeId(db);
+  const r = id ? await carregarImovel(db, id) : null;
   if (!r || r.situacao !== "publicado" || !completo(r)) return null;
   const i = paraImovel(r);
   const capa = i.fotos[0] ?? SEM_FOTO;
@@ -152,9 +160,9 @@ export function oportunidadeDeHoje(): Destaque | null {
 }
 
 /** Mais recentes pela data da primeira publicação, sem repetir a Oportunidade de hoje. */
-function recentes(filtro: (r: Completo) => boolean): ImovelCard[] {
-  const oportunidade = banco().oportunidadeId;
-  return publicados()
+async function recentes(filtro: (r: Completo) => boolean, db: Db): Promise<ImovelCard[]> {
+  const [oportunidade, todos] = await Promise.all([oportunidadeId(db), publicados(db)]);
+  return todos
     .filter((r) => r.id !== oportunidade && filtro(r))
     .sort((a, b) => (b.publicadoEm ?? "").localeCompare(a.publicadoEm ?? ""))
     .slice(0, CARDS_HOME)
@@ -162,18 +170,18 @@ function recentes(filtro: (r: Completo) => boolean): ImovelCard[] {
 }
 
 /** Seção Lançamentos: automática. */
-export function lancamentosHome(): ImovelCard[] {
-  return recentes((r) => r.lancamento);
+export function lancamentosHome(db: Db = conexao()): Promise<ImovelCard[]> {
+  return recentes((r) => r.lancamento, db);
 }
 
 /** Seção "Imóveis em destaque", aba Venda: automática, sem lançamentos (que têm seção própria). */
-export function vendaHome(): ImovelCard[] {
-  return recentes((r) => r.finalidade === "venda" && !r.lancamento);
+export function vendaHome(db: Db = conexao()): Promise<ImovelCard[]> {
+  return recentes((r) => r.finalidade === "venda" && !r.lancamento, db);
 }
 
 /** Seção "Imóveis em destaque", aba Locação: automática. */
-export function locacaoHome(): ImovelCard[] {
-  return recentes((r) => r.finalidade === "locacao");
+export function locacaoHome(db: Db = conexao()): Promise<ImovelCard[]> {
+  return recentes((r) => r.finalidade === "locacao", db);
 }
 
 export function regioesHome(): Regiao[] {

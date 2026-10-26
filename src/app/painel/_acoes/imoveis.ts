@@ -48,19 +48,19 @@ export type RespostaSalvar =
 export async function salvarImovelAction(id: string | null, entrada: unknown, intencao: unknown): Promise<RespostaSalvar> {
   const u = await usuarioDaAcao();
   const acao = INTENCOES.includes(intencao as Intencao) ? (intencao as Intencao) : "rascunho";
-  const r = salvarImovel(u, typeof id === "string" ? id : null, sanear(entrada), acao);
+  const r = await salvarImovel(u, typeof id === "string" ? id : null, sanear(entrada), acao);
   if (!r.ok) {
     if ("erros" in r) return { ok: false, erros: r.erros };
     return { ok: false, falha: "proibido" in r ? "proibido" : "inexistente" };
   }
   updateTag(TAG_IMOVEIS);
-  return { ok: true, novo: r.novo, codigo: r.codigo, situacao: r.situacao, oportunidadeSaiu: r.oportunidadeSaiu, imovel: obterParaEdicao(u, r.id)! };
+  return { ok: true, novo: r.novo, codigo: r.codigo, situacao: r.situacao, oportunidadeSaiu: r.oportunidadeSaiu, imovel: (await obterParaEdicao(u, r.id))! };
 }
 
 export async function excluirImovelAction(id: unknown): Promise<{ ok: true; codigo: string; titulo: string; oportunidadeSaiu: boolean } | { ok: false }> {
   const u = await usuarioDaAcao();
   if (typeof id !== "string") return { ok: false };
-  const r = excluirImovel(u, id);
+  const r = await excluirImovel(u, id);
   if (r.ok) updateTag(TAG_IMOVEIS);
   return r;
 }

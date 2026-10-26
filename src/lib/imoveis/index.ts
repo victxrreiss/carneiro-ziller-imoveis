@@ -21,9 +21,12 @@ export { POR_PAGINA } from "./catalogo";
 
 export const TAG_IMOVEIS = "imoveis";
 
+// O cache padrão é em memória e por instância (em serverless não é compartilhado):
+// `updateTag` invalida na hora, e a vida finita é a rede de segurança caso uma
+// instância aquecida não receba a invalidação.
 function marcar() {
   cacheTag(TAG_IMOVEIS);
-  cacheLife("max");
+  cacheLife({ stale: 60, revalidate: 300, expire: 3600 });
 }
 
 export async function getDestaque() {

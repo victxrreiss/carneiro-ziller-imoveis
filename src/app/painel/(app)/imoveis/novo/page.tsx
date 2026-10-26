@@ -12,8 +12,8 @@ export default async function NovoImovelPage() {
     <FormImovel
       imovel={null}
       usuario={{ id: u.id, nome: u.nome, admin: u.papel === "admin" }}
-      responsaveis={opcoesResponsavel(u.id)}
-      oportunidadeAtual={oportunidadeAtual()}
+      responsaveis={await opcoesResponsavel(u.id)}
+      oportunidadeAtual={await oportunidadeAtual()}
       avisoInicial={null}
     />
   );

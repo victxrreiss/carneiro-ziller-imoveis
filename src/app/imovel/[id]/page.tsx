@@ -8,8 +8,15 @@ import { contextoVolta } from "@/lib/imoveis/filtros";
 import { formatarArea, formatarReais } from "@/lib/imoveis/formato";
 import { routes } from "@/lib/routes";
 
+// Com `cacheComponents`, `generateStaticParams` não pode devolver lista vazia (erro de
+// build), e a produção começa sem imóveis: nesse caso, um id que não existe
+// pré-renderiza o estado "não encontrado". Os imóveis cadastrados depois são gerados
+// na primeira visita.
+const ID_SENTINELA = "_vazio";
+
 export async function generateStaticParams() {
-  return (await listarIdsImoveis()).map((id) => ({ id }));
+  const ids = await listarIdsImoveis();
+  return (ids.length ? ids : [ID_SENTINELA]).map((id) => ({ id }));
 }
 
 export async function generateMetadata({ params }: PageProps<"/imovel/[id]">): Promise<Metadata> {

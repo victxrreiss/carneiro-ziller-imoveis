@@ -15,7 +15,7 @@ export default async function UsuariosPage() {
       <SemPermissao texto="A gestão de usuários é exclusiva do ADMIN. Se precisar convidar alguém ou mudar um acesso, fale com o ADMIN da Carneiro & Ziller." />
     );
   }
-  const usuarios = listarUsuarios().map((l) => ({
+  const usuarios = (await listarUsuarios()).map((l) => ({
     ...l,
     ultimoTexto:
       l.situacao === "pendente"

@@ -1,5 +1,6 @@
-// Registros da base de dados (hoje em memória, ver ./banco.ts). Site e painel
-// leem daqui; o site só enxerga imóveis publicados ou indisponíveis.
+// Registros do domínio, como o site e o painel os enxergam. As tabelas ficam em
+// ./esquema.ts; a camada de dados (lib/painel, lib/imoveis) converte entre os dois.
+// O site só enxerga imóveis publicados ou indisponíveis.
 
 export type Finalidade = "venda" | "locacao";
 
@@ -10,8 +11,9 @@ export type Papel = "admin" | "corretor";
 export type SituacaoUsuario = "ativo" | "pendente" | "desativado";
 
 export type FotoRegistro = {
-  /** Id do arquivo (upload) ou nome do arquivo da semente. */
+  /** Id da foto (uuid). */
   id: string;
+  /** URL pública da foto no armazenamento. */
   src: string;
   alt: string;
   largura: number;
@@ -54,21 +56,13 @@ export type RegistroUsuario = {
   email: string;
   papel: Papel;
   situacao: SituacaoUsuario;
-  /** `scrypt$<salt>$<hash>`; nulo enquanto o convite não for aceito. */
+  /** argon2id (`$argon2id$...`); nulo enquanto o convite não for aceito. */
   senhaHash: string | null;
   ultimoAcesso: string | null;
   conviteEnviadoEm: string | null;
 };
 
-export type Sessao = { usuarioId: string; criadaEm: number; usadaEm: number };
-
 export type TipoToken = "convite" | "redefinicao";
-
-export type TokenSenha = { usuarioId: string; tipo: TipoToken; expiraEm: number; usado: boolean };
-
-export type Tentativas = { falhas: number; bloqueadoAte: number };
-
-export type ArquivoFoto = { bytes: Uint8Array; tipo: string; largura: number; altura: number; enviadoPorId: string };
 
 /** Por que a Oportunidade de hoje ficou vazia (aviso ao ADMIN na lista de imóveis). */
 export type AvisoOportunidade = {
@@ -78,5 +72,3 @@ export type AvisoOportunidade = {
   motivo: "indisponivel" | "rascunho" | "excluido" | "desmarcado";
   em: string;
 };
-
-export type EmailEnviado = { para: string; assunto: string; html: string; texto: string; link: string; em: string };

@@ -2,6 +2,7 @@
 // Ler a sessão é dado de requisição: quem chama fica atrás de <Suspense>.
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { painel } from "@/lib/routes";
 import { abrirSessao, encerrarSessao, lerSessao, SESSAO_OCIOSA_MIN, type LeituraSessao } from "./contas";
 import type { UsuarioLogado } from "./regras";
@@ -13,6 +14,8 @@ async function tokenDoCookie(): Promise<string | undefined> {
 }
 
 export async function sessaoAtual(): Promise<LeituraSessao> {
+  // Sessão é dado de requisição (a hora atual entra na conta): nunca entra no HTML pré-renderizado.
+  await connection();
   return lerSessao(await tokenDoCookie());
 }
 
@@ -31,7 +34,7 @@ export async function usuarioDaAcao(): Promise<UsuarioLogado> {
 }
 
 export async function iniciarSessao(usuarioId: string): Promise<void> {
-  const token = abrirSessao(usuarioId);
+  const token = await abrirSessao(usuarioId);
   (await cookies()).set(COOKIE_SESSAO, token, {
     httpOnly: true,
     sameSite: "lax",
@@ -43,7 +46,7 @@ export async function iniciarSessao(usuarioId: string): Promise<void> {
 
 export async function terminarSessao(): Promise<void> {
   const jar = await cookies();
-  encerrarSessao(jar.get(COOKIE_SESSAO)?.value);
+  await encerrarSessao(jar.get(COOKIE_SESSAO)?.value);
   jar.delete(COOKIE_SESSAO);
 }
 

@@ -1,4 +1,5 @@
 // Envio de fotos do cadastro: uma requisição por foto (XHR, para ter progresso).
+import type { Envio } from "@/lib/armazenamento";
 import { LIMITES, TIPOS_FOTO } from "@/lib/painel/regras";
 
 export type FotoTela = {
@@ -44,28 +45,71 @@ export function erroArquivo(arquivo: File): string | null {
   return null;
 }
 
+type RespostaPreparo = { ok?: boolean; id?: string; envio?: Envio; erro?: string };
+type RespostaConfirmar = { ok?: boolean; id?: string; src?: string; erro?: string };
+
+async function postarJson<T>(url: string, corpo?: unknown): Promise<{ status: number; corpo: T | null }> {
+  try {
+    const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: corpo === undefined ? undefined : JSON.stringify(corpo) });
+    return { status: r.status, corpo: (await r.json().catch(() => null)) as T | null };
+  } catch {
+    return { status: 0, corpo: null };
+  }
+}
+
+type Progresso = (enviados: number, total: number) => void;
+
+function enviarPut(envio: Extract<Envio, { modo: "put" }>, arquivo: File, progresso: Progresso): Promise<boolean> {
+  return new Promise<boolean>((resolve) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", envio.url);
+    for (const [k, v] of Object.entries(envio.cabecalhos)) xhr.setRequestHeader(k, v);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) progresso(e.loaded, e.total);
+    };
+    xhr.onload = () => resolve(xhr.status >= 200 && xhr.status < 300);
+    xhr.onerror = () => resolve(false);
+    xhr.send(arquivo);
+  });
+}
+
+async function enviarBlob(envio: Extract<Envio, { modo: "vercel-blob" }>, arquivo: File, progresso: Progresso): Promise<boolean> {
+  try {
+    // Carregado só quando o site usa Vercel Blob.
+    const { put } = await import("@vercel/blob/client");
+    await put(envio.chave, arquivo, {
+      access: "public",
+      token: envio.token,
+      contentType: arquivo.type,
+      onUploadProgress: (e) => progresso(e.loaded, e.total),
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Envio em três passos, sem o arquivo passar pelo servidor do site:
+ * 1) pede a permissão de envio; 2) envia direto ao armazenamento (com
+ * progresso); 3) pede ao servidor que confira o objeto.
+ */
 export async function enviarFoto(
   arquivo: File,
   onProgresso: (pct: number) => void,
 ): Promise<{ ok: true; id: string; src: string } | { ok: false; erro: string }> {
   const { largura, altura } = await dimensoes(arquivo);
-  const dados = new FormData();
-  dados.append("foto", arquivo);
-  dados.append("largura", String(largura));
-  dados.append("altura", String(altura));
-  return new Promise((resolve) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/painel/fotos");
-    xhr.responseType = "json";
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) onProgresso(Math.min(99, Math.round((e.loaded / e.total) * 100)));
-    };
-    xhr.onload = () => {
-      const r = xhr.response as { ok?: boolean; id?: string; src?: string; erro?: string } | null;
-      if (xhr.status === 200 && r?.ok && r.id && r.src) resolve({ ok: true, id: r.id, src: r.src });
-      else resolve({ ok: false, erro: r?.erro ?? "não chegou ao servidor." });
-    };
-    xhr.onerror = () => resolve({ ok: false, erro: "não chegou ao servidor." });
-    xhr.send(dados);
-  });
+  const preparo = await postarJson<RespostaPreparo>("/painel/fotos", { tipo: arquivo.type, tamanho: arquivo.size, largura, altura });
+  const p = preparo.corpo;
+  if (preparo.status !== 200 || !p?.ok || !p.id || !p.envio) return { ok: false, erro: p?.erro ?? "não chegou ao servidor." };
+
+  const progresso = (enviados: number, total: number) => onProgresso(Math.min(95, Math.round((enviados / total) * 95)));
+  const enviado = p.envio.modo === "vercel-blob" ? await enviarBlob(p.envio, arquivo, progresso) : await enviarPut(p.envio, arquivo, progresso);
+  if (!enviado) return { ok: false, erro: "o envio da foto falhou. Tente de novo." };
+
+  onProgresso(99);
+  const confirmacao = await postarJson<RespostaConfirmar>(`/painel/fotos/${p.id}/confirmar`);
+  const c = confirmacao.corpo;
+  if (confirmacao.status === 200 && c?.ok && c.id && c.src) return { ok: true, id: c.id, src: c.src };
+  return { ok: false, erro: c?.erro ?? "não foi possível confirmar a foto." };
 }
