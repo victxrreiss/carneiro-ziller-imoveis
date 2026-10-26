@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { IcArea, IcCama, IcPin, IcSeta } from "@/components/ui/IconesSite";
 import type { ImovelResumo } from "@/lib/imoveis";
-import { formatarArea, formatarPreco, formatarQuartos, rotuloFinalidade } from "@/lib/imoveis/formato";
+import { formatarArea, formatarPreco, formatarQuartos, rotuloEtiqueta } from "@/lib/imoveis/formato";
 import { registrarSaidaDoGrid } from "@/lib/navegacao/retorno";
 import { routes } from "@/lib/routes";
 
@@ -30,7 +30,7 @@ export function CardImovel({ imovel: i, de, grid, prioridade }: Props) {
           sizes="(max-width: 600px) calc(100vw - 48px), (max-width: 1080px) calc(50vw - 36px), 382px"
           loading={prioridade ? "eager" : "lazy"}
         />
-        <span className="badge">{rotuloFinalidade[i.finalidade]}</span>
+        <span className="badge">{rotuloEtiqueta(i)}</span>
       </div>
       <div className="card-body">
         <div className="card-loc">

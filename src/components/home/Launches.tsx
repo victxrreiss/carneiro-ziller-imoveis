@@ -5,8 +5,10 @@ import { routes } from "@/lib/routes";
 import { PropertyGrid } from "./PropertyGrid";
 import { SectionHeader } from "./SectionHeader";
 
+/** Automática: os lançamentos publicados mais recentes. Sem nenhum, a seção não aparece. */
 export async function Launches() {
   const items = await getLancamentos();
+  if (!items.length) return null;
 
   return (
     <section aria-labelledby="lanc-titulo" className="mx-auto box-content max-w-310 px-6 pt-30">

@@ -22,5 +22,9 @@ export function formatarQuartos(n: number): string {
 export const rotuloFinalidade: Record<Finalidade, string> = {
   venda: "VENDA",
   locacao: "LOCAÇÃO",
-  lancamento: "LANÇAMENTO",
 };
+
+/** Etiqueta do card e da ficha: o lançamento prevalece sobre a finalidade. */
+export function rotuloEtiqueta(i: { finalidade: Finalidade; lancamento: boolean }): "LANÇAMENTO" | "VENDA" | "LOCAÇÃO" {
+  return i.lancamento ? "LANÇAMENTO" : i.finalidade === "locacao" ? "LOCAÇÃO" : "VENDA";
+}

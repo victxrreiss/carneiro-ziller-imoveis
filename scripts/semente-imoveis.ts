@@ -1,10 +1,7 @@
-// Mock do catálogo, montado a partir dos dados-exemplo.json do handoff
-// (carneiro-ziller-site-handoff/imoveis e /imovel). 22 dos 35 anúncios são
-// fictícios e todas as fotos são provisórias. A fonte real (GranCRM) entra no
-// lugar deste arquivo, atrás das funções de ./index.ts.
-import type { Finalidade, Foto, Imovel } from "./types";
-
-const DIR = "/images/imoveis";
+// Dados de desenvolvimento: os 35 imóveis do handoff (22 dos 35 anúncios são
+// fictícios e todas as fotos são provisórias). Usado por `npm run db:semente` e
+// pelos testes. Nunca roda em produção, que começa vazia. Sem usuários nem senhas.
+import type { Finalidade, SituacaoImovel } from "../src/lib/dados/tipos";
 
 /** Dimensões reais dos arquivos em public/images/imoveis, para o next/image. */
 const DIMENSOES: Record<string, [number, number]> = {
@@ -35,12 +32,15 @@ const DIMENSOES: Record<string, [number, number]> = {
   "fb93739e7184d00c58fed8564f56afa2": [1600, 900],
 };
 
-function foto(arquivo: string, alt: string): Foto {
+export type SementeFoto = { arquivo: string; alt: string; largura: number; altura: number };
+
+function foto(arquivo: string, alt: string): SementeFoto {
   const [largura, altura] = DIMENSOES[arquivo];
-  return { src: `${DIR}/${arquivo}.jpg`, alt, largura, altura };
+  return { arquivo, alt, largura, altura };
 }
 
-const FIN: Record<string, Finalidade> = { l: "lancamento", c: "venda", a: "locacao" };
+// Finalidade: c venda, a locação; l = venda marcada como lançamento.
+const FIN: Record<string, [Finalidade, boolean]> = { l: ["venda", true], c: ["venda", false], a: ["locacao", false] };
 
 // [código, finalidade, tipo, título, bairro, cidade, valor, área, quartos, vagas, foto do card]
 // Quartos/vagas 0 = não informado.
@@ -138,35 +138,68 @@ const FICHAS: Record<string, { descricao: string[]; fotos: string[] }> = {
   },
 };
 
-/**
- * Vendidos, alugados ou retirados. Os dois handoffs divergem sobre o CZ1021:
- * no grid ele aparece à venda; na tela do imóvel é o exemplo de indisponível.
- * O mock reproduz cada tela como foi desenhada; a fonte real não terá isso.
- */
-export const INDISPONIVEIS = new Set(["cz1021"]);
+/** Vendido, alugado ou retirado: fora do grid, página com o aviso de indisponível. */
+const INDISPONIVEIS = new Set(["cz1021"]);
 
-function fotosNumeradas(titulo: string, arquivos: string[]): Foto[] {
-  return arquivos.map((a, i) => foto(a, `${titulo} — foto ${i + 1} de ${arquivos.length}`));
+const DIA = 24 * 60 * 60 * 1000;
+/** Publicação mais recente primeiro na ordem do código (define as seções automáticas da Home). */
+const BASE = Date.parse("2026-10-20T10:00:00-03:00");
+
+export type SementeImovel = {
+  id: string;
+  codigo: string;
+  finalidade: Finalidade;
+  lancamento: boolean;
+  tipo: string;
+  titulo: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  valor: number;
+  area: number;
+  quartos: number | null;
+  vagas: number | null;
+  descricao: string;
+  fotos: SementeFoto[];
+  situacao: SituacaoImovel;
+  criadoEm: Date;
+  publicadoEm: Date;
+};
+
+/** Anúncios sem ficha do handoff recebem uma descrição montada só com os dados que já temos. */
+function descricaoPadrao(tipo: string, area: number, bairro: string, cidade: string, quartos: number, vagas: number): string {
+  const extras = [quartos ? `${quartos} quartos` : "", vagas ? `${vagas} vagas de garagem` : ""].filter(Boolean).join(" e ");
+  return `${tipo} de ${area} m² em ${bairro}, ${cidade}${extras ? `, com ${extras}` : ""}.`;
 }
 
-export const IMOVEIS: Imovel[] = LINHAS.map(([codigo, fin, tipo, titulo, bairro, cidade, valor, area, quartos, vagas, capa]) => {
-  const id = codigo.toLowerCase();
-  const ficha = FICHAS[id];
-  return {
-    id,
-    codigo,
-    finalidade: FIN[fin],
-    tipo,
-    titulo,
-    bairro,
-    cidade,
-    uf: "MG",
-    valor,
-    area,
-    quartos: quartos || null,
-    vagas: vagas || null,
-    foto: foto(capa, titulo),
-    descricao: ficha?.descricao ?? [],
-    fotos: fotosNumeradas(titulo, ficha?.fotos ?? [capa]),
-  };
-});
+export function sementeImoveis(): SementeImovel[] {
+  return LINHAS.map(([codigo, fin, tipo, titulo, bairro, cidade, valor, area, quartos, vagas, capa], i) => {
+    const id = codigo.toLowerCase();
+    const ficha = FICHAS[id];
+    const [finalidade, lancamento] = FIN[fin];
+    const arquivos = ficha?.fotos ?? [capa];
+    return {
+      id,
+      codigo,
+      finalidade,
+      lancamento,
+      tipo,
+      titulo,
+      bairro,
+      cidade,
+      uf: "MG",
+      valor,
+      area,
+      quartos: quartos || null,
+      vagas: vagas || null,
+      descricao: ficha ? ficha.descricao.join("\n\n") : descricaoPadrao(tipo, area, bairro, cidade, quartos, vagas),
+      fotos: arquivos.map((a, n) => foto(a, `${titulo} — foto ${n + 1} de ${arquivos.length}`)),
+      situacao: INDISPONIVEIS.has(id) ? "indisponivel" : "publicado",
+      criadoEm: new Date(BASE - i * DIA - 2 * DIA),
+      publicadoEm: new Date(BASE - i * DIA),
+    };
+  });
+}
+
+/** Imóvel da Oportunidade de hoje na semente. */
+export const OPORTUNIDADE_INICIAL = "cz1009";

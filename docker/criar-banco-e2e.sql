@@ -1,0 +1,1 @@
+CREATE DATABASE cz_e2e OWNER cz;

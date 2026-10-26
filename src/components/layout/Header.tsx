@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { navItems, routes, type NavKey } from "@/lib/routes";
+import { navItems, painel, routes, type NavKey } from "@/lib/routes";
 import { Logo } from "./Logo";
 import { MenuDrawer } from "./MenuDrawer";
 
@@ -27,6 +27,12 @@ export function Header({ current }: { current: NavKey }) {
             </Link>
           ))}
         </nav>
+        <Link
+          href={painel.entrar}
+          className="bg-azul-noite px-6.5 py-4 text-xs font-semibold tracking-[0.2em] text-white transition-colors duration-200 hover:bg-azul-noite-hover max-[900px]:hidden"
+        >
+          SOU CORRETOR
+        </Link>
         <div className="min-[900px]:hidden">
           <MenuDrawer
             items={items}

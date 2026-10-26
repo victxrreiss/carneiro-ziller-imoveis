@@ -10,7 +10,7 @@ describe("formato", () => {
 
   test("preço do card: locação em R$/mês", () => {
     expect(formatarPreco(12500, "locacao")).toBe("R$ 12.500/mês");
-    expect(formatarPreco(6200000, "lancamento")).toBe("R$ 6.200.000");
+    expect(formatarPreco(6200000, "venda")).toBe("R$ 6.200.000");
   });
 
   test("área com milhar e m²", () => {

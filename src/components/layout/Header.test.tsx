@@ -22,4 +22,9 @@ describe("Header", () => {
     expect(within(nav).getByRole("link", { name: "Imóveis" })).toHaveAttribute("aria-current", "page");
     expect(within(nav).getByRole("link", { name: "Home" })).not.toHaveAttribute("aria-current");
   });
+
+  test("SOU CORRETOR leva ao login do painel", () => {
+    render(<Header current="home" />);
+    expect(screen.getByRole("link", { name: "SOU CORRETOR" })).toHaveAttribute("href", "/painel/entrar");
+  });
 });

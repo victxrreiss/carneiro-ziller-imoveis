@@ -1,6 +1,6 @@
-// Envio do lead. O backend ainda não existe: o contrato abaixo é o payload
-// sugerido no README do handoff. Enquanto /api/interesses não for criado, o
-// envio falha e a tela mostra o estado "falha" (dados mantidos).
+// Envio do lead para POST /api/interesses (src/app/api/interesses/route.ts),
+// que grava o interesse e avisa a equipe por e-mail. Falha (rede, limite) cai
+// no estado "falha" da tela, com os dados mantidos.
 import { telefoneE164, type CamposInteresse } from "./validacao";
 
 export const ENDPOINT_INTERESSES = "/api/interesses";

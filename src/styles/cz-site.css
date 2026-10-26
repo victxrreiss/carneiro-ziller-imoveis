@@ -31,6 +31,10 @@
 .cz .nav a{color:var(--grafite);padding:12px 0 6px;border-bottom:2px solid transparent;transition:color .2s ease}
 .cz .nav a:hover{color:var(--vinho)}
 .cz .nav a[aria-current="page"]{color:var(--azul-noite);border-bottom-color:var(--vinho)}
+/* SOU CORRETOR: mesmo botão do AGENDAR VISITA da Home. */
+.cz .btn-corretor{background:var(--azul-noite);color:var(--branco);padding:16px 26px;font-size:12px;font-weight:600;letter-spacing:.2em;text-align:center;transition:background .2s ease}
+.cz .btn-corretor:hover{background:var(--azul-noite-hover);color:var(--branco)}
+.cz .menu-drawer .btn-corretor{margin:8px 20px 20px}
 .cz .menu-btn{display:none;width:44px;height:44px;border:1px solid var(--areia);background:var(--branco);cursor:pointer;align-items:center;justify-content:center}
 .cz .scrim{position:fixed;inset:0;background:rgba(15,29,36,.5);z-index:40}
 .cz .menu-drawer{position:fixed;top:0;right:0;bottom:0;width:min(86vw,360px);background:var(--fundo-hero);z-index:50;display:flex;flex-direction:column;box-shadow:-20px 0 40px rgba(15,29,36,.2)}
@@ -178,6 +182,7 @@
 }
 @media (max-width:900px){
   .cz .nav{display:none}
+  .cz .site-header .btn-corretor{display:none}
   .cz .menu-btn{display:flex}
   .cz .site-header .wrap{padding-top:18px;padding-bottom:18px}
   .cz .page-head .wrap{padding-top:32px;padding-bottom:28px}

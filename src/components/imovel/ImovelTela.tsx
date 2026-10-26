@@ -2,7 +2,7 @@ import Link from "next/link";
 import { IcCasa, IcPin } from "@/components/ui/IconesSite";
 import type { Imovel } from "@/lib/imoveis";
 import type { ContextoVolta } from "@/lib/imoveis/filtros";
-import { formatarArea, formatarReais, rotuloFinalidade } from "@/lib/imoveis/formato";
+import { formatarArea, formatarReais, rotuloEtiqueta } from "@/lib/imoveis/formato";
 import { routes } from "@/lib/routes";
 import { AgendarProvider, BotaoAgendar } from "./Agendar";
 import { BarraVolta, LinkVolta } from "./BarraVolta";
@@ -36,7 +36,7 @@ export function ImovelTela({ imovel, volta }: { imovel: Imovel; volta: ContextoV
     <main>
       <BarraVolta
         volta={volta}
-        secao={secaoDoImovel(imovel.finalidade === "lancamento")}
+        secao={secaoDoImovel(imovel.lancamento)}
         codigo={`CÓD. ${imovel.codigo}`}
       />
       <AgendarProvider imovel={imovel}>
@@ -57,7 +57,7 @@ export function ImovelTela({ imovel, volta }: { imovel: Imovel; volta: ContextoV
               )}
             </div>
             <aside className="im-card" aria-label="Resumo do imóvel">
-              <span className="im-badge">{rotuloFinalidade[imovel.finalidade]}</span>
+              <span className="im-badge">{rotuloEtiqueta(imovel)}</span>
               <div className="im-code">
                 CÓD. {imovel.codigo} · {imovel.tipo.toUpperCase()}
               </div>

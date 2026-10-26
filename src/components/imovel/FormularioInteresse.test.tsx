@@ -8,6 +8,7 @@ const imovel: Imovel = {
   id: "cz1009",
   codigo: "CZ1009",
   finalidade: "venda",
+  lancamento: false,
   tipo: "Apartamento",
   titulo: "Apartamento no Belvedere",
   bairro: "Belvedere",
