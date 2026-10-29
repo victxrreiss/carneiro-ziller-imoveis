@@ -76,7 +76,7 @@
 .cz .f-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr)) auto;gap:12px;align-items:end}
 .cz .f-carac{grid-column:1 / -1;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .cz .f-carac .lbl{margin-right:4px}
-.cz .tog{display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border:1px solid var(--areia);background:var(--branco);font-family:var(--sans);font-size:13px;color:var(--grafite);cursor:pointer;transition:border-color .2s ease}
+.cz .tog{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border:1px solid var(--areia);background:var(--branco);font-family:var(--sans);font-size:13px;color:var(--grafite);cursor:pointer;transition:border-color .2s ease}
 .cz .tog:hover{border-color:var(--prata)}
 .cz .tog:focus-visible{outline:none;border-color:var(--azul-noite);box-shadow:0 0 0 3px rgba(15,29,36,.08)}
 .cz .tog[aria-pressed="true"]{border-color:var(--azul-noite);color:var(--azul-noite);font-weight:500;box-shadow:inset 0 -2px 0 var(--vinho)}

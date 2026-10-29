@@ -34,15 +34,10 @@ export function ImovelTela({ imovel, volta }: { imovel: Imovel; volta: ContextoV
     imovel.vagas ? { rotulo: "VAGAS", valor: String(imovel.vagas) } : null,
     imovel.areaTotal && imovel.areaTotal > imovel.area ? { rotulo: "ÁREA TOTAL", valor: formatarArea(imovel.areaTotal) } : null,
   ].filter((s) => s !== null);
-  // "Valores": a linha da finalidade principal já aparece no preço; aqui vão os demais.
+  const locacao = imovel.finalidade === "locacao";
   const valores = [
-    {
-      rotulo: imovel.finalidade === "locacao" ? "LOCAÇÃO" : "VENDA",
-      valor: imovel.finalidade === "locacao" ? formatarMensal(imovel.valor) : formatarReais(imovel.valor),
-    },
-    imovel.finalidade === "venda" && imovel.valorLocacao !== null
-      ? { rotulo: "LOCAÇÃO", valor: formatarMensal(imovel.valorLocacao) }
-      : null,
+    { rotulo: locacao ? "LOCAÇÃO" : "VENDA", valor: locacao ? formatarMensal(imovel.valor) : formatarReais(imovel.valor) },
+    !locacao && imovel.valorLocacao !== null ? { rotulo: "LOCAÇÃO", valor: formatarMensal(imovel.valorLocacao) } : null,
     imovel.condominio !== null ? { rotulo: "CONDOMÍNIO", valor: formatarMensal(imovel.condominio) } : null,
     imovel.iptu !== null ? { rotulo: "IPTU", valor: formatarAnual(imovel.iptu) } : null,
   ].filter((v) => v !== null);
@@ -54,7 +49,11 @@ export function ImovelTela({ imovel, volta }: { imovel: Imovel; volta: ContextoV
 
   return (
     <main>
-      <BarraVolta volta={volta} secao={secaoDoImovel(imovel.lancamento)} codigo={`CÓD. ${imovel.codigo}`} />
+      <BarraVolta
+        volta={volta}
+        secao={secaoDoImovel(imovel.lancamento)}
+        codigo={`CÓD. ${imovel.codigo}`}
+      />
       <AgendarProvider imovel={imovel}>
         <section className="im-main" aria-labelledby="im-titulo">
           <div className="wrap">
@@ -147,20 +146,11 @@ export function ImovelTela({ imovel, volta }: { imovel: Imovel; volta: ContextoV
 
 type Ausencia =
   | { tipo: "inexistente" }
-  | {
-      tipo: "indisponivel";
-      codigo: string;
-      volta: ContextoVolta;
-      veioDoGrid: boolean;
-    };
+  | { tipo: "indisponivel"; codigo: string; volta: ContextoVolta; veioDoGrid: boolean };
 
 /** Estados "Não encontrado" (404) e "Indisponível" (vendido, alugado ou retirado). */
 export function ImovelAusente(props: Ausencia) {
-  const direto: ContextoVolta = {
-    href: routes.imoveis,
-    rotulo: "VER TODOS OS IMÓVEIS",
-    resumo: undefined,
-  };
+  const direto: ContextoVolta = { href: routes.imoveis, rotulo: "VER TODOS OS IMÓVEIS", resumo: undefined };
   const volta = props.tipo === "indisponivel" ? props.volta : direto;
   const comFiltros = props.tipo === "indisponivel" && props.veioDoGrid;
 
@@ -198,7 +188,10 @@ export function ImovelAusente(props: Ausencia) {
             ) : (
               <>
                 <h1>Imóvel não encontrado</h1>
-                <p>O endereço pode estar incorreto ou o anúncio foi removido. Confira o portfólio completo ou fale com um consultor.</p>
+                <p>
+                  O endereço pode estar incorreto ou o anúncio foi removido. Confira o portfólio completo ou fale com um
+                  consultor.
+                </p>
                 <div className="notice-actions">
                   <Link href={routes.imoveis} className="btn">
                     VER TODOS OS IMÓVEIS
@@ -243,15 +236,7 @@ export function ImovelCarregando() {
                 <span key={i} className="shimmer" />
               ))}
             </div>
-            <div
-              style={{
-                marginTop: 64,
-                display: "flex",
-                flexDirection: "column",
-                gap: 14,
-                maxWidth: 680,
-              }}
-            >
+            <div style={{ marginTop: 64, display: "flex", flexDirection: "column", gap: 14, maxWidth: 680 }}>
               <Linha style={{ width: "22%" }} />
               <Linha style={{ height: 30, width: "46%" }} />
               <Linha style={{ width: "100%" }} />

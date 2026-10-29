@@ -26,10 +26,7 @@ export type ChaveFiltro = Exclude<keyof Filtros, "pagina">;
 /** [valor na URL, rótulo, mínimo inclusivo, máximo exclusivo] */
 export type Faixa = readonly [string, string, number, number];
 
-export const FINALIDADES: readonly {
-  valor: FinalidadeFiltro | undefined;
-  rotulo: string;
-}[] = [
+export const FINALIDADES: readonly { valor: FinalidadeFiltro | undefined; rotulo: string }[] = [
   { valor: undefined, rotulo: "TODOS" },
   { valor: "comprar", rotulo: "COMPRAR" },
   { valor: "alugar", rotulo: "ALUGAR" },
@@ -40,10 +37,7 @@ export const FINALIDADES: readonly {
  * Lançamento não é finalidade: é uma marcação do imóvel. "Comprar" e "Alugar"
  * filtram pela finalidade; "Lançamentos" filtra pela marcação.
  */
-export function combinaFinalidade(
-  filtro: FinalidadeFiltro | undefined,
-  i: Pick<ImovelResumo, "finalidade" | "lancamento" | "valorLocacao">,
-): boolean {
+export function combinaFinalidade(filtro: FinalidadeFiltro | undefined, i: Pick<ImovelResumo, "finalidade" | "lancamento" | "valorLocacao">): boolean {
   if (!filtro) return true;
   if (filtro === "lancamentos") return i.lancamento;
   if (filtro === "comprar") return i.finalidade === "venda";
@@ -154,7 +148,8 @@ export function filtrosParaQuery(filtros: Filtros): string {
     const v = filtros[chave];
     if (v) p.set(chave, v);
   }
-  for (const c of filtros.carac ?? []) p.append("carac", c);
+  // Ordem canônica, para a mesma seleção dar sempre a mesma URL.
+  for (const c of CARACTERISTICAS_FILTRO) if (filtros.carac?.includes(c)) p.append("carac", c);
   if (filtros.pagina > 1) p.set("pagina", String(filtros.pagina));
   return p.toString();
 }
@@ -166,12 +161,7 @@ export function urlGrid(filtros: Filtros): string {
 
 /** Remove um filtro; sem finalidade, a faixa de preço também sai. */
 export function semFiltro(filtros: Filtros, chave: ChaveFiltro, valor?: string): Filtros {
-  if (chave === "carac" && valor)
-    return {
-      ...filtros,
-      carac: filtros.carac?.filter((c) => c !== valor),
-      pagina: 1,
-    };
+  if (chave === "carac" && valor) return { ...filtros, carac: filtros.carac?.filter((c) => c !== valor), pagina: 1 };
   const proximo: Filtros = { ...filtros, [chave]: undefined, pagina: 1 };
   if (chave === "finalidade") proximo.preco = undefined;
   return proximo;
@@ -180,12 +170,7 @@ export function semFiltro(filtros: Filtros, chave: ChaveFiltro, valor?: string):
 /** Troca a finalidade e limpa uma faixa de preço que não vale para a nova. */
 export function comFinalidade(filtros: Filtros, finalidade: FinalidadeFiltro | undefined): Filtros {
   const precoValido = faixasPreco(finalidade).some(([v]) => v === filtros.preco);
-  return {
-    ...filtros,
-    finalidade,
-    preco: precoValido ? filtros.preco : undefined,
-    pagina: 1,
-  };
+  return { ...filtros, finalidade, preco: precoValido ? filtros.preco : undefined, pagina: 1 };
 }
 
 export function contarFiltrosPainel(filtros: Filtros): number {
@@ -195,17 +180,14 @@ export function contarFiltrosPainel(filtros: Filtros): number {
 export type RotuloFiltro = {
   chave: ChaveFiltro;
   rotulo: string;
-  /** Qual característica, quando `chave` é "carac". */ valor?: string;
+  /** Qual característica, quando `chave` é "carac". */
+  valor?: string;
 };
 
 export function rotulosFiltros(filtros: Filtros): RotuloFiltro[] {
   const r: RotuloFiltro[] = [];
   const faixa = (lista: readonly Faixa[], v?: string) => lista.find(([valor]) => valor === v)?.[1];
-  if (filtros.finalidade)
-    r.push({
-      chave: "finalidade",
-      rotulo: rotuloChipFinalidade[filtros.finalidade],
-    });
+  if (filtros.finalidade) r.push({ chave: "finalidade", rotulo: rotuloChipFinalidade[filtros.finalidade] });
   if (filtros.q) r.push({ chave: "q", rotulo: `“${filtros.q}”` });
   if (filtros.tipo) r.push({ chave: "tipo", rotulo: filtros.tipo });
   const preco = faixa(faixasPreco(filtros.finalidade), filtros.preco);
@@ -226,11 +208,7 @@ export function tituloGrid(finalidade: FinalidadeFiltro | undefined): string {
   return "Todos os imóveis";
 }
 
-export type ContextoVolta = {
-  href: string;
-  rotulo: string;
-  resumo: string | undefined;
-};
+export type ContextoVolta = { href: string; rotulo: string; resumo: string | undefined };
 
 /**
  * Link "voltar" da tela do imóvel. `de` é a querystring do grid de onde a pessoa
@@ -240,16 +218,8 @@ export type ContextoVolta = {
 export function contextoVolta(de: string | undefined, lancamento: boolean): ContextoVolta {
   if (de === undefined) {
     return lancamento
-      ? {
-          href: routes.lancamentos,
-          rotulo: "VOLTAR AOS LANÇAMENTOS",
-          resumo: undefined,
-        }
-      : {
-          href: routes.imoveis,
-          rotulo: "VER TODOS OS IMÓVEIS",
-          resumo: undefined,
-        };
+      ? { href: routes.lancamentos, rotulo: "VOLTAR AOS LANÇAMENTOS", resumo: undefined }
+      : { href: routes.imoveis, rotulo: "VER TODOS OS IMÓVEIS", resumo: undefined };
   }
   const filtros = lerFiltros(new URLSearchParams(de));
   const lancamentos = filtros.finalidade === "lancamentos";

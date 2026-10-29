@@ -1,9 +1,6 @@
 import type { Finalidade } from "./types";
 
-const milhar = (n: number) =>
-  Math.round(n)
-    .toString()
-    .replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+const milhar = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
 export function formatarReais(valor: number): string {
   return `R$ ${milhar(valor)}`;

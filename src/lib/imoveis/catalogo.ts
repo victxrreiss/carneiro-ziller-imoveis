@@ -7,7 +7,7 @@ import { conexao, type Db } from "@/lib/dados/conexao";
 import { carregarImovel, carregarImoveis } from "@/lib/dados/consultas";
 import { configuracaoSite, imoveis } from "@/lib/dados/esquema";
 import type { RegistroImovel } from "@/lib/dados/tipos";
-import { FAIXAS_AREA, combinaFinalidade, faixasPreco, type Filtros } from "./filtros";
+import { FAIXAS_AREA, combinaFinalidade, faixasPreco, type Faixa, type Filtros } from "./filtros";
 import { formatarArea, formatarPreco, formatarQuartos, formatarReais, rotuloEtiqueta } from "./formato";
 import { rotuloCaracteristica } from "./caracteristicas";
 import { regioes } from "./mock-data";
@@ -17,27 +17,22 @@ export const POR_PAGINA = 15;
 /** Cards por seção automática da Home. */
 export const CARDS_HOME = 4;
 
-const normalizar = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
+const normalizar = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .trim();
 
 /** Publicado com todos os campos que o site exibe (a publicação exige todos). */
-type Completo = RegistroImovel & {
-  finalidade: NonNullable<RegistroImovel["finalidade"]>;
-  tipo: string;
-  valor: number;
-  area: number;
-};
+type Completo = RegistroImovel & { finalidade: NonNullable<RegistroImovel["finalidade"]>; tipo: string; valor: number; area: number };
 
 function completo(r: RegistroImovel): r is Completo {
   return r.finalidade !== null && r.tipo !== null && r.valor !== null && r.area !== null;
 }
 
 /** Card do grid de um imóvel publicado sem fotos (a página mostra "FOTOS EM BREVE"). */
-const SEM_FOTO = {
-  src: "/images/sem-foto.svg",
-  alt: "",
-  largura: 1600,
-  altura: 1200,
-};
+const SEM_FOTO = { src: "/images/sem-foto.svg", alt: "", largura: 1600, altura: 1200 };
 
 function paraImovel(r: Completo): Imovel {
   const capa = r.fotos[0];
@@ -68,24 +63,12 @@ function paraImovel(r: Completo): Imovel {
       const rotulo = rotuloCaracteristica(chave);
       return rotulo ? [{ chave, rotulo }] : [];
     }),
-    foto: capa
-      ? {
-          src: capa.src,
-          alt: capa.alt,
-          largura: capa.largura,
-          altura: capa.altura,
-        }
-      : SEM_FOTO,
+    foto: capa ? { src: capa.src, alt: capa.alt, largura: capa.largura, altura: capa.altura } : SEM_FOTO,
     descricao: r.descricao
       .split(/\n\s*\n/)
       .map((p) => p.trim())
       .filter(Boolean),
-    fotos: r.fotos.map(({ src, alt, largura, altura }) => ({
-      src,
-      alt,
-      largura,
-      altura,
-    })),
+    fotos: r.fotos.map(({ src, alt, largura, altura }) => ({ src, alt, largura, altura })),
   };
 }
 
@@ -101,29 +84,14 @@ async function oportunidadeId(db: Db): Promise<string | null> {
 
 function resumo(i: Imovel): ImovelResumo {
   const { id, codigo, finalidade, lancamento, tipo, titulo, bairro, cidade, valor, area, quartos, vagas, suites, valorLocacao, foto } = i;
-  return {
-    id,
-    codigo,
-    finalidade,
-    lancamento,
-    tipo,
-    titulo,
-    bairro,
-    cidade,
-    valor,
-    area,
-    quartos,
-    vagas,
-    suites,
-    valorLocacao,
-    foto,
-  };
+  return { id, codigo, finalidade, lancamento, tipo, titulo, bairro, cidade, valor, area, quartos, vagas, suites, valorLocacao, foto };
 }
 
 /** Em "Alugar", a faixa vale para o aluguel: o valor de locação de um imóvel à venda. */
-function valorDaFaixa(filtros: Filtros, i: Imovel): number {
-  if (filtros.finalidade !== "alugar") return i.valor;
-  return i.finalidade === "locacao" ? i.valor : (i.valorLocacao ?? i.valor);
+function naFaixaDePreco(filtros: Filtros, faixa: Faixa | undefined, i: Imovel): boolean {
+  if (!faixa) return true;
+  const valor = filtros.finalidade === "alugar" && i.finalidade === "venda" ? i.valorLocacao : i.valor;
+  return valor !== null && valor >= faixa[2] && valor < faixa[3];
 }
 
 async function filtrar(filtros: Filtros, db: Db): Promise<Imovel[]> {
@@ -137,7 +105,7 @@ async function filtrar(filtros: Filtros, db: Db): Promise<Imovel[]> {
         combinaFinalidade(filtros.finalidade, i) &&
         (!q || normalizar(`${i.titulo} ${i.bairro} ${i.cidade} ${i.codigo} ${i.empreendimento ?? ""}`).includes(q)) &&
         (!filtros.tipo || i.tipo === filtros.tipo) &&
-        (!preco || (valorDaFaixa(filtros, i) >= preco[2] && valorDaFaixa(filtros, i) < preco[3])) &&
+        naFaixaDePreco(filtros, preco, i) &&
         (!area || (i.area >= area[2] && i.area < area[3])) &&
         (!filtros.quartos || (i.quartos ?? 0) >= Number(filtros.quartos)) &&
         (!filtros.vagas || (i.vagas ?? 0) >= Number(filtros.vagas)) &&

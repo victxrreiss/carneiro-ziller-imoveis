@@ -31,11 +31,7 @@ describe("lerFiltros", () => {
   });
 
   test("aceita o objeto de searchParams do Next", () => {
-    expect(lerFiltros({ finalidade: "alugar", q: ["sion", "x"] })).toEqual({
-      finalidade: "alugar",
-      q: "sion",
-      pagina: 1,
-    });
+    expect(lerFiltros({ finalidade: "alugar", q: ["sion", "x"] })).toEqual({ finalidade: "alugar", q: "sion", pagina: 1 });
   });
 
   test("limita o tamanho da busca", () => {
@@ -45,14 +41,9 @@ describe("lerFiltros", () => {
 
 describe("filtrosParaQuery", () => {
   test("ordem fixa e página só acima de 1", () => {
-    expect(
-      filtrosParaQuery({
-        quartos: "3",
-        finalidade: "comprar",
-        q: "belvedere",
-        pagina: 1,
-      }),
-    ).toBe("finalidade=comprar&q=belvedere&quartos=3");
+    expect(filtrosParaQuery({ quartos: "3", finalidade: "comprar", q: "belvedere", pagina: 1 })).toBe(
+      "finalidade=comprar&q=belvedere&quartos=3",
+    );
     expect(filtrosParaQuery({ pagina: 3 })).toBe("pagina=3");
     expect(filtrosParaQuery({ pagina: 1 })).toBe("");
   });
@@ -98,19 +89,11 @@ describe("contextoVolta", () => {
   });
 
   test("grid sem filtros", () => {
-    expect(contextoVolta("", false)).toEqual({
-      href: "/imoveis",
-      rotulo: "VOLTAR AOS RESULTADOS",
-      resumo: undefined,
-    });
+    expect(contextoVolta("", false)).toEqual({ href: "/imoveis", rotulo: "VOLTAR AOS RESULTADOS", resumo: undefined });
   });
 
   test("acesso direto", () => {
-    expect(contextoVolta(undefined, false)).toEqual({
-      href: "/imoveis",
-      rotulo: "VER TODOS OS IMÓVEIS",
-      resumo: undefined,
-    });
+    expect(contextoVolta(undefined, false)).toEqual({ href: "/imoveis", rotulo: "VER TODOS OS IMÓVEIS", resumo: undefined });
     expect(contextoVolta(undefined, true)).toEqual({
       href: "/imoveis?finalidade=lancamentos",
       rotulo: "VOLTAR AOS LANÇAMENTOS",
@@ -134,13 +117,11 @@ describe("suítes e características", () => {
       carac: ["piscina", "academia"],
       pagina: 1,
     });
-    expect(lerFiltros(new URLSearchParams("suites=9&carac=xxx"))).toEqual({
-      pagina: 1,
-    });
+    expect(lerFiltros(new URLSearchParams("suites=9&carac=xxx"))).toEqual({ pagina: 1 });
   });
 
-  test("monta a querystring e os rótulos", () => {
-    const f = { suites: "2", carac: ["piscina", "academia"], pagina: 1 };
+  test("monta a querystring (características na ordem canônica) e os rótulos", () => {
+    const f = { suites: "2", carac: ["academia", "piscina"], pagina: 1 };
     expect(filtrosParaQuery(f)).toBe("suites=2&carac=piscina&carac=academia");
     const rotulos = rotulosFiltros(f).map((r) => r.rotulo);
     expect(rotulos).toContain("2+ suítes");

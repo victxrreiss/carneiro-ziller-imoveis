@@ -31,7 +31,8 @@ type Props = {
 };
 
 const LIMPOS: Filtros = { pagina: 1 };
-const opcoesFaixa = (lista: readonly (readonly [string, string, number, number])[]) => lista.map(([valor, rotulo]) => ({ valor, rotulo }));
+const opcoesFaixa = (lista: readonly (readonly [string, string, number, number])[]) =>
+  lista.map(([valor, rotulo]) => ({ valor, rotulo }));
 const opcoesMinimo = (lista: readonly string[]) => lista.map((v) => ({ valor: v, rotulo: `${v} ou mais` }));
 
 export function FiltrosImoveis({ filtros, onAplicar, contar, totalAtual }: Props) {
@@ -50,12 +51,7 @@ export function FiltrosImoveis({ filtros, onAplicar, contar, totalAtual }: Props
     setBusca(filtros.q ?? "");
   }
 
-  useDialog({
-    aberto: painelAberto,
-    onFechar: () => setPainelAberto(false),
-    painelRef,
-    retornoRef: botaoFiltrosRef,
-  });
+  useDialog({ aberto: painelAberto, onFechar: () => setPainelAberto(false), painelRef, retornoRef: botaoFiltrosRef });
 
   // Com o painel mobile aberto, as escolhas ficam num rascunho até "VER N IMÓVEIS".
   const ativos = painelAberto ? rascunho : filtros;
@@ -117,7 +113,12 @@ export function FiltrosImoveis({ filtros, onAplicar, contar, totalAtual }: Props
     <>
       <section className="filters" aria-label="Filtros">
         <div className="wrap">
-          <form className={ativos.finalidade ? "ff" : "ff has-hint"} role="search" aria-label="Filtrar imóveis" onSubmit={enviarBusca}>
+          <form
+            className={ativos.finalidade ? "ff" : "ff has-hint"}
+            role="search"
+            aria-label="Filtrar imóveis"
+            onSubmit={enviarBusca}
+          >
             <div className="f-top">
               {segmentado("seg")}
               <div className="search">
@@ -140,7 +141,13 @@ export function FiltrosImoveis({ filtros, onAplicar, contar, totalAtual }: Props
             </div>
 
             <div className="f-mobile-bar">
-              <button ref={botaoFiltrosRef} type="button" className="btn-filters" aria-expanded={painelAberto} onClick={abrirPainel}>
+              <button
+                ref={botaoFiltrosRef}
+                type="button"
+                className="btn-filters"
+                aria-expanded={painelAberto}
+                onClick={abrirPainel}
+              >
                 <IcFiltros size={18} width={1.6} />
                 FILTROS
                 {noPainel > 0 && (
@@ -155,13 +162,7 @@ export function FiltrosImoveis({ filtros, onAplicar, contar, totalAtual }: Props
             <div
               ref={painelRef}
               className={painelAberto ? "f-panel open" : "f-panel"}
-              {...(painelAberto
-                ? {
-                    role: "dialog",
-                    "aria-modal": true,
-                    "aria-labelledby": tituloPainelId,
-                  }
-                : {})}
+              {...(painelAberto ? { role: "dialog", "aria-modal": true, "aria-labelledby": tituloPainelId } : {})}
             >
               <div className="f-panel-head">
                 <h2 id={tituloPainelId}>Filtros</h2>

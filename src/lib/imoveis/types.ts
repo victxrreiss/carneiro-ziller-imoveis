@@ -52,7 +52,9 @@ export type Imovel = ImovelResumo & {
 };
 
 export type ResultadoImovel =
-  { situacao: "disponivel"; imovel: Imovel } | { situacao: "indisponivel"; codigo: string } | { situacao: "inexistente" };
+  | { situacao: "disponivel"; imovel: Imovel }
+  | { situacao: "indisponivel"; codigo: string }
+  | { situacao: "inexistente" };
 
 export type PaginaImoveis = {
   itens: ImovelResumo[];

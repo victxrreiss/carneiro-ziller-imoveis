@@ -57,7 +57,7 @@ export function CardImovel({ imovel: i, de, grid, prioridade }: Props) {
         <div className="card-foot">
           <span className="card-price">
             {formatarPreco(i.valor, i.finalidade)}
-            {i.valorLocacao !== null && i.finalidade === "venda" && (
+            {i.finalidade === "venda" && i.valorLocacao !== null && (
               <small className="card-price-alt">ou {formatarMensal(i.valorLocacao)}</small>
             )}
           </span>
