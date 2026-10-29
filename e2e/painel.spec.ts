@@ -191,7 +191,13 @@ test("cadastro com a ficha completa aparece na lista e na busca", async ({ page 
   await page.getByLabel(/^BANHEIROS/).fill("5");
   await page.getByLabel(/CONDOMÍNIO/).fill("2300");
   await page.getByLabel(/IPTU/).fill("9800");
-  await page.getByLabel(/^EMPREENDIMENTO/).fill("Residencial Aurora Teste");
+  // Valor de locação só existe com finalidade Venda: preenche, troca para Locação (some) e volta a Venda.
+  await page.getByLabel(/VALOR DE LOCAÇÃO/).fill("7500");
+  await page.getByRole("radio", { name: "LOCAÇÃO" }).click();
+  await expect(page.getByLabel(/VALOR DE LOCAÇÃO/)).toHaveCount(0);
+  await page.getByRole("radio", { name: "VENDA" }).click();
+  await expect(page.getByLabel(/VALOR DE LOCAÇÃO/)).toHaveValue("7.500");
+  await page.getByLabel(/^EMPREENDIMENTO/).fill("Edifício Aurora Teste");
   await page.getByRole("checkbox", { name: "Piscina" }).check();
   await page.getByRole("textbox", { name: /^ENDEREÇO/ }).fill("Rua Teste");
   await page.getByRole("textbox", { name: /^CEP/ }).fill("34000-000");
@@ -211,15 +217,27 @@ test("cadastro com a ficha completa aparece na lista e na busca", async ({ page 
   await expect(page.getByLabel(/^BANHEIROS/)).toHaveValue("5");
   await expect(page.getByLabel(/CONDOMÍNIO/)).toHaveValue("2.300");
   await expect(page.getByLabel(/IPTU/)).toHaveValue("9.800");
-  await expect(page.getByLabel(/^EMPREENDIMENTO/)).toHaveValue("Residencial Aurora Teste");
+  await expect(page.getByLabel(/VALOR DE LOCAÇÃO/)).toHaveValue("7.500");
+  await expect(page.getByLabel(/^EMPREENDIMENTO/)).toHaveValue("Edifício Aurora Teste");
   await expect(page.getByRole("checkbox", { name: "Piscina" })).toBeChecked();
   await expect(page.getByRole("checkbox", { name: "Churrasqueira" })).not.toBeChecked();
   await expect(page.getByRole("textbox", { name: /^ENDEREÇO/ })).toHaveValue("Rua Teste");
   await expect(page.getByRole("textbox", { name: /^CEP/ })).toHaveValue("34000-000");
 
-  // Lista: busca por empreendimento (sem acento/caixa), filtros Tipo e Cidade.
+  // Trocar para Locação e salvar descarta o valor de locação; voltando a Venda o campo está vazio.
+  await page.getByRole("radio", { name: "LOCAÇÃO" }).click();
+  await page.getByRole("button", { name: "SALVAR ALTERAÇÕES" }).click();
+  await expect(page.getByText("Alterações salvas.", { exact: true })).toBeVisible();
+  await page.goto(`/painel/imoveis/${cod.toLowerCase()}`);
+  await expect(page.getByLabel(/VALOR DE LOCAÇÃO/)).toHaveCount(0);
+  await page.getByRole("radio", { name: "VENDA" }).click();
+  await expect(page.getByLabel(/VALOR DE LOCAÇÃO/)).toHaveValue("");
+  await page.getByRole("button", { name: "SALVAR ALTERAÇÕES" }).click();
+  await expect(page.getByText("Alterações salvas.", { exact: true })).toBeVisible();
+
+  // Lista: busca por empreendimento com outros acentos e caixa ("edificio AURORA" acha "Edifício Aurora"), filtros Tipo e Cidade.
   await page.goto("/painel/imoveis");
-  await page.getByLabel(/Buscar por código/).fill("RESIDENCIAL aurora");
+  await page.getByLabel(/Buscar por código/).fill("edificio AURORA");
   await expect(page.getByRole("link", { name: "Apartamento da ficha completa" })).toBeVisible();
   await page.getByRole("button", { name: /Tipo/ }).click();
   await page.getByRole("option", { name: "Casa", exact: true }).click();

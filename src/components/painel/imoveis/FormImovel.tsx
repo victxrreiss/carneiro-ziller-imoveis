@@ -467,7 +467,7 @@ export function FormImovel({
     </div>
   );
 
-  type CampoNumero = "condominio" | "iptu" | "valorLocacao" | "areaTotal" | "banheiros" | "suites" | "andar" | "anoConstrucao";
+  type CampoNumero = "quartos" | "vagas" | "condominio" | "iptu" | "valorLocacao" | "areaTotal" | "banheiros" | "suites" | "andar" | "anoConstrucao";
   /** Número só com dígitos; `milhar` mostra o ponto de milhar como o campo Valor. */
   const campoNumero = (k: CampoNumero, rotulo: string, max: number, milharOn: boolean, opcional = true) => (
     <div className={classeCampo(k)}>
@@ -871,55 +871,10 @@ export function FormImovel({
                 {erros.area && <ErroCampo id="pn-f-area-err">{erros.area}</ErroCampo>}
               </div>
               {campoNumero("areaTotal", "ÁREA TOTAL (M²)", 7, true)}
-              {(["quartos"] as const).map((k) => (
-                <div key={k} className={classeCampo(k)}>
-                  <label className="im-lbl" htmlFor={ID_CAMPO[k]}>
-                    {k === "quartos" ? "QUARTOS" : "VAGAS"}
-                    <span className="pn-opt">opcional</span>
-                  </label>
-                  {so ? (
-                    <div className="pn-ro">{c[k] || "—"}</div>
-                  ) : (
-                    <input
-                      id={ID_CAMPO[k]}
-                      className="im-input"
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={2}
-                      value={c[k]}
-                      onChange={(e) => mudar(k, digitos(e.target.value).slice(0, 2))}
-                      aria-invalid={erros[k] ? true : undefined}
-                      aria-describedby={descr(k)}
-                    />
-                  )}
-                  {erros[k] && <ErroCampo id={`${ID_CAMPO[k]}-err`}>{erros[k]}</ErroCampo>}
-                </div>
-              ))}
+              {campoNumero("quartos", "QUARTOS", 2, false)}
               {campoNumero("suites", "SUÍTES", 2, false)}
               {campoNumero("banheiros", "BANHEIROS", 2, false)}
-              {(["vagas"] as const).map((k) => (
-                <div key={k} className={classeCampo(k)}>
-                  <label className="im-lbl" htmlFor={ID_CAMPO[k]}>
-                    VAGAS<span className="pn-opt">opcional</span>
-                  </label>
-                  {so ? (
-                    <div className="pn-ro">{c[k] || "—"}</div>
-                  ) : (
-                    <input
-                      id={ID_CAMPO[k]}
-                      className="im-input"
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={2}
-                      value={c[k]}
-                      onChange={(e) => mudar(k, digitos(e.target.value).slice(0, 2))}
-                      aria-invalid={erros[k] ? true : undefined}
-                      aria-describedby={descr(k)}
-                    />
-                  )}
-                  {erros[k] && <ErroCampo id={`${ID_CAMPO[k]}-err`}>{erros[k]}</ErroCampo>}
-                </div>
-              ))}
+              {campoNumero("vagas", "VAGAS", 2, false)}
               {campoNumero("andar", "ANDAR", 2, false)}
               {campoNumero("anoConstrucao", "ANO DE CONSTRUÇÃO", 4, false)}
             </div>

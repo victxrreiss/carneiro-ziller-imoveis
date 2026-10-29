@@ -22,8 +22,8 @@ services:
       retries: 20
 
   # Servidor S3 local. Mesma imagem (MinIO, fixada por digest) usada em produção;
-  # pode ser trocada por qualquer servidor S3 mantido (o app só fala o protocolo S3). Os buckets cz-dev e cz-e2e são criados
-  # por `npm run db:subir` (scripts/preparar-s3.ts), com leitura pública.
+  # pode ser trocada por qualquer servidor S3 mantido (o app só fala o protocolo S3).
+  # Os buckets cz-dev e cz-e2e são criados por `npm run db:subir` (scripts/preparar-s3.ts), com leitura pública.
   s3:
     image: cgr.dev/chainguard/minio@sha256:e70b2b1e74d79457f808710483bd726ff364529ca30736eaa15a6ab547d3a5a7
     command: server /data --console-address ":9001"

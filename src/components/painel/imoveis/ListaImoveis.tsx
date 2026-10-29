@@ -293,9 +293,9 @@ export function ListaImoveis({ linhas, usuario, avisoOportunidade }: { linhas: L
             <div className="pn-search">
               <IcBusca stroke="#6D6E71" />
               <label htmlFor="pn-q" className="sr-only">
-                Buscar por código, título, bairro ou empreendimento
+                Buscar por código, título, bairro, empreendimento ou referência Loft
               </label>
-              <input id="pn-q" type="search" placeholder="Buscar por código, título ou empreendimento" autoComplete="off" value={q} onChange={(e) => mudar(setQ)(e.target.value)} />
+              <input id="pn-q" type="search" placeholder="Buscar por código, título, empreendimento ou ref. Loft" autoComplete="off" value={q} onChange={(e) => mudar(setQ)(e.target.value)} />
               {q && (
                 <button type="button" className="pn-clear-q" aria-label="Limpar busca" onClick={() => mudar(setQ)("")}>
                   <IcFechar size={14} width={2} />
