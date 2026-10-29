@@ -24,12 +24,27 @@ export type ImovelResumo = {
   area: number;
   quartos: number | null;
   vagas: number | null;
+  suites: number | null;
+  /** Valor de locação de um imóvel à venda (o card mostra "ou R$ X/mês"). */
+  valorLocacao: number | null;
   foto: Foto;
 };
 
 /** Ficha completa da tela do imóvel. */
 export type Imovel = ImovelResumo & {
   uf: string;
+  banheiros: number | null;
+  /** Só interessa quando maior que a área útil. */
+  areaTotal: number | null;
+  /** Mensal. */
+  condominio: number | null;
+  /** Anual. */
+  iptu: number | null;
+  andar: number | null;
+  anoConstrucao: number | null;
+  empreendimento: string | null;
+  /** Só as características conhecidas, na ordem gravada. */
+  caracteristicas: { chave: string; rotulo: string }[];
   /** Parágrafos. */
   descricao: string[];
   /** Em ordem; a primeira é a capa. Pode ser vazia ("FOTOS EM BREVE"). */
@@ -37,9 +52,7 @@ export type Imovel = ImovelResumo & {
 };
 
 export type ResultadoImovel =
-  | { situacao: "disponivel"; imovel: Imovel }
-  | { situacao: "indisponivel"; codigo: string }
-  | { situacao: "inexistente" };
+  { situacao: "disponivel"; imovel: Imovel } | { situacao: "indisponivel"; codigo: string } | { situacao: "inexistente" };
 
 export type PaginaImoveis = {
   itens: ImovelResumo[];

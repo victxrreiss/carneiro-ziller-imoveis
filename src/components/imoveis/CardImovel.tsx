@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { IcArea, IcCama, IcPin, IcSeta } from "@/components/ui/IconesSite";
 import type { ImovelResumo } from "@/lib/imoveis";
-import { formatarArea, formatarPreco, formatarQuartos, rotuloEtiqueta } from "@/lib/imoveis/formato";
+import { formatarArea, formatarMensal, formatarPreco, formatarQuartos, rotuloEtiqueta } from "@/lib/imoveis/formato";
 import { registrarSaidaDoGrid } from "@/lib/navegacao/retorno";
 import { routes } from "@/lib/routes";
 
@@ -55,7 +55,12 @@ export function CardImovel({ imovel: i, de, grid, prioridade }: Props) {
           )}
         </div>
         <div className="card-foot">
-          <span className="card-price">{formatarPreco(i.valor, i.finalidade)}</span>
+          <span className="card-price">
+            {formatarPreco(i.valor, i.finalidade)}
+            {i.valorLocacao !== null && i.finalidade === "venda" && (
+              <small className="card-price-alt">ou {formatarMensal(i.valorLocacao)}</small>
+            )}
+          </span>
           <span className="card-arrow" aria-hidden="true">
             <IcSeta />
           </span>

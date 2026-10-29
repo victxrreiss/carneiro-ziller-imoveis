@@ -11,6 +11,7 @@ import {
   FINALIDADES,
   filtrosParaQuery,
   MINIMOS_QUARTOS,
+  MINIMOS_SUITES,
   MINIMOS_VAGAS,
   rotulosFiltros,
   semFiltro,
@@ -18,6 +19,7 @@ import {
   type ChaveFiltro,
   type Filtros,
 } from "@/lib/imoveis/filtros";
+import { CARACTERISTICAS_FILTRO, rotuloCaracteristica } from "@/lib/imoveis/caracteristicas";
 import { Dropdown } from "./Dropdown";
 
 type Props = {
@@ -29,8 +31,7 @@ type Props = {
 };
 
 const LIMPOS: Filtros = { pagina: 1 };
-const opcoesFaixa = (lista: readonly (readonly [string, string, number, number])[]) =>
-  lista.map(([valor, rotulo]) => ({ valor, rotulo }));
+const opcoesFaixa = (lista: readonly (readonly [string, string, number, number])[]) => lista.map(([valor, rotulo]) => ({ valor, rotulo }));
 const opcoesMinimo = (lista: readonly string[]) => lista.map((v) => ({ valor: v, rotulo: `${v} ou mais` }));
 
 export function FiltrosImoveis({ filtros, onAplicar, contar, totalAtual }: Props) {
@@ -49,7 +50,12 @@ export function FiltrosImoveis({ filtros, onAplicar, contar, totalAtual }: Props
     setBusca(filtros.q ?? "");
   }
 
-  useDialog({ aberto: painelAberto, onFechar: () => setPainelAberto(false), painelRef, retornoRef: botaoFiltrosRef });
+  useDialog({
+    aberto: painelAberto,
+    onFechar: () => setPainelAberto(false),
+    painelRef,
+    retornoRef: botaoFiltrosRef,
+  });
 
   // Com o painel mobile aberto, as escolhas ficam num rascunho até "VER N IMÓVEIS".
   const ativos = painelAberto ? rascunho : filtros;
@@ -111,12 +117,7 @@ export function FiltrosImoveis({ filtros, onAplicar, contar, totalAtual }: Props
     <>
       <section className="filters" aria-label="Filtros">
         <div className="wrap">
-          <form
-            className={ativos.finalidade ? "ff" : "ff has-hint"}
-            role="search"
-            aria-label="Filtrar imóveis"
-            onSubmit={enviarBusca}
-          >
+          <form className={ativos.finalidade ? "ff" : "ff has-hint"} role="search" aria-label="Filtrar imóveis" onSubmit={enviarBusca}>
             <div className="f-top">
               {segmentado("seg")}
               <div className="search">
@@ -139,13 +140,7 @@ export function FiltrosImoveis({ filtros, onAplicar, contar, totalAtual }: Props
             </div>
 
             <div className="f-mobile-bar">
-              <button
-                ref={botaoFiltrosRef}
-                type="button"
-                className="btn-filters"
-                aria-expanded={painelAberto}
-                onClick={abrirPainel}
-              >
+              <button ref={botaoFiltrosRef} type="button" className="btn-filters" aria-expanded={painelAberto} onClick={abrirPainel}>
                 <IcFiltros size={18} width={1.6} />
                 FILTROS
                 {noPainel > 0 && (
@@ -160,7 +155,13 @@ export function FiltrosImoveis({ filtros, onAplicar, contar, totalAtual }: Props
             <div
               ref={painelRef}
               className={painelAberto ? "f-panel open" : "f-panel"}
-              {...(painelAberto ? { role: "dialog", "aria-modal": true, "aria-labelledby": tituloPainelId } : {})}
+              {...(painelAberto
+                ? {
+                    role: "dialog",
+                    "aria-modal": true,
+                    "aria-labelledby": tituloPainelId,
+                  }
+                : {})}
             >
               <div className="f-panel-head">
                 <h2 id={tituloPainelId}>Filtros</h2>
@@ -214,10 +215,42 @@ export function FiltrosImoveis({ filtros, onAplicar, contar, totalAtual }: Props
                     valor={ativos.vagas}
                     onChange={set("vagas")}
                   />
+                  <Dropdown
+                    rotulo="SUÍTES"
+                    vazio="Qualquer"
+                    opcoes={opcoesMinimo(MINIMOS_SUITES)}
+                    valor={ativos.suites}
+                    onChange={set("suites")}
+                  />
                   <button type="button" className="clear" disabled={chips.length === 0} onClick={() => onAplicar(LIMPOS)}>
                     <IcX size={14} stroke="currentColor" width={1.8} />
                     LIMPAR FILTROS
                   </button>
+                  <div className="f-carac" role="group" aria-label="Características">
+                    <span className="lbl" aria-hidden="true">
+                      CARACTERÍSTICAS
+                    </span>
+                    {CARACTERISTICAS_FILTRO.map((c) => {
+                      const marcada = ativos.carac?.includes(c) ?? false;
+                      return (
+                        <button
+                          key={c}
+                          type="button"
+                          className="tog"
+                          aria-pressed={marcada}
+                          onClick={() =>
+                            mudar({
+                              ...ativos,
+                              carac: marcada ? ativos.carac?.filter((x) => x !== c) : [...(ativos.carac ?? []), c],
+                              pagina: 1,
+                            })
+                          }
+                        >
+                          {rotuloCaracteristica(c)}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
               <div className="f-panel-foot">
@@ -235,11 +268,11 @@ export function FiltrosImoveis({ filtros, onAplicar, contar, totalAtual }: Props
                 <span className="chips-lbl">FILTROS ATIVOS</span>
                 {chips.map((c) => (
                   <button
-                    key={c.chave}
+                    key={`${c.chave}${c.valor ?? ""}`}
                     type="button"
                     className="chip"
                     aria-label={`Remover filtro ${c.rotulo}`}
-                    onClick={() => onAplicar(semFiltro(filtros, c.chave))}
+                    onClick={() => onAplicar(semFiltro(filtros, c.chave, c.valor))}
                   >
                     {c.rotulo}
                     <span className="x">

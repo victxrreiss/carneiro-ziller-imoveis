@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { formatarArea, formatarPreco, formatarQuartos, formatarReais } from "./formato";
+import { formatarArea, formatarAnual, formatarMensal, formatarPreco, formatarQuartos, formatarReais } from "./formato";
 
 describe("formato", () => {
   test("reais com separador de milhar", () => {
@@ -21,5 +21,10 @@ describe("formato", () => {
   test("quartos no singular e no plural", () => {
     expect(formatarQuartos(1)).toBe("1 quarto");
     expect(formatarQuartos(3)).toBe("3 quartos");
+  });
+
+  test("valores mensal e anual", () => {
+    expect(formatarMensal(1250)).toBe("R$ 1.250/mês");
+    expect(formatarAnual(4800)).toBe("R$ 4.800/ano");
   });
 });

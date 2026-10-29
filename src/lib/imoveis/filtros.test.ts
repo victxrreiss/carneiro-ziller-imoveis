@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { contextoVolta, filtrosParaQuery, lerFiltros, rotulosFiltros, tituloGrid } from "./filtros";
+import { combinaFinalidade, contextoVolta, filtrosParaQuery, lerFiltros, rotulosFiltros, tituloGrid } from "./filtros";
 
 describe("lerFiltros", () => {
   test("aceita só valores conhecidos", () => {
@@ -31,7 +31,11 @@ describe("lerFiltros", () => {
   });
 
   test("aceita o objeto de searchParams do Next", () => {
-    expect(lerFiltros({ finalidade: "alugar", q: ["sion", "x"] })).toEqual({ finalidade: "alugar", q: "sion", pagina: 1 });
+    expect(lerFiltros({ finalidade: "alugar", q: ["sion", "x"] })).toEqual({
+      finalidade: "alugar",
+      q: "sion",
+      pagina: 1,
+    });
   });
 
   test("limita o tamanho da busca", () => {
@@ -41,9 +45,14 @@ describe("lerFiltros", () => {
 
 describe("filtrosParaQuery", () => {
   test("ordem fixa e página só acima de 1", () => {
-    expect(filtrosParaQuery({ quartos: "3", finalidade: "comprar", q: "belvedere", pagina: 1 })).toBe(
-      "finalidade=comprar&q=belvedere&quartos=3",
-    );
+    expect(
+      filtrosParaQuery({
+        quartos: "3",
+        finalidade: "comprar",
+        q: "belvedere",
+        pagina: 1,
+      }),
+    ).toBe("finalidade=comprar&q=belvedere&quartos=3");
     expect(filtrosParaQuery({ pagina: 3 })).toBe("pagina=3");
     expect(filtrosParaQuery({ pagina: 1 })).toBe("");
   });
@@ -89,11 +98,19 @@ describe("contextoVolta", () => {
   });
 
   test("grid sem filtros", () => {
-    expect(contextoVolta("", false)).toEqual({ href: "/imoveis", rotulo: "VOLTAR AOS RESULTADOS", resumo: undefined });
+    expect(contextoVolta("", false)).toEqual({
+      href: "/imoveis",
+      rotulo: "VOLTAR AOS RESULTADOS",
+      resumo: undefined,
+    });
   });
 
   test("acesso direto", () => {
-    expect(contextoVolta(undefined, false)).toEqual({ href: "/imoveis", rotulo: "VER TODOS OS IMÓVEIS", resumo: undefined });
+    expect(contextoVolta(undefined, false)).toEqual({
+      href: "/imoveis",
+      rotulo: "VER TODOS OS IMÓVEIS",
+      resumo: undefined,
+    });
     expect(contextoVolta(undefined, true)).toEqual({
       href: "/imoveis?finalidade=lancamentos",
       rotulo: "VOLTAR AOS LANÇAMENTOS",
@@ -107,5 +124,34 @@ describe("contextoVolta", () => {
 
   test("mantém a página do grid", () => {
     expect(contextoVolta("finalidade=comprar&pagina=2", false).href).toBe("/imoveis?finalidade=comprar&pagina=2");
+  });
+});
+
+describe("suítes e características", () => {
+  test("lê e valida; característica desconhecida cai", () => {
+    expect(lerFiltros(new URLSearchParams("suites=2&carac=piscina&carac=xxx&carac=academia"))).toEqual({
+      suites: "2",
+      carac: ["piscina", "academia"],
+      pagina: 1,
+    });
+    expect(lerFiltros(new URLSearchParams("suites=9&carac=xxx"))).toEqual({
+      pagina: 1,
+    });
+  });
+
+  test("monta a querystring e os rótulos", () => {
+    const f = { suites: "2", carac: ["piscina", "academia"], pagina: 1 };
+    expect(filtrosParaQuery(f)).toBe("suites=2&carac=piscina&carac=academia");
+    const rotulos = rotulosFiltros(f).map((r) => r.rotulo);
+    expect(rotulos).toContain("2+ suítes");
+    expect(rotulos).toContain("Piscina");
+    expect(rotulos).toContain("Academia");
+  });
+
+  test("Alugar aceita venda com valor de locação", () => {
+    const venda = { finalidade: "venda" as const, lancamento: false };
+    expect(combinaFinalidade("alugar", { ...venda, valorLocacao: 9000 })).toBe(true);
+    expect(combinaFinalidade("alugar", { ...venda, valorLocacao: null })).toBe(false);
+    expect(combinaFinalidade("comprar", { ...venda, valorLocacao: 9000 })).toBe(true);
   });
 });

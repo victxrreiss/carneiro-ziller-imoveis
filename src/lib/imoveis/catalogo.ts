@@ -9,6 +9,7 @@ import { configuracaoSite, imoveis } from "@/lib/dados/esquema";
 import type { RegistroImovel } from "@/lib/dados/tipos";
 import { FAIXAS_AREA, combinaFinalidade, faixasPreco, type Filtros } from "./filtros";
 import { formatarArea, formatarPreco, formatarQuartos, formatarReais, rotuloEtiqueta } from "./formato";
+import { rotuloCaracteristica } from "./caracteristicas";
 import { regioes } from "./mock-data";
 import type { Destaque, Imovel, ImovelCard, ImovelResumo, PaginaImoveis, Regiao, ResultadoImovel } from "./types";
 
@@ -16,22 +17,27 @@ export const POR_PAGINA = 15;
 /** Cards por seção automática da Home. */
 export const CARDS_HOME = 4;
 
-const normalizar = (s: string) =>
-  s
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase()
-    .trim();
+const normalizar = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
 
 /** Publicado com todos os campos que o site exibe (a publicação exige todos). */
-type Completo = RegistroImovel & { finalidade: NonNullable<RegistroImovel["finalidade"]>; tipo: string; valor: number; area: number };
+type Completo = RegistroImovel & {
+  finalidade: NonNullable<RegistroImovel["finalidade"]>;
+  tipo: string;
+  valor: number;
+  area: number;
+};
 
 function completo(r: RegistroImovel): r is Completo {
   return r.finalidade !== null && r.tipo !== null && r.valor !== null && r.area !== null;
 }
 
 /** Card do grid de um imóvel publicado sem fotos (a página mostra "FOTOS EM BREVE"). */
-const SEM_FOTO = { src: "/images/sem-foto.svg", alt: "", largura: 1600, altura: 1200 };
+const SEM_FOTO = {
+  src: "/images/sem-foto.svg",
+  alt: "",
+  largura: 1600,
+  altura: 1200,
+};
 
 function paraImovel(r: Completo): Imovel {
   const capa = r.fotos[0];
@@ -49,12 +55,37 @@ function paraImovel(r: Completo): Imovel {
     area: r.area,
     quartos: r.quartos,
     vagas: r.vagas,
-    foto: capa ? { src: capa.src, alt: capa.alt, largura: capa.largura, altura: capa.altura } : SEM_FOTO,
+    suites: r.suites,
+    valorLocacao: r.valorLocacao,
+    banheiros: r.banheiros,
+    areaTotal: r.areaTotal,
+    condominio: r.condominio,
+    iptu: r.iptu,
+    andar: r.andar,
+    anoConstrucao: r.anoConstrucao,
+    empreendimento: r.empreendimento,
+    caracteristicas: r.caracteristicas.flatMap((chave) => {
+      const rotulo = rotuloCaracteristica(chave);
+      return rotulo ? [{ chave, rotulo }] : [];
+    }),
+    foto: capa
+      ? {
+          src: capa.src,
+          alt: capa.alt,
+          largura: capa.largura,
+          altura: capa.altura,
+        }
+      : SEM_FOTO,
     descricao: r.descricao
       .split(/\n\s*\n/)
       .map((p) => p.trim())
       .filter(Boolean),
-    fotos: r.fotos.map(({ src, alt, largura, altura }) => ({ src, alt, largura, altura })),
+    fotos: r.fotos.map(({ src, alt, largura, altura }) => ({
+      src,
+      alt,
+      largura,
+      altura,
+    })),
   };
 }
 
@@ -69,8 +100,30 @@ async function oportunidadeId(db: Db): Promise<string | null> {
 }
 
 function resumo(i: Imovel): ImovelResumo {
-  const { id, codigo, finalidade, lancamento, tipo, titulo, bairro, cidade, valor, area, quartos, vagas, foto } = i;
-  return { id, codigo, finalidade, lancamento, tipo, titulo, bairro, cidade, valor, area, quartos, vagas, foto };
+  const { id, codigo, finalidade, lancamento, tipo, titulo, bairro, cidade, valor, area, quartos, vagas, suites, valorLocacao, foto } = i;
+  return {
+    id,
+    codigo,
+    finalidade,
+    lancamento,
+    tipo,
+    titulo,
+    bairro,
+    cidade,
+    valor,
+    area,
+    quartos,
+    vagas,
+    suites,
+    valorLocacao,
+    foto,
+  };
+}
+
+/** Em "Alugar", a faixa vale para o aluguel: o valor de locação de um imóvel à venda. */
+function valorDaFaixa(filtros: Filtros, i: Imovel): number {
+  if (filtros.finalidade !== "alugar") return i.valor;
+  return i.finalidade === "locacao" ? i.valor : (i.valorLocacao ?? i.valor);
 }
 
 async function filtrar(filtros: Filtros, db: Db): Promise<Imovel[]> {
@@ -82,12 +135,14 @@ async function filtrar(filtros: Filtros, db: Db): Promise<Imovel[]> {
     .filter(
       (i) =>
         combinaFinalidade(filtros.finalidade, i) &&
-        (!q || normalizar(`${i.titulo} ${i.bairro} ${i.cidade} ${i.codigo}`).includes(q)) &&
+        (!q || normalizar(`${i.titulo} ${i.bairro} ${i.cidade} ${i.codigo} ${i.empreendimento ?? ""}`).includes(q)) &&
         (!filtros.tipo || i.tipo === filtros.tipo) &&
-        (!preco || (i.valor >= preco[2] && i.valor < preco[3])) &&
+        (!preco || (valorDaFaixa(filtros, i) >= preco[2] && valorDaFaixa(filtros, i) < preco[3])) &&
         (!area || (i.area >= area[2] && i.area < area[3])) &&
         (!filtros.quartos || (i.quartos ?? 0) >= Number(filtros.quartos)) &&
-        (!filtros.vagas || (i.vagas ?? 0) >= Number(filtros.vagas)),
+        (!filtros.vagas || (i.vagas ?? 0) >= Number(filtros.vagas)) &&
+        (!filtros.suites || (i.suites ?? 0) >= Number(filtros.suites)) &&
+        (filtros.carac ?? []).every((c) => i.caracteristicas.some((x) => x.chave === c)),
     );
 }
 
