@@ -106,3 +106,32 @@ test("só na planilha: sem fotos, sem descrição, cidade vazia; empreendimento 
   expect(f).toMatchObject({ tipo: "Apartamento", finalidade: "venda", valor: 2_500_000, quartos: 4, fotos: [], endereco: "Avenida dos ExemplÃ£o" });
   expect(item("907")).toMatchObject({ tipo: "Terreno", complemento: "000" });
 });
+
+test("sem área: aviso, mas a situação não muda", () => {
+  const l = juntar([{ ...feed[1], areaUtil: null, areaTerreno: null }], [], []);
+  expect(l[0].area).toBeNull();
+  expect(l[0].situacao).toBe("publicado");
+  expect(l[0].avisos).toContain("Sem área: não aparece no site até ser preenchida.");
+  expect(item("901").avisos.some((x) => x.startsWith("Sem área"))).toBe(false);
+  expect(item("908").avisos).toContain("Sem área: não aparece no site até ser preenchida.");
+});
+
+test("só na planilha sem valores: aviso de finalidade", () => {
+  const l = juntar([], [], [{ ...pendentes[0], valorVenda: null, valorAluguel: null }]);
+  expect(l[0].finalidade).toBeNull();
+  expect(l[0].avisos).toContain("Sem finalidade: sem valor de venda nem de aluguel.");
+  expect(item("908").avisos.some((x) => x.startsWith("Sem finalidade"))).toBe(false);
+});
+
+test("venda-locação sem preço de venda vira locação", () => {
+  const l = juntar([{ ...feed[2], precoVenda: null }], [], []);
+  expect(l[0]).toMatchObject({ finalidade: "locacao", valor: 15_000, valorLocacao: null });
+});
+
+test("cita rua e número em formas variadas", () => {
+  const com = (d: string) => juntar([{ ...feed[0], descricao: d }], [], [])[0].avisos.includes("Descrição cita o endereço (rua e número)");
+  expect(com("Fica na Rua Exemplo, número 100, perto de tudo")).toBe(true);
+  expect(com("Fica na Rua Exemplo nº 100")).toBe(true);
+  expect(com("Fica na Rua Exemplo, 1000")).toBe(false);
+  expect(com("Fica na Rua Exemplo, perto de tudo")).toBe(false);
+});

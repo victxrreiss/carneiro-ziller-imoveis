@@ -81,6 +81,7 @@ function cortarPorPalavra(s: string, max: number): string {
   return (espaco > 0 ? corte.slice(0, espaco) : t.slice(0, max)).replace(/[\s,;:.\-–]+$/, "");
 }
 
+const AVISO_SEM_AREA = "Sem área: não aparece no site até ser preenchida.";
 const semAcento = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 const vazioParaNull = (s: string) => (s.trim() === "" ? null : s.trim());
 
@@ -92,8 +93,8 @@ function citaRuaENumero(texto: string, rua: string, numero: string): boolean {
   const t = semAcento(texto);
   let i = t.indexOf(r);
   while (i >= 0) {
-    const depois = t.slice(i + r.length, i + r.length + 12);
-    if (new RegExp(`^[\\s,.\\-–]*(?:n[º°o.]*\\s*)?${n}(?!\\d)`).test(depois)) return true;
+    const depois = t.slice(i + r.length, i + r.length + 25);
+    if (new RegExp(`^[\\s,.\\-–]*(?:(?:n[º°o.]*|numero)\\s*)?${n}(?!\\d)`).test(depois)) return true;
     i = t.indexOf(r, i + 1);
   }
   return false;
@@ -118,14 +119,16 @@ function doFeed(a: AnuncioVrsync, planilha: LinhaPlanilha | undefined): ImovelLo
     else if (!caracteristicas.includes(chave)) caracteristicas.push(chave);
   }
 
-  const soLocacao = a.transacao === "locacao";
+  const soLocacao = a.transacao === "locacao" || (a.transacao === "venda-locacao" && a.precoVenda == null && a.precoLocacao != null);
   const finalidade: Finalidade = soLocacao ? "locacao" : "venda";
   const valor = soLocacao ? a.precoLocacao ?? a.precoVenda : a.precoVenda;
-  const valorLocacao = a.transacao === "venda-locacao" ? a.precoLocacao : null;
+  const valorLocacao = a.transacao === "venda-locacao" && !soLocacao ? a.precoLocacao : null;
 
   // Terrenos e prédios vêm sem LivingArea: a área do site é a do lote. A total só aparece quando maior que a privativa.
   const area = a.areaUtil ?? a.areaTerreno;
   const areaTotal = a.areaUtil != null && a.areaTerreno != null && a.areaTerreno > a.areaUtil ? a.areaTerreno : null;
+
+  if (area == null) avisos.push(AVISO_SEM_AREA);
 
   let titulo = a.titulo;
   if (!titulo) {
@@ -184,6 +187,8 @@ function daPlanilha(l: LinhaPlanilha, situacao: SituacaoImovel): ImovelLoft {
     finalidade = "locacao";
     valor = l.valorAluguel;
   }
+  avisos.push(AVISO_SEM_AREA);
+  if (!finalidade) avisos.push("Sem finalidade: sem valor de venda nem de aluguel.");
   return {
     referencia: l.referencia,
     situacao,

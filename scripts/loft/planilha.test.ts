@@ -43,3 +43,10 @@ describe("lerPlanilha", () => {
     ]);
   });
 });
+
+test("aspas no meio do campo são literais", () => {
+  const csv = 'Referencia;Categoria;Endereco;Endereco Numero;Endereco Complemento;Dormitorio;Valor venda;Valor Aluguel;Bairro Comercial;Empreendimento\n1;Casa;Rua 5" X;1;;0;0;0;B;Ed "Z"; W\n';
+  const [l] = lerPlanilha(csv);
+  expect(l.endereco).toBe('Rua 5" X');
+  expect(l.empreendimento).toBe('Ed "Z"; W'.split(";")[0]);
+});

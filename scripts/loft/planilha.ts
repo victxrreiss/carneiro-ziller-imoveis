@@ -25,7 +25,7 @@ function linhasCsv(csv: string): string[][] {
       if (c === '"') {
         if (csv[i + 1] === '"') { campo += '"'; i++; } else entreAspas = false;
       } else campo += c;
-    } else if (c === '"') entreAspas = true;
+    } else if (c === '"' && campo === "") entreAspas = true;
     else if (c === ";") { linha.push(campo); campo = ""; }
     else if (c === "\n" || c === "\r") {
       if (c === "\r" && csv[i + 1] === "\n") i++;
