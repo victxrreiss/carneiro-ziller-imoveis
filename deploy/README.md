@@ -46,6 +46,7 @@ Outros comandos, também pelo túnel:
 ```bash
 deploy/deploy.sh admin "Nome Completo" email@dominio.com   # cria o único ADMIN e imprime o link (72 h)
 deploy/deploy.sh exemplos                                  # 3 imóveis de exemplo; só com o banco vazio
+deploy/deploy.sh importar-loft --feed ... --ativos ... --pendentes ... --responsavel ...   # veja "Importar da Loft"
 ```
 
 ## Primeira instalação (já feita em 2026-10-28)
@@ -63,6 +64,39 @@ deploy/deploy.sh exemplos                                  # 3 imóveis de exemp
    25 3 * * * /home/granconsultoria/projetos/clientes/carneiro-ziller/site/backup.sh >> /home/granconsultoria/projetos/clientes/carneiro-ziller/site/backups/backup.log 2>&1
    17 6 * * * /home/granconsultoria/projetos/clientes/carneiro-ziller/site/cron-limpeza.sh >> /home/granconsultoria/projetos/clientes/carneiro-ziller/site/backups/limpeza.log 2>&1
    ```
+
+## Importar da Loft
+
+Traz os imóveis do CRM da Loft (feed VRSync + as duas planilhas CSV exportadas do CRM) para o banco e as fotos para o bucket da VPS. O comando roda na máquina do dev, pelo mesmo túnel dos outros modos. Pode ser repetido: a tabela `importacao_loft` guarda o que veio da Loft na última vez, então nada duplica e o que a equipe editou no painel não é desfeito.
+
+Passo a passo (produção):
+
+1. **Deploy primeiro** (`deploy/deploy.sh`), para as migrations e o código novos estarem na VPS.
+2. **Crie o Matheus** como Corretor pelo painel (`/painel/usuarios`, logado como ADMIN) e use "Definir senha provisória" nele. Passe a senha a ele (vale 72 h; ele a troca no primeiro acesso). Os imóveis importados ficam no nome dele; se for outra pessoa, use o e-mail dela. O responsável precisa existir e estar ativo ou pendente.
+3. **Simule** (não grava nada; mostra contagens, tipos sem mapa e avisos):
+   ```bash
+   deploy/deploy.sh importar-loft --simular \
+     --feed "<URL do VRSync>" --ativos ~/caminho/imoveis.csv --pendentes "~/caminho/imoveis filtro.csv" \
+     --responsavel matheus@dominio.com
+   ```
+   Em 2026-10-29: 348 publicados, 74 rascunhos, 0 tipos sem mapa. `--feed` aceita a URL ou um arquivo XML salvo. A URL do feed é sensível (dá acesso aos dados de todos os anúncios): nunca vai para o git, e o comando não a imprime.
+4. **Rodada real**: o mesmo comando sem `--simular`. Baixa as fotos (milhares; leva alguns minutos), cria os imóveis, tira os 3 exemplos e escolhe a Oportunidade da Home.
+5. **Regenere as páginas**: `deploy/deploy.sh` de novo (o cache do catálogo também expira sozinho em até 5 min).
+
+Como ler o relatório (impresso e salvo em `relatorio-loft-<data>.json` na pasta atual, fora do git):
+
+| Campo | Significa |
+|---|---|
+| `criados` / `atualizados` | Referências novas / já conhecidas que mudaram na Loft |
+| `camposPreservados` | Campos que a equipe editou no painel e a importação não tocou |
+| `indisponibilizados` | Importados como publicado que saíram da Loft e não foram editados: viram indisponível |
+| `ausentesRascunho` | Rascunhos que saíram da Loft: ficam como estão (não ganham página pública) |
+| `excluidosNoPainel` | Apagados no painel: não voltam |
+| `fotosBaixadas` / `fotosFalhas` | Fotos novas / as que falharam (referência, URL, erro). Com falhas o comando sai com código 2: rode de novo, só as que faltam são baixadas |
+| `avisos` | Dados da Loft que o site não aceitou como vieram (área, finalidade ausentes etc.): revisar no painel |
+| `exemplosRemovidos`, `oportunidade` | Exemplos apagados na primeira rodada; id da Oportunidade escolhida |
+
+Antes da virada: pode repetir a importação à vontade, trazendo o feed e as planilhas mais recentes. O que a equipe já ajustou no painel é preservado. Depois da virada, a equipe cadastra só pelo painel e a importação deixa de ser usada.
 
 ## Ligar o e-mail
 

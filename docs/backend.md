@@ -31,6 +31,7 @@ npm run dev
 | `npm run db:gerar` | Gera nova migration SQL a partir de `src/lib/dados/esquema.ts` |
 | `npm run db:semente` | Só local: importa os imóveis de exemplo. Recusa produção e qualquer banco/S3 fora de `localhost` |
 | `npm run admin:criar` | Cria o único ADMIN e imprime o link de convite (72 h). Recusa se já houver ADMIN |
+| `npm run loft:importar` | Importa os imóveis da Loft (`--feed <url\|arquivo> --ativos <csv> --pendentes <csv> --responsavel <email>`; `--simular` só mostra o resumo). Idempotente; grava `relatorio-loft-<data>.json`. Em produção: `deploy/deploy.sh importar-loft` (veja `deploy/README.md`) |
 | `npm run fotos:limpar` | Apaga fotos órfãs (não confirmadas ou sem imóvel, com mais de 24 h), sessões/links vencidos e limites antigos. Na Vercel roda sozinho todo dia (`vercel.json` → `/api/cron/limpeza`) |
 | `vercel-build` | Usado pela Vercel no lugar de `build`: `scripts/implantar.ts` (migrations; em produção, ADMIN inicial) + `next build` |
 | `npm run e2e:preparar` | Zera e prepara o banco `cz_e2e` e o bucket `cz-e2e` (usado pelo `test:e2e`) |

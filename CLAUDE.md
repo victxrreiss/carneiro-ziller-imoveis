@@ -19,6 +19,7 @@ cp .env.example .env.local   # once; next.config.ts throws without photo-storage
 npm run db:subir             # local Postgres, MinIO (S3) and Mailpit via docker-compose.yml
 npm run db:migrar            # apply drizzle/*.sql
 npm run admin:criar -- --nome "Nome" --email "a@b.com"   # the single ADMIN; prints the set-password link
+npm run loft:importar -- --feed <url|file> --ativos <csv> --pendentes <csv> --responsavel <email> [--simular]   # Loft import
 npm run db:semente           # local only: the 35 sample properties (refuses non-localhost)
 npm run dev
 npm run db:gerar             # new migration from src/lib/dados/esquema.ts
@@ -30,7 +31,7 @@ npx vitest run -t "nome do teste"
 npm run test:e2e             # playwright; needs `npm run db:subir` (uses the cz_e2e DB and cz-e2e bucket)
 ```
 
-Note: the MinIO image pinned in the local `docker-compose.yml` (`minio/minio:RELEASE.2025-04-22…`) can no longer be pulled from Docker Hub. Production uses `cgr.dev/chainguard/minio`.
+Note: the local `docker-compose.yml` uses the same `cgr.dev/chainguard/minio` image (pinned by digest) as production. If host ports clash with another project, set `CZ_PORTA_*` in `.env` (see `docs/backend.md`).
 
 ## Architecture
 
@@ -39,6 +40,7 @@ Note: the MinIO image pinned in the local `docker-compose.yml` (`minio/minio:REL
 - **Public catalogue:** `src/lib/imoveis/index.ts` is the only entry point for the site. It wraps `catalogo.ts` in `"use cache"` with `cacheTag(TAG_IMOVEIS)` and a finite `cacheLife`. Panel actions invalidate that tag when a property is saved, published or deleted. `next build` reads the DB to prerender, so a build needs a reachable, migrated database. `obterImovel` returns a `ResultadoImovel` union (`disponivel` / `indisponivel` / `inexistente`).
 - **Panel:** `src/app/painel/` (route groups `(acesso)` and `(app)`, server actions in `_acoes/`). The domain logic is in `src/lib/painel/`. Permissions live in `regras.ts` and are checked on the server in every action. There is exactly one ADMIN, who invites brokers ("corretores") by e-mail; a broker can edit only their own properties. Sessions and argon2 passwords are in `contas.ts`, `sessao.ts` and `src/lib/seguranca/`.
 - **Photos:** S3-compatible storage or Vercel Blob (`src/lib/armazenamento/`). The browser uploads straight to storage with a short-lived presigned PUT. Then `POST /painel/fotos/[id]/confirmar` checks the size, type and magic bytes. The DB stores only the key, and the public URL is `FOTOS_URL_PUBLICA` + key. `FOTOS_URL_PUBLICA` is read at build time for `images.remotePatterns`.
+- **Loft import:** `scripts/loft/` reads the Loft CRM data (`vrsync.ts` feed, `planilha.ts` CSVs), `mapear.ts` joins them into `ImovelLoft`, and `importar.ts` writes them idempotently (control table `importacao_loft` keeps a snapshot per Loft reference, so panel edits are preserved, panel-deleted properties don't return and photos are reused by stable key). CLI: `scripts/importar-loft.ts`; production runs via `deploy/deploy.sh importar-loft`. The feed URL is sensitive: never log or commit it. The ADMIN can give any non-admin user a **temporary password** in the panel ("Definir senha provisória", valid 72 h, forces a change on first login), which works without SMTP.
 - **Leads:** `POST /api/interesses` → `registrarInteresse` (`src/lib/interesse/servidor.ts`). It validates again, limits sends per IP (only a hash of the IP is stored), writes to the `interesses` table, then e-mails the responsible broker, the ADMIN and `LEADS_EMAIL` inside `after()`. The planned n8n webhook / GranCRM integration also goes after the insert.
 - **Filters live in the URL:** `src/lib/imoveis/filtros.ts` (`lerFiltros` validates and drops unknown values; `urlGrid` builds the URL). The filter values (`comprar|alugar|lancamentos`) differ from the domain `Finalidade`, and `finalidadeDoFiltro` maps between them.
 - **Back to results:** cards link to `/imovel/<id>?de=<grid querystring>`. `contextoVolta` re-validates `de`, and `src/lib/navegacao/retorno.ts` goes back through browser history when the visitor really came from that grid.
@@ -49,7 +51,7 @@ Note: the MinIO image pinned in the local `docker-compose.yml` (`minio/minio:REL
 
 The full runbook is `deploy/README.md`. In short:
 - It runs on `ssh granconsultoria.vps` as three containers: `carneiro-ziller-site`, `-db` and `-s3` (MinIO), defined in `deploy/docker-compose.vps.yml`, behind the shared `nginx-proxy` (vhost template in `deploy/nginx/`). The domain is `carneiroziller.com.br`, on the client's Cloudflare. `www` and the old temporary `carneiroziller.granconsultoria.com.br` redirect to it.
-- `deploy/deploy.sh` runs **on the dev machine**. It opens an SSH tunnel to the VPS's loopback-only DB/S3 ports, migrates, then `docker build --network host` (the build reads the production DB, and secrets go in as a BuildKit secret), and ships the image with `docker save | ssh docker load`. The VPS never builds and holds no source code. Other modes: `deploy.sh admin "Nome" email` and `deploy.sh exemplos`.
+- `deploy/deploy.sh` runs **on the dev machine**. It opens an SSH tunnel to the VPS's loopback-only DB/S3 ports, migrates, then `docker build --network host` (the build reads the production DB, and secrets go in as a BuildKit secret), and ships the image with `docker save | ssh docker load`. The VPS never builds and holds no source code. Other modes: `deploy.sh admin "Nome" email`, `deploy.sh exemplos` and `deploy.sh importar-loft ...`.
 - Photos are served from the site's own origin at `/cz-fotos/`, which nginx proxies to MinIO unchanged so S3 signatures stay valid. `S3_ENDPOINT` is therefore `SITE_URL`.
 - The VPS is shared with other clients. Always run `nginx -t` before reloading, and never run bulk deletes against the bucket or the DB.
 
