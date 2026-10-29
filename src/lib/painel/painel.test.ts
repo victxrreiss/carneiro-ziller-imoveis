@@ -30,7 +30,7 @@ import {
   prepararEnvioFoto,
   salvarImovel,
 } from "./imoveis";
-import type { EntradaImovel } from "./regras";
+import { validarImovel, type EntradaImovel } from "./regras";
 
 let amb: Ambiente;
 beforeAll(async () => {
@@ -56,11 +56,16 @@ const contar = async (tabela: typeof usuarios | typeof imoveis | typeof fotos | 
 const vazia: EntradaImovel = {
   finalidade: "", lancamento: false, tipo: "", titulo: "", bairro: "", cidade: "", uf: "MG",
   valor: "", area: "", quartos: "", vagas: "", descricao: "", fotos: [], situacao: "rascunho",
+  banheiros: "", suites: "", areaTotal: "", condominio: "", iptu: "", valorLocacao: "", andar: "", anoConstrucao: "",
+  empreendimento: "", endereco: "", numero: "", complemento: "", cep: "", caracteristicas: [],
 };
 const completa: EntradaImovel = {
   ...vazia, finalidade: "venda", tipo: "Casa", titulo: "Casa no Sion", bairro: "Sion", cidade: "Belo Horizonte",
   valor: "2500000", area: "320", quartos: "4", descricao: "Casa ampla.\n\nPerto de tudo.",
 };
+
+/** Entrada publicável (os obrigatórios preenchidos). */
+const entradaValida = (): EntradaImovel => ({ ...completa });
 
 const JPG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
@@ -76,6 +81,31 @@ async function fotoConfirmada(u = amb.mariana, bytes = JPG) {
 }
 
 describe("cadastro de imóvel", () => {
+  test("salva e relê os campos novos", async () => {
+    const r = await salvarImovel(
+      amb.admin, null,
+      { ...entradaValida(), banheiros: "3", suites: "2", areaTotal: "450", condominio: "1250", iptu: "4800", valorLocacao: "", andar: "4", anoConstrucao: "2015", empreendimento: "  Edifício   Soho ", endereco: "Rua X", numero: "110", complemento: "403", cep: "34006-083", caracteristicas: ["piscina", "invalida", "academia", "piscina"] },
+      "publicar", new Date(), amb.db,
+    );
+    if (!r.ok) throw new Error("esperava ok");
+    const ed = (await obterParaEdicao(amb.admin, r.id, amb.db))!;
+    expect(ed.entrada).toMatchObject({ banheiros: "3", suites: "2", areaTotal: "450", condominio: "1250", iptu: "4800", valorLocacao: "", andar: "4", anoConstrucao: "2015", empreendimento: "Edifício Soho", endereco: "Rua X", numero: "110", complemento: "403", cep: "34006-083" });
+    expect(ed.entrada.caracteristicas).toEqual(["piscina", "academia"]);
+    expect(ed.referenciaLoft).toBeNull();
+    const linha = (await listarImoveis(amb.admin, amb.db)).find((l) => l.id === r.id)!;
+    expect(linha).toMatchObject({ empreendimento: "Edifício Soho", referenciaLoft: null });
+  });
+
+  test("formatos inválidos dos campos novos são erro, vazio não é", () => {
+    const { erros } = validarImovel({ ...entradaValida(), suites: "dois", anoConstrucao: "1700", cep: "abc", condominio: "" }, "publicado");
+    expect(erros).toEqual({ suites: "Use só números.", anoConstrucao: "Ano inválido.", cep: "CEP inválido. Use 00000-000." });
+  });
+
+  test("valor de locação só com finalidade venda", () => {
+    const { erros } = validarImovel({ ...entradaValida(), finalidade: "locacao", valorLocacao: "5000" }, "publicado");
+    expect(erros.valorLocacao).toBe("Use o campo Valor mensal para imóveis de locação.");
+  });
+
   test("rascunho salva incompleto e não aparece no site", async () => {
     const r = await salvarImovel(amb.mariana, null, vazia, "rascunho", new Date(), amb.db);
     expect(r).toMatchObject({ ok: true, codigo: "CZ1036", situacao: "rascunho", novo: true });

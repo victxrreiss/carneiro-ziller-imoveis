@@ -30,6 +30,8 @@ export type LinhaImovel = {
   tipo: string | null;
   bairro: string;
   cidade: string;
+  empreendimento: string | null;
+  referenciaLoft: string | null;
   valor: number | null;
   situacao: SituacaoImovel;
   responsavelId: string;
@@ -71,6 +73,8 @@ export async function listarImoveis(u: UsuarioLogado, db: Db = conexao()): Promi
       tipo: r.tipo,
       bairro: r.bairro,
       cidade: r.cidade,
+      empreendimento: r.empreendimento,
+      referenciaLoft: r.referenciaLoft,
       valor: r.valor,
       situacao: r.situacao,
       responsavelId: r.responsavelId,
@@ -85,6 +89,8 @@ export async function listarImoveis(u: UsuarioLogado, db: Db = conexao()): Promi
 export type ImovelEdicao = {
   id: string;
   codigo: string;
+  /** Só leitura: código do imóvel na Loft, quando veio da importação. */
+  referenciaLoft: string | null;
   entrada: EntradaImovel;
   fotos: (FotoRegistro & { alt: string })[];
   situacao: SituacaoImovel;
@@ -106,6 +112,7 @@ export async function obterParaEdicao(u: UsuarioLogado, id: string, db: Db = con
   return {
     id: r.id,
     codigo: r.codigo,
+    referenciaLoft: r.referenciaLoft,
     entrada: {
       finalidade: r.finalidade ?? "",
       lancamento: r.lancamento,
@@ -118,6 +125,20 @@ export async function obterParaEdicao(u: UsuarioLogado, id: string, db: Db = con
       area: digitos(r.area),
       quartos: digitos(r.quartos),
       vagas: digitos(r.vagas),
+      banheiros: digitos(r.banheiros),
+      suites: digitos(r.suites),
+      areaTotal: digitos(r.areaTotal),
+      condominio: digitos(r.condominio),
+      iptu: digitos(r.iptu),
+      valorLocacao: digitos(r.valorLocacao),
+      andar: digitos(r.andar),
+      anoConstrucao: digitos(r.anoConstrucao),
+      empreendimento: r.empreendimento ?? "",
+      endereco: r.endereco ?? "",
+      numero: r.numero ?? "",
+      complemento: r.complemento ?? "",
+      cep: r.cep ?? "",
+      caracteristicas: r.caracteristicas,
       descricao: r.descricao,
       fotos: r.fotos.map((f) => ({ id: f.id, alt: f.alt })),
       situacao: r.situacao,
