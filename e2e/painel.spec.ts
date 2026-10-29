@@ -281,6 +281,50 @@ test("convidar usuário e trocar senha com a atual errada", async ({ page }) => 
   await expect(page.getByText("A senha atual está incorreta.")).toBeVisible();
 });
 
+test("senha provisória: ADMIN gera, a pessoa troca no primeiro acesso", async ({ page }) => {
+  const email = `provisoria-${Date.now().toString(36)}@e2e.test`;
+  await entrar(page, ADMIN);
+  await page.goto("/painel/usuarios");
+  await page.getByRole("button", { name: "CONVIDAR USUÁRIO" }).first().click();
+  const gaveta = page.getByRole("dialog", { name: "Convidar usuário" });
+  await gaveta.getByLabel(/NOME/).fill("Teste Provisória");
+  await gaveta.getByLabel(/E-MAIL/).fill(email);
+  await gaveta.getByRole("button", { name: "ENVIAR CONVITE" }).click();
+  await expect(gaveta.getByText("Convite enviado")).toBeVisible();
+  await gaveta.getByRole("button", { name: "CONCLUIR" }).click();
+
+  await page.getByRole("button", { name: "Mais ações para Teste Provisória" }).click();
+  await page.getByRole("menuitem", { name: "Definir senha provisória" }).click();
+  const dialogo = page.getByRole("dialog", { name: "Senha provisória" });
+  const provisoria = (await dialogo.locator("code").innerText()).trim();
+  expect(provisoria.length).toBeGreaterThanOrEqual(10);
+  await expect(dialogo.getByText("Ela aparece só agora. Vale por 72 horas.")).toBeVisible();
+  await expect(dialogo.getByRole("button", { name: "COPIAR" })).toBeVisible();
+  await dialogo.getByRole("button", { name: "CONCLUIR" }).click();
+  await expect(dialogo).toHaveCount(0);
+  await sair(page);
+
+  await page.getByLabel("E-MAIL").fill(email);
+  await page.locator("#pn-senha").fill(provisoria);
+  await page.getByRole("button", { name: "ENTRAR" }).click();
+  await page.waitForURL(/\/painel\/trocar-senha$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Crie sua senha" })).toBeVisible();
+
+  await page.goto("/painel/imoveis");
+  await page.waitForURL(/\/painel\/trocar-senha$/);
+
+  await page.locator("#pn-nova").fill("senha-nova-provisoria-2027");
+  await page.locator("#pn-conf").fill("senha-nova-provisoria-2027");
+  await page.getByRole("button", { name: "SALVAR SENHA" }).click();
+  await page.waitForURL(/\/painel\/imoveis$/);
+  await sair(page);
+
+  await page.getByLabel("E-MAIL").fill(email);
+  await page.locator("#pn-senha").fill(provisoria);
+  await page.getByRole("button", { name: "ENTRAR" }).click();
+  await expect(page.getByText("E-mail ou senha incorretos.")).toBeVisible();
+});
+
 test("o convite chega por e-mail e o link define a senha e dá acesso", async ({ page }) => {
   const link = await linkDoEmail(CONVIDADO);
   await page.goto(link);

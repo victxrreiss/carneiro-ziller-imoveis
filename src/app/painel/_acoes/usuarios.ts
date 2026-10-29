@@ -2,7 +2,7 @@
 
 // Server Actions de usuários (só ADMIN) e de Minha conta (qualquer usuário, só a própria conta).
 import { revalidatePath } from "next/cache";
-import { convidar, desativar, editarNome, reativar, reenviarConvite, trocarSenha, type ErrosTrocaSenha, type ErrosUsuario } from "@/lib/painel/contas";
+import { convidar, definirSenhaProvisoria, desativar, editarNome, reativar, reenviarConvite, trocarSenha, type ErrosTrocaSenha, type ErrosUsuario } from "@/lib/painel/contas";
 import { ehAdmin, type UsuarioLogado } from "@/lib/painel/regras";
 import { usuarioDaAcao } from "@/lib/painel/sessao";
 import { painel } from "@/lib/routes";
@@ -53,6 +53,21 @@ export async function reativarAction(id: unknown): Promise<boolean> {
   const ok = await reativar(txt(id, 100));
   if (ok) revalidatePath(painel.usuarios);
   return ok;
+}
+
+const ERROS_PROVISORIA = {
+  proibido: "Só o ADMIN define senhas provisórias.",
+  inexistente: "Usuário não encontrado.",
+  desativado: "Reative o acesso antes de definir uma senha provisória.",
+} as const;
+
+export async function definirSenhaProvisoriaAction(id: unknown): Promise<{ ok: true; senha: string } | { ok: false; erro: string }> {
+  const u = await admin();
+  if (!u) return { ok: false, erro: ERROS_PROVISORIA.proibido };
+  const r = await definirSenhaProvisoria(u, txt(id, 100));
+  if (!r.ok) return { ok: false, erro: ERROS_PROVISORIA[r.erro] };
+  revalidatePath(painel.usuarios);
+  return r;
 }
 
 // ---------- Minha conta ----------
