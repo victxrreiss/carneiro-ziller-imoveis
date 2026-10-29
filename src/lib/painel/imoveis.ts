@@ -2,7 +2,7 @@
 // hoje da Home. Toda permissão é conferida aqui, não só na tela.
 // Todas as funções recebem o banco como último parâmetro opcional (testes).
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { armazenamento, assinaturaConfere, type Envio } from "@/lib/armazenamento";
+import { armazenamento, assinaturaConfere, type ArmazenamentoFotos, type Envio } from "@/lib/armazenamento";
 import { conexao, type Db } from "@/lib/dados/conexao";
 import { carregarImovel, carregarImoveis } from "@/lib/dados/consultas";
 import { configuracaoSite, fotos as tabFotos, imovelFotos, imoveis, usuarios } from "@/lib/dados/esquema";
@@ -47,12 +47,12 @@ async function nomes(db: Db): Promise<Map<string, string>> {
   return new Map(todos.map((u) => [u.id, u.nome]));
 }
 
-async function configuracao(db: Db) {
+export async function configuracao(db: Db) {
   const [c] = await db.select().from(configuracaoSite).where(eq(configuracaoSite.id, 1)).limit(1);
   return { oportunidadeId: c?.oportunidadeId ?? null, aviso: c?.aviso ?? null };
 }
 
-async function gravarConfiguracao(db: Db, oportunidadeId: string | null, aviso: AvisoOportunidade | null) {
+export async function gravarConfiguracao(db: Db, oportunidadeId: string | null, aviso: AvisoOportunidade | null) {
   await db
     .insert(configuracaoSite)
     .values({ id: 1, oportunidadeId, aviso })
@@ -229,8 +229,8 @@ export async function confirmarFoto(
   return { ok: true, id: f.id, src: a.urlPublica(f.chave) };
 }
 
-/** Apaga linhas e objetos de fotos sem vínculo. Falha no armazenamento deixa o resto para `fotos:limpar`. */
-async function descartarFotos(db: Db, ids: string[]): Promise<void> {
+/** Apaga linhas e objetos destas fotos, só as que estão sem vínculo. Falha no armazenamento deixa o resto para `fotos:limpar`. */
+export async function descartarFotos(db: Db, ids: string[], a: ArmazenamentoFotos = armazenamento()): Promise<void> {
   if (!ids.length) return;
   const livres = await db
     .select()
@@ -238,7 +238,7 @@ async function descartarFotos(db: Db, ids: string[]): Promise<void> {
     .where(and(inArray(tabFotos.id, ids), sql`not exists (select 1 from imovel_fotos where imovel_fotos.foto_id = ${tabFotos.id})`));
   if (!livres.length) return;
   try {
-    await armazenamento().remover(livres.map((f) => f.chave));
+    await a.remover(livres.map((f) => f.chave));
   } catch (e) {
     console.error("[fotos] não foi possível remover objetos; fotos:limpar tentará de novo", e instanceof Error ? e.message : e);
     return;
@@ -247,6 +247,13 @@ async function descartarFotos(db: Db, ids: string[]): Promise<void> {
 }
 
 // ---------- Salvar ----------
+
+/** Próximo código (`CZ1011`...) pela sequence: sem corrida entre dois cadastros. */
+export async function proximoCodigo(db: Db): Promise<string> {
+  // PGlite devolve { rows }; postgres-js, o array direto.
+  const r = (await db.execute(sql`select nextval('imovel_codigo_seq')::int as n`)) as unknown as { n: number }[] | { rows: { n: number }[] };
+  return `CZ${(Array.isArray(r) ? r : r.rows)[0].n}`;
+}
 
 export type ResultadoSalvar =
   | { ok: true; id: string; codigo: string; situacao: SituacaoImovel; novo: boolean; oportunidadeSaiu: boolean }
@@ -305,9 +312,7 @@ export async function salvarImovel(
         .set({ ...dados, situacao: destino, responsavelId, alteradoEm: agora, alteradoPorId: u.id, ...(primeiraPublicacao ? { publicadoEm: agora } : {}) })
         .where(eq(imoveis.id, existente.id));
     } else {
-      const r = (await tx.execute(sql`select nextval('imovel_codigo_seq')::int as n`)) as unknown as { n: number }[] | { rows: { n: number }[] };
-      const n = (Array.isArray(r) ? r : r.rows)[0].n;
-      codigo = `CZ${n}`;
+      codigo = await proximoCodigo(tx);
       imovelId = codigo.toLowerCase();
       await tx.insert(imoveis).values({
         ...dados,
