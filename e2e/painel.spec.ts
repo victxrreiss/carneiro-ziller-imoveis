@@ -108,9 +108,9 @@ test("ADMIN cadastra: rascunho incompleto, publicar exige os obrigatórios, publ
   await page.getByRole("option", { name: "Casa", exact: true }).click();
   await page.getByLabel(/BAIRRO/).fill("Sion");
   await page.getByLabel(/CIDADE/).fill("Nova Lima");
-  await page.getByLabel(/^VALOR/).fill("2500000");
-  await expect(page.getByLabel(/^VALOR/)).toHaveValue("2.500.000");
-  await page.getByLabel(/ÁREA/).fill("320");
+  await page.getByLabel(/^VALOR(?! DE)/).fill("2500000");
+  await expect(page.getByLabel(/^VALOR(?! DE)/)).toHaveValue("2.500.000");
+  await page.getByLabel(/ÁREA PRIVATIVA/).fill("320");
   await page.getByLabel(/DESCRIÇÃO/).fill("Casa ampla.\n\nPerto de tudo.");
   await page.locator("#pn-file:visible").setInputFiles({ name: "fachada.png", mimeType: "image/png", buffer: PNG });
   await expect(page.locator(".pn-photo-cover")).toHaveText("CAPA");
@@ -164,7 +164,7 @@ test("Oportunidade de hoje: ADMIN escolhe; Corretor tira do ar e o ADMIN é avis
 
 test("ADMIN exclui o imóvel de teste", async ({ page }) => {
   await entrar(page, ADMIN);
-  await page.getByLabel("Buscar por código ou título").fill(codigo);
+  await page.getByLabel(/Buscar por código/).fill(codigo);
   await page.getByRole("button", { name: `Mais ações para ${codigo}` }).click();
   await page.getByRole("menuitem", { name: "Excluir imóvel" }).click();
   await expect(page.getByRole("alertdialog")).toContainText("Excluir este imóvel?");
@@ -172,6 +172,72 @@ test("ADMIN exclui o imóvel de teste", async ({ page }) => {
   await expect(page.getByText("Imóvel excluído.", { exact: true })).toBeVisible();
   await page.goto(`/imovel/${codigo.toLowerCase()}`);
   await expect(page.getByRole("heading", { name: /não encontrado/i })).toBeVisible();
+});
+
+test("cadastro com a ficha completa aparece na lista e na busca", async ({ page }) => {
+  await entrar(page, ADMIN);
+  await page.getByRole("link", { name: "CADASTRAR IMÓVEL" }).click();
+  await page.getByLabel(/TÍTULO/).fill("Apartamento da ficha completa");
+  await page.getByRole("radio", { name: "VENDA" }).click();
+  await page.getByRole("button", { name: /TIPO/ }).click();
+  await page.getByRole("option", { name: "Casa", exact: true }).click();
+  await page.getByLabel(/BAIRRO/).fill("Belvedere");
+  await page.getByLabel(/CIDADE/).fill("Nova Lima");
+  await page.getByLabel(/^VALOR(?! DE)/).fill("1800000");
+  await page.getByLabel(/ÁREA PRIVATIVA/).fill("210");
+  await page.getByLabel(/ÁREA TOTAL/).fill("260");
+  await page.getByLabel(/^QUARTOS/).fill("4");
+  await page.getByLabel(/^SUÍTES/).fill("2");
+  await page.getByLabel(/^BANHEIROS/).fill("5");
+  await page.getByLabel(/CONDOMÍNIO/).fill("2300");
+  await page.getByLabel(/IPTU/).fill("9800");
+  await page.getByLabel(/^EMPREENDIMENTO/).fill("Residencial Aurora Teste");
+  await page.getByRole("checkbox", { name: "Piscina" }).check();
+  await page.getByRole("textbox", { name: /^ENDEREÇO/ }).fill("Rua Teste");
+  await page.getByRole("textbox", { name: /^CEP/ }).fill("34000-000");
+  await page.getByLabel(/DESCRIÇÃO/).fill("Ficha completa.");
+  await page.locator("#pn-file:visible").setInputFiles({ name: "fachada.png", mimeType: "image/png", buffer: PNG });
+  await expect(page.getByRole("progressbar")).toHaveCount(0);
+  await page.getByLabel("TEXTO ALTERNATIVO").fill("Fachada");
+  await page.getByRole("button", { name: "PUBLICAR" }).click();
+  await page.waitForURL(/\/painel\/imoveis\/cz\d+(\?|$)/);
+  await expect(page.getByText("Imóvel publicado.", { exact: true })).toBeVisible();
+  const cod = (await page.locator(".pn-ro.is-code").first().textContent())!.trim();
+
+  // Reabrir: os valores voltam preenchidos.
+  await page.goto(`/painel/imoveis/${cod.toLowerCase()}`);
+  await expect(page.getByLabel(/ÁREA TOTAL/)).toHaveValue("260");
+  await expect(page.getByLabel(/^SUÍTES/)).toHaveValue("2");
+  await expect(page.getByLabel(/^BANHEIROS/)).toHaveValue("5");
+  await expect(page.getByLabel(/CONDOMÍNIO/)).toHaveValue("2.300");
+  await expect(page.getByLabel(/IPTU/)).toHaveValue("9.800");
+  await expect(page.getByLabel(/^EMPREENDIMENTO/)).toHaveValue("Residencial Aurora Teste");
+  await expect(page.getByRole("checkbox", { name: "Piscina" })).toBeChecked();
+  await expect(page.getByRole("checkbox", { name: "Churrasqueira" })).not.toBeChecked();
+  await expect(page.getByRole("textbox", { name: /^ENDEREÇO/ })).toHaveValue("Rua Teste");
+  await expect(page.getByRole("textbox", { name: /^CEP/ })).toHaveValue("34000-000");
+
+  // Lista: busca por empreendimento (sem acento/caixa), filtros Tipo e Cidade.
+  await page.goto("/painel/imoveis");
+  await page.getByLabel(/Buscar por código/).fill("RESIDENCIAL aurora");
+  await expect(page.getByRole("link", { name: "Apartamento da ficha completa" })).toBeVisible();
+  await page.getByRole("button", { name: /Tipo/ }).click();
+  await page.getByRole("option", { name: "Casa", exact: true }).click();
+  await expect(page.getByRole("link", { name: "Apartamento da ficha completa" })).toBeVisible();
+  await page.getByRole("button", { name: /Cidade/ }).click();
+  await page.getByRole("option", { name: "Nova Lima", exact: true }).click();
+  await expect(page.getByRole("link", { name: "Apartamento da ficha completa" })).toBeVisible();
+  await page.getByRole("button", { name: /Tipo/ }).click();
+  await page.getByRole("option", { name: "Terreno", exact: true }).click();
+  await expect(page.getByRole("link", { name: "Apartamento da ficha completa" })).toHaveCount(0);
+
+  // Desfaz o que o teste criou.
+  await page.getByRole("button", { name: "LIMPAR BUSCA E FILTROS" }).click();
+  await page.getByLabel(/Buscar por código/).fill(cod);
+  await page.getByRole("button", { name: `Mais ações para ${cod}` }).click();
+  await page.getByRole("menuitem", { name: "Excluir imóvel" }).click();
+  await page.getByRole("button", { name: "EXCLUIR IMÓVEL" }).click();
+  await expect(page.getByText("Imóvel excluído.", { exact: true })).toBeVisible();
 });
 
 test("convidar usuário e trocar senha com a atual errada", async ({ page }) => {
