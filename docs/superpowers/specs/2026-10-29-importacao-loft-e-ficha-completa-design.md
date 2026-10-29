@@ -157,7 +157,7 @@ As colunas das duas: `Referencia; Categoria; Endereco; Endereco Numero; Endereco
 **Grid público** (`/imoveis`, filtros na URL em `src/lib/imoveis/filtros.ts`):
 - Novo: **suítes mínimas** (1–4+), no padrão de quartos e vagas.
 - Novo: **características**, com algumas das mais procuradas (piscina, academia, área gourmet, varanda se existir no feed), multisseleção. O builder escolhe a forma de mostrar dentro do padrão visual do painel de filtros.
-- Busca textual (`q`): incluir o código e a referência Loft, nunca o endereço.
+- Busca textual (`q`): título, bairro, cidade, código e empreendimento. Nunca o endereço nem a referência Loft (que é só do painel).
 - "Alugar" passa a incluir imóveis de venda com `valorLocacao`.
 - A faixa de preço de locação usa o `valorLocacao` quando a finalidade é venda.
 
