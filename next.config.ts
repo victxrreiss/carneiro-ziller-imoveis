@@ -30,6 +30,8 @@ function fotosRemotePatterns(): Padroes {
 }
 
 const nextConfig: NextConfig = {
+  // Imagem Docker enxuta (Dockerfile): só o servidor e as dependências rastreadas.
+  output: "standalone",
   cacheComponents: true,
   partialPrefetching: true,
   images: {

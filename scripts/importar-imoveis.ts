@@ -19,6 +19,8 @@ export type OpcoesImportacao = {
   armazenamento: ArmazenamentoFotos;
   /** Bytes do arquivo de foto da semente (em `public/images/imoveis`). */
   lerArquivo: (arquivo: string) => Promise<Uint8Array>;
+  /** Só estes imóveis da semente (ex.: os exemplos de produção). Sem isto, todos. */
+  ids?: string[];
 };
 
 export async function importarImoveis(db: Db, o: OpcoesImportacao): Promise<{ imoveis: number; fotos: number }> {
@@ -26,7 +28,10 @@ export async function importarImoveis(db: Db, o: OpcoesImportacao): Promise<{ im
   if (n > 0) throw new Error("O banco já tem imóveis. A semente só roda em banco vazio.");
 
   let totalFotos = 0;
-  const lista = sementeImoveis();
+  const semente = sementeImoveis();
+  const desconhecidos = (o.ids ?? []).filter((id) => !semente.some((s) => s.id === id));
+  if (desconhecidos.length) throw new Error(`Imóveis fora da semente: ${desconhecidos.join(", ")}.`);
+  const lista = o.ids ? semente.filter((s) => o.ids!.includes(s.id)) : semente;
   for (const s of lista) {
     const ligacoes: { fotoId: string; ordem: number; alt: string }[] = [];
     for (const [ordem, f] of s.fotos.entries()) {
@@ -65,6 +70,7 @@ export async function importarImoveis(db: Db, o: OpcoesImportacao): Promise<{ im
   // Os códigos entraram explícitos: o próximo gerado pela sequence continua depois do maior.
   const maior = Math.max(...lista.map((s) => Number(s.codigo.replace(/\D/g, ""))));
   await db.execute(sql`select setval('imovel_codigo_seq', ${maior})`);
+  if (!lista.some((s) => s.id === OPORTUNIDADE_INICIAL)) return { imoveis: lista.length, fotos: totalFotos };
   await db.insert(configuracaoSite).values({ id: 1, oportunidadeId: OPORTUNIDADE_INICIAL, aviso: null }).onConflictDoUpdate({ target: configuracaoSite.id, set: { oportunidadeId: OPORTUNIDADE_INICIAL, aviso: null } });
   return { imoveis: lista.length, fotos: totalFotos };
 }

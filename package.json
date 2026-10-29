@@ -17,7 +17,9 @@
     "db:semente": "tsx --conditions=react-server scripts/semear.ts",
     "admin:criar": "tsx --conditions=react-server scripts/criar-admin.ts",
     "fotos:limpar": "tsx --conditions=react-server scripts/fotos-limpar.ts",
-    "e2e:preparar": "tsx --conditions=react-server scripts/e2e-preparar.ts"
+    "e2e:preparar": "tsx --conditions=react-server scripts/e2e-preparar.ts",
+    "vps:preparar": "tsx --conditions=react-server scripts/vps-preparar.ts",
+    "vps:exemplos": "tsx --conditions=react-server scripts/vps-exemplos.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1156.0",
