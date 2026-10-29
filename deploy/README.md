@@ -9,7 +9,7 @@ diferença é só de onde vêm o banco e as fotos.
 | Site + painel | contêiner `carneiro-ziller-site` (Next standalone), na `proxy-network` |
 | Banco | `carneiro-ziller-db` (Postgres 17), volume `carneiro-ziller_banco`, porta só em `127.0.0.1:15433` |
 | Fotos | `carneiro-ziller-s3` (MinIO, imagem da Chainguard), bucket `cz-fotos`, volume `carneiro-ziller_fotos`, porta só em `127.0.0.1:19010` |
-| HTTPS | Cloudflare + `nginx-proxy` (`~/projetos/nginx/conf.d/carneiro-ziller.conf`, modelo em `deploy/nginx/`) |
+| HTTPS | `carneiroziller.com.br` na Cloudflare (Full strict) + Origin Certificate em `~/projetos/nginx/ssl/carneiro-ziller.{crt,key}` (até 2041) + `nginx-proxy` (`~/projetos/nginx/conf.d/carneiro-ziller.conf`, modelo em `deploy/nginx/`). `www` e o temporário `carneiroziller.granconsultoria.com.br` redirecionam |
 | E-mail | SMTP opcional no `.env` (ainda sem conta: convites e avisos não saem) |
 | Cron | `backup.sh` (03:25) e `cron-limpeza.sh` (06:17) no crontab do usuário `granconsultoria` |
 
@@ -50,7 +50,7 @@ deploy/deploy.sh exemplos                                  # 3 imóveis de exemp
 
 ## Primeira instalação (já feita em 2026-10-28)
 
-1. DNS na Cloudflare: registro A `carneiroziller` → `31.97.175.225`, proxy ligado.
+1. DNS na Cloudflare: registro A `carneiroziller` → `31.97.175.225`, proxy ligado (domínio temporário da Gran; trocado pelo do cliente em 2026-10-29, abaixo).
 2. `.env` na VPS a partir de `deploy/vps.env.example`, com os segredos gerados lá (`openssl rand -hex 32`).
 3. `deploy/deploy.sh`, depois `deploy/deploy.sh admin ...` e `deploy/deploy.sh exemplos`.
 4. nginx: copiar `deploy/nginx/carneiro-ziller.conf` para `~/projetos/nginx/conf.d/` e recarregar. **Sempre `nginx -t` antes**, porque um erro derruba o reload de todos os clientes:
@@ -74,11 +74,14 @@ ssh granconsultoria.vps 'cd ~/projetos/clientes/carneiro-ziller/site && docker c
 
 Sem SMTP, o log mostra o alerta `[config]` e o ADMIN não consegue convidar corretores por e-mail.
 
-## Trocar para o domínio do cliente
+## Trocar de domínio (feito em 2026-10-29: temporário → carneiroziller.com.br)
+
+Para um próximo domínio, o caminho é o mesmo:
+
 
 1. Cloudflare do cliente: registro A → `31.97.175.225` (proxy ligado), SSL/TLS **Full (strict)**, e um Origin Certificate salvo em `~/projetos/nginx/ssl/carneiro-ziller.{crt,key}` (`chmod 600` na chave).
 2. `.env` da VPS: `SITE_URL` e `SITE_DOMINIO` com o domínio novo.
-3. `deploy/nginx/carneiro-ziller.conf`: `server_name` novo, certificado `carneiro-ziller.crt/key`, **remover o `X-Robots-Tag`**, e um `server` para o temporário com `return 301 https://DOMINIO$request_uri;`. Depois `nginx -t` e reload.
+3. `deploy/nginx/carneiro-ziller.conf`: `server_name` e o destino dos `return 301`. Primeiro o nginx (com `nginx -t`), depois o `.env`, para o site nunca apontar para um domínio que o nginx ainda não atende.
 4. `deploy/deploy.sh`. `SITE_URL` e `FOTOS_URL_PUBLICA` entram no build.
 
 As fotos já gravadas continuam valendo: o banco guarda só a chave (`fotos/<id>.jpg`), e a URL é montada com o `FOTOS_URL_PUBLICA` atual.

@@ -48,7 +48,7 @@ Note: the MinIO image pinned in the local `docker-compose.yml` (`minio/minio:REL
 ## Deploy (production = shared Gran VPS)
 
 The full runbook is `deploy/README.md`. In short:
-- It runs on `ssh granconsultoria.vps` as three containers: `carneiro-ziller-site`, `-db` and `-s3` (MinIO), defined in `deploy/docker-compose.vps.yml`, behind the shared `nginx-proxy` (vhost template in `deploy/nginx/`). The temporary domain is `carneiroziller.granconsultoria.com.br` and is `noindex`.
+- It runs on `ssh granconsultoria.vps` as three containers: `carneiro-ziller-site`, `-db` and `-s3` (MinIO), defined in `deploy/docker-compose.vps.yml`, behind the shared `nginx-proxy` (vhost template in `deploy/nginx/`). The domain is `carneiroziller.com.br`, on the client's Cloudflare. `www` and the old temporary `carneiroziller.granconsultoria.com.br` redirect to it.
 - `deploy/deploy.sh` runs **on the dev machine**. It opens an SSH tunnel to the VPS's loopback-only DB/S3 ports, migrates, then `docker build --network host` (the build reads the production DB, and secrets go in as a BuildKit secret), and ships the image with `docker save | ssh docker load`. The VPS never builds and holds no source code. Other modes: `deploy.sh admin "Nome" email` and `deploy.sh exemplos`.
 - Photos are served from the site's own origin at `/cz-fotos/`, which nginx proxies to MinIO unchanged so S3 signatures stay valid. `S3_ENDPOINT` is therefore `SITE_URL`.
 - The VPS is shared with other clients. Always run `nginx -t` before reloading, and never run bulk deletes against the bucket or the DB.
