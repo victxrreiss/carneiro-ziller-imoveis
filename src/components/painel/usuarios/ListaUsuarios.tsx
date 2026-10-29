@@ -258,7 +258,8 @@ function DialogoSenhaProvisoria({ nome, senha, onFechar }: { nome: string; senha
   const painelRef = useRef<HTMLDivElement>(null);
   const fecharRef = useRef<HTMLButtonElement>(null);
   const [copiada, setCopiada] = useState<boolean | null>(null);
-  useDialog({ aberto: true, onFechar, painelRef, focoInicialRef: fecharRef });
+  // Esc e clique fora não fecham: a senha só aparece uma vez.
+  useDialog({ aberto: true, onFechar: () => {}, painelRef, focoInicialRef: fecharRef });
 
   async function copiar() {
     try {
@@ -271,7 +272,7 @@ function DialogoSenhaProvisoria({ nome, senha, onFechar }: { nome: string; senha
 
   return (
     <Portal>
-      <div className="scrim" onClick={onFechar} />
+      <div className="scrim" />
       <div ref={painelRef} className="pn-modal" role="dialog" aria-modal="true" aria-labelledby="pn-prov-t">
         <div className="pn-modal-body">
           <h2 id="pn-prov-t">Senha provisória</h2>
@@ -310,6 +311,7 @@ export function ListaUsuarios({ usuarios, eu }: { usuarios: Linha[]; eu: string 
   const router = useRouter();
   const [gaveta, setGaveta] = useState<Gaveta | null>(null);
   const [desativar, setDesativar] = useState<Linha | null>(null);
+  const [confirmarProv, setConfirmarProv] = useState<Linha | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [ocupado, iniciar] = useTransition();
   const [erro, setErro] = useState<string | null>(null);
@@ -337,19 +339,24 @@ export function ListaUsuarios({ usuarios, eu }: { usuarios: Linha[]; eu: string 
   }
 
   const reenviar = (u: Linha) => executar(() => reenviarConviteAction(u.id), `Convite reenviado para ${u.email}. O link anterior deixou de valer.`);
+  const pedirProvisoria = (u: Linha) => (u.situacao === "ativo" ? setConfirmarProv(u) : definirProvisoria(u));
+
   function definirProvisoria(u: Linha) {
     setErro(null);
     iniciar(async () => {
       try {
         const r = await definirSenhaProvisoriaAction(u.id);
         if (!r.ok) {
+          setConfirmarProv(null);
           setErro(r.erro);
           router.refresh();
           return;
         }
+        setConfirmarProv(null);
         setProvisoria({ nome: u.nome, senha: r.senha });
         router.refresh();
       } catch {
+        setConfirmarProv(null);
         setErro("Não foi possível concluir. A lista foi atualizada; tente de novo.");
         router.refresh();
       }
@@ -473,7 +480,7 @@ export function ListaUsuarios({ usuarios, eu }: { usuarios: Linha[]; eu: string 
                             )}
                             {u.situacao !== "desativado" && (
                               <MenuItem as="li">
-                                <button type="button" onClick={() => definirProvisoria(u)}>
+                                <button type="button" onClick={() => pedirProvisoria(u)}>
                                   <IcConta />
                                   Definir senha provisória
                                 </button>
@@ -541,7 +548,7 @@ export function ListaUsuarios({ usuarios, eu }: { usuarios: Linha[]; eu: string 
                   </button>
                 )}
                 {!souEu && u.situacao !== "desativado" && (
-                  <button type="button" className="btn-plain" disabled={ocupado} onClick={() => definirProvisoria(u)}>
+                  <button type="button" className="btn-plain" disabled={ocupado} onClick={() => pedirProvisoria(u)}>
                     SENHA PROVISÓRIA
                   </button>
                 )}
@@ -614,6 +621,18 @@ export function ListaUsuarios({ usuarios, eu }: { usuarios: Linha[]; eu: string 
             setAviso(texto);
           }}
         />
+      )}
+
+      {confirmarProv && (
+        <Confirmacao
+          titulo={`Definir senha provisória para ${confirmarProv.nome}?`}
+          rotuloConfirmar="CONTINUAR"
+          ocupado={ocupado}
+          onCancelar={() => !ocupado && setConfirmarProv(null)}
+          onConfirmar={() => definirProvisoria(confirmarProv)}
+        >
+          <p>Isso troca a senha atual de {primeiro(confirmarProv.nome)} e encerra as sessões abertas. Continuar?</p>
+        </Confirmacao>
       )}
 
       {provisoria && <DialogoSenhaProvisoria nome={provisoria.nome} senha={provisoria.senha} onFechar={() => setProvisoria(null)} />}

@@ -3,6 +3,7 @@
 // assinada do S3 ou token de cliente do Vercel Blob).
 // Exige sessão; os limites estão em lib/painel.
 import { cookies } from "next/headers";
+import { exigirSessaoHttp } from "@/lib/painel/acesso-http";
 import { lerSessao } from "@/lib/painel/contas";
 import { prepararEnvioFoto } from "@/lib/painel/imoveis";
 import { COOKIE_SESSAO } from "@/lib/painel/sessao";
@@ -16,7 +17,9 @@ const MENSAGEM = {
 
 export async function POST(request: Request) {
   const sessao = await lerSessao((await cookies()).get(COOKIE_SESSAO)?.value);
-  if (!sessao.usuario) return Response.json({ ok: false, erro: "Sua sessão expirou. Entre de novo." }, { status: 401 });
+  const porteiro = exigirSessaoHttp(sessao);
+  if ("resposta" in porteiro) return porteiro.resposta;
+  const usuario = porteiro.usuario;
 
   let corpo: unknown;
   try {
@@ -25,7 +28,7 @@ export async function POST(request: Request) {
     return Response.json({ ok: false, erro: "Envio inválido." }, { status: 400 });
   }
   const o = (corpo && typeof corpo === "object" ? corpo : {}) as Record<string, unknown>;
-  const r = await prepararEnvioFoto(sessao.usuario, {
+  const r = await prepararEnvioFoto(usuario, {
     tipo: typeof o.tipo === "string" ? o.tipo : "",
     tamanho: Number(o.tamanho),
     largura: Number(o.largura),
