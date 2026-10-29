@@ -13,7 +13,7 @@ export const UFS = [
 export const LIMITES = { titulo: 90, alt: 140, nome: 120, textoCurto: 120, fotos: 60, fotoMB: 15 } as const;
 export const TIPOS_FOTO = ["image/jpeg", "image/png", "image/webp"] as const;
 
-export type UsuarioLogado = { id: string; nome: string; email: string; papel: Papel };
+export type UsuarioLogado = { id: string; nome: string; email: string; papel: Papel; trocarSenha: boolean };
 
 export const ehAdmin = (u: Pick<UsuarioLogado, "papel">) => u.papel === "admin";
 

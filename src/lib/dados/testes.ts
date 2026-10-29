@@ -44,7 +44,7 @@ export async function criarAmbiente(): Promise<Ambiente> {
     await db.execute(sql`alter sequence imovel_codigo_seq restart with 1001`);
     const criar = async (nome: string, email: string, extra: Partial<typeof usuarios.$inferInsert>) => {
       const [u] = await db.insert(usuarios).values({ nome, email, papel: "corretor", situacao: "ativo", senhaHash: hash, ...extra }).returning();
-      return { id: u.id, nome: u.nome, email: u.email, papel: u.papel } satisfies UsuarioLogado;
+      return { id: u.id, nome: u.nome, email: u.email, papel: u.papel, trocarSenha: false } satisfies UsuarioLogado;
     };
     amb.admin = await criar("Ana Admin", "admin@exemplo.test", { papel: "admin" });
     amb.mariana = await criar("Mariana Costa", "mariana@exemplo.test", {});

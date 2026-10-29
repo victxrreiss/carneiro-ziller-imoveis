@@ -5,12 +5,13 @@ import { oportunidadeDeHoje } from "@/lib/imoveis/catalogo";
 import { remetente, type remetenteMemoria } from "@/lib/email";
 import { configuracaoSite, fotos, imovelFotos, imoveis, sessoes, tentativasLogin, tokensSenha, usuarios } from "@/lib/dados/esquema";
 import { criarAmbiente, type Ambiente } from "@/lib/dados/testes";
-import { conferirSenha, hashToken } from "@/lib/seguranca/senha";
+import { conferirSenha, gerarSenhaProvisoria, hashToken } from "@/lib/seguranca/senha";
 import {
   abrirSessao,
   BLOQUEIO_MIN,
   convidar,
   definirSenha,
+  definirSenhaProvisoria,
   desativar,
   entrar,
   lerSessao,
@@ -20,6 +21,7 @@ import {
   reativar,
   reenviarConvite,
   trocarSenha,
+  trocarSenhaObrigatoria,
 } from "./contas";
 import {
   avisoOportunidadeVazia,
@@ -30,7 +32,7 @@ import {
   prepararEnvioFoto,
   salvarImovel,
 } from "./imoveis";
-import { validarImovel, type EntradaImovel } from "./regras";
+import { erroNovaSenha, validarImovel, type EntradaImovel } from "./regras";
 
 let amb: Ambiente;
 beforeAll(async () => {
@@ -570,5 +572,86 @@ describe("usuários", () => {
   test("ids que não são uuid não chegam ao banco", async () => {
     expect(await desativar(amb.admin, "'; drop table usuarios;--", amb.db)).toBe(false);
     expect(await reativar("u3", amb.db)).toBe(false);
+  });
+});
+
+describe("senha provisória", () => {
+  const AGORA = Date.UTC(2026, 9, 29, 12, 0, 0);
+  const H = 3600_000;
+  const gerar = async (id: string) => {
+    const r = await definirSenhaProvisoria(amb.admin, id, AGORA, amb.db);
+    if (!r.ok) throw new Error("não gerou");
+    return r.senha;
+  };
+
+  test("gerarSenhaProvisoria: 12 caracteres sem ambíguos e válida na política", () => {
+    for (let i = 0; i < 50; i++) {
+      const s = gerarSenhaProvisoria();
+      expect(s).toMatch(/^[^0O1lI]{12}$/);
+      expect(s).toMatch(/^[A-Za-z2-9]{12}$/);
+      expect(erroNovaSenha(s)).toBeNull();
+    }
+  });
+
+  test("ADMIN gera, a pessoa entra e fica obrigada a trocar", async () => {
+    const r = await definirSenhaProvisoria(amb.admin, amb.juliana.id, AGORA, amb.db);
+    if (!r.ok) throw new Error();
+    expect(erroNovaSenha(r.senha)).toBeNull();
+    const e = await entrar(amb.juliana.email, r.senha, AGORA + 1000, amb.db);
+    expect(e.ok).toBe(true);
+    const token = await abrirSessao(amb.juliana.id, AGORA, amb.db);
+    expect((await lerSessao(token, AGORA + 1000, amb.db)).usuario?.trocarSenha).toBe(true);
+  });
+
+  test("provisória vencida não entra", async () => {
+    const senha = await gerar(amb.juliana.id);
+    expect(await entrar(amb.juliana.email, senha, AGORA + 73 * H, amb.db)).toEqual({ ok: false, erro: "credenciais" });
+    expect((await entrar(amb.juliana.email, senha, AGORA + 71 * H, amb.db)).ok).toBe(true);
+  });
+
+  test("depois da troca, a provisória não vale mais e a flag some", async () => {
+    const senha = await gerar(amb.juliana.id);
+    const nova = `${amb.senha}-nova`;
+    expect(await trocarSenhaObrigatoria(amb.juliana.id, nova, nova, amb.db)).toEqual({ ok: true });
+    expect(await entrar(amb.juliana.email, senha, AGORA + 1000, amb.db)).toEqual({ ok: false, erro: "credenciais" });
+    expect((await entrar(amb.juliana.email, nova, AGORA + 1000, amb.db)).ok).toBe(true);
+    const token = await abrirSessao(amb.juliana.id, AGORA, amb.db);
+    expect((await lerSessao(token, AGORA + 1000, amb.db)).usuario?.trocarSenha).toBe(false);
+    const [u] = await amb.db.select().from(usuarios).where(eq(usuarios.id, amb.juliana.id));
+    expect(u.senhaProvisoriaExpiraEm).toBeNull();
+    // Passado o prazo, a nova senha continua valendo.
+    expect((await entrar(amb.juliana.email, nova, AGORA + 100 * H, amb.db)).ok).toBe(true);
+  });
+
+  test("igual à provisória é recusada; validações de senha valem", async () => {
+    const senha = await gerar(amb.juliana.id);
+    const r = await trocarSenhaObrigatoria(amb.juliana.id, senha, senha, amb.db);
+    expect(r).toEqual({ ok: false, erros: { nova: "Use uma senha diferente da provisória." } });
+    const curta = await trocarSenhaObrigatoria(amb.juliana.id, "abc", "abc", amb.db);
+    expect(curta.ok === false && curta.erros.nova).toBeTruthy();
+    const dif = await trocarSenhaObrigatoria(amb.juliana.id, `${amb.senha}-x`, "outra", amb.db);
+    expect(dif.ok === false && dif.erros.confirmacao).toBeTruthy();
+  });
+
+  test("trocarSenhaObrigatoria exige a flag", async () => {
+    const r = await trocarSenhaObrigatoria(amb.mariana.id, `${amb.senha}-x`, `${amb.senha}-x`, amb.db);
+    expect(r.ok).toBe(false);
+    expect(await conferirSenha(amb.senha, (await amb.db.select().from(usuarios).where(eq(usuarios.id, amb.mariana.id)))[0].senhaHash)).toBe(true);
+  });
+
+  test("só ADMIN, nunca para si nem para ADMIN; desativado recusa", async () => {
+    expect(await definirSenhaProvisoria(amb.mariana, amb.ricardo.id, AGORA, amb.db)).toEqual({ ok: false, erro: "proibido" });
+    expect(await definirSenhaProvisoria(amb.admin, amb.admin.id, AGORA, amb.db)).toEqual({ ok: false, erro: "proibido" });
+    expect(await definirSenhaProvisoria(amb.admin, amb.paulo.id, AGORA, amb.db)).toEqual({ ok: false, erro: "desativado" });
+    expect(await definirSenhaProvisoria(amb.admin, "nao-e-uuid", AGORA, amb.db)).toEqual({ ok: false, erro: "inexistente" });
+  });
+
+  test("gerar de novo derruba sessões, tokens e bloqueio do usuário", async () => {
+    const token = await abrirSessao(amb.ricardo.id, AGORA, amb.db);
+    await amb.db.insert(tentativasLogin).values({ email: amb.ricardo.email, falhas: 3, bloqueadoAte: null });
+    await gerar(amb.ricardo.id);
+    expect((await lerSessao(token, AGORA + 1000, amb.db)).usuario).toBeNull();
+    expect(await amb.db.select().from(tentativasLogin).where(eq(tentativasLogin.email, amb.ricardo.email))).toHaveLength(0);
+    expect(await amb.db.select().from(tokensSenha).where(eq(tokensSenha.usuarioId, amb.ricardo.id))).toHaveLength(0);
   });
 });
