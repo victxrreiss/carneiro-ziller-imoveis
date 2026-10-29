@@ -52,6 +52,7 @@
     "drizzle-kit": "^0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
+    "fast-xml-parser": "^5.11.2",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",

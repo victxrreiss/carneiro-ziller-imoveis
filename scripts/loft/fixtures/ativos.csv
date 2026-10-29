@@ -1,0 +1,8 @@
+﻿Referencia;Categoria;Endereco;"Endereco Numero";"Endereco Complemento";Dormitorio;"Valor venda";"Valor Aluguel";"Bairro Comercial";Empreendimento;"Valor M2 Aluguel";"Valor M2 venda";"Valor total aluguel"
+901;Apartamento;" Rua Exemplo";100;101;2;990000;0;Bairro Exemplo;"Edifício Exemplo; Torre A";0;17678.571428571;0
+902;Terreno;"Rua Exemplo Dois";"S/N";;0;1500000;0;Bairro Exemplo;;0;2369.668246445;0
+903;Cobertura;"Rua Exemplo Tres";300;1201;3;3200000;15000;Bairro Exemplo;;0;17777.777777778;0
+904;Apartamento;"Rua Exemplo Quatro";400;22;3;1800000;0;Bairro Exemplo;;0;15000;0
+905;"Casa em Condomínio";"Rua Exemplo Cinco";500;01;5;4300000;0;Bairro Exemplo;"Condomínio Exemplo";0;8600;0
+906;"Apartamento Duplex";"Avenida dos ExemplÃ£o";600;12;4;2500000;0;Outro Bairro;;0;13617.021276596;0
+
