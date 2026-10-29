@@ -38,6 +38,8 @@ function paraRegistro(r: LinhaUsuarioBanco): RegistroUsuario {
     senhaHash: r.senhaHash,
     ultimoAcesso: iso(r.ultimoAcesso),
     conviteEnviadoEm: iso(r.conviteEnviadoEm),
+    trocarSenha: r.trocarSenha,
+    senhaProvisoriaExpiraEm: iso(r.senhaProvisoriaExpiraEm),
   };
 }
 

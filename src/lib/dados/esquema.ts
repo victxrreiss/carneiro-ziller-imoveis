@@ -42,6 +42,9 @@ export const usuarios = pgTable(
     senhaHash: text("senha_hash"),
     ultimoAcesso: momento("ultimo_acesso"),
     conviteEnviadoEm: momento("convite_enviado_em"),
+    /** Senha provisória (ex.: criada pela importação): obriga a trocar no primeiro acesso. */
+    trocarSenha: boolean("trocar_senha").notNull().default(false),
+    senhaProvisoriaExpiraEm: momento("senha_provisoria_expira_em"),
     criadoEm: momento("criado_em").notNull().defaultNow(),
   },
   (t) => [
@@ -68,6 +71,24 @@ export const imoveis = pgTable(
     area: integer("area"),
     quartos: integer("quartos"),
     vagas: integer("vagas"),
+    banheiros: integer("banheiros"),
+    suites: integer("suites"),
+    areaTotal: integer("area_total"),
+    condominio: bigint("condominio", { mode: "number" }),
+    /** Anual. */
+    iptu: bigint("iptu", { mode: "number" }),
+    valorLocacao: bigint("valor_locacao", { mode: "number" }),
+    /** Chaves de `lib/imoveis/caracteristicas.ts`. */
+    caracteristicas: text("caracteristicas").array().notNull().default(sql`'{}'::text[]`),
+    andar: integer("andar"),
+    anoConstrucao: integer("ano_construcao"),
+    empreendimento: text("empreendimento"),
+    endereco: text("endereco"),
+    numero: text("numero"),
+    complemento: text("complemento"),
+    cep: text("cep"),
+    /** Referência do imóvel na Loft; liga a ficha à importação. */
+    referenciaLoft: text("referencia_loft").unique(),
     descricao: text("descricao").notNull().default(""),
     situacao: situacaoImovelEnum("situacao").notNull().default("rascunho"),
     responsavelId: uuid("responsavel_id")
@@ -119,6 +140,19 @@ export const imovelFotos = pgTable(
   },
   (t) => [primaryKey({ columns: [t.imovelId, t.fotoId] }), index("imovel_fotos_ordem").on(t.imovelId, t.ordem)],
 );
+
+/** Controle da importação da Loft: o que veio de lá, para reimportar sem sobrescrever edições. */
+export const importacaoLoft = pgTable("importacao_loft", {
+  referencia: text("referencia").primaryKey(),
+  imovelId: text("imovel_id").references(() => imoveis.id, { onDelete: "set null" }),
+  /** Snapshot dos campos vindos da Loft. */
+  valores: jsonb("valores").$type<Record<string, unknown>>().notNull(),
+  /** URLs de origem das fotos, em ordem. */
+  fotosOrigem: jsonb("fotos_origem").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+  /** Ids das fotos importadas, em ordem. */
+  fotoIds: jsonb("foto_ids").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+  importadoEm: momento("importado_em").notNull(),
+});
 
 export const sessoes = pgTable("sessoes", {
   /** SHA-256 do token do cookie; o token nunca é gravado. */

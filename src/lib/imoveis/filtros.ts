@@ -48,6 +48,8 @@ const rotuloChipFinalidade: Record<FinalidadeFiltro, string> = {
 export const TIPOS = [
   "Apartamento",
   "Cobertura",
+  "Studio",
+  "Loft",
   "Casa em condomínio",
   "Casa",
   "Terreno",

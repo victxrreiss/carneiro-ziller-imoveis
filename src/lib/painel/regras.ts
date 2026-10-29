@@ -9,7 +9,7 @@ export const UFS = [
   "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
 ] as const;
 
-export const LIMITES = { titulo: 90, alt: 140, nome: 120, fotos: 40, fotoMB: 15 } as const;
+export const LIMITES = { titulo: 90, alt: 140, nome: 120, fotos: 60, fotoMB: 15 } as const;
 export const TIPOS_FOTO = ["image/jpeg", "image/png", "image/webp"] as const;
 
 export type UsuarioLogado = { id: string; nome: string; email: string; papel: Papel };
