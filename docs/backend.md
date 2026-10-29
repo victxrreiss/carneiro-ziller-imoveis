@@ -10,6 +10,7 @@ Requisitos: Node 22+, Docker.
 npm install
 cp .env.example .env.local     # valores do Docker local
 npm run db:subir               # Postgres 17, S3 local (MinIO) e Mailpit; cria os buckets
+# Portas do host ocupadas por outro projeto? Defina CZ_PORTA_BANCO, CZ_PORTA_S3, CZ_PORTA_S3_CONSOLE, CZ_PORTA_SMTP e CZ_PORTA_MAILPIT em `.env` (padrões: 5432, 9000, 9001, 1025, 8025) e ajuste `.env.local` às mesmas portas.
 npm run db:migrar              # aplica drizzle/*.sql
 npm run admin:criar -- --nome "Seu Nome" --email "voce@dominio.com"   # imprime o link para definir a senha
 npm run db:semente             # opcional: 35 imóveis de exemplo + fotos (exige o ADMIN acima)
