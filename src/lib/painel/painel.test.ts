@@ -106,6 +106,39 @@ describe("cadastro de imóvel", () => {
     expect(erros.valorLocacao).toBe("Use o campo Valor mensal para imóveis de locação.");
   });
 
+  test("textos acima de 120 caracteres são erro no próprio campo", () => {
+    const longo = "x".repeat(121);
+    for (const campo of ["empreendimento", "endereco", "numero", "complemento"] as const) {
+      const { erros } = validarImovel({ ...entradaValida(), [campo]: longo }, "publicado");
+      expect(erros).toEqual({ [campo]: "Use até 120 caracteres." });
+    }
+  });
+
+  test("CEP sem hífen é gravado com hífen", async () => {
+    const r = await salvarImovel(amb.admin, null, { ...entradaValida(), cep: "34006083" }, "publicar", new Date(), amb.db);
+    if (!r.ok) throw new Error("esperava ok");
+    expect((await obterParaEdicao(amb.admin, r.id, amb.db))!.entrada.cep).toBe("34006-083");
+  });
+
+  test("ano de construção: limites", () => {
+    const ano = new Date().getFullYear();
+    const erro = (v: number) => validarImovel({ ...entradaValida(), anoConstrucao: String(v) }, "publicado").erros.anoConstrucao;
+    expect(erro(ano + 5)).toBeUndefined();
+    expect(erro(ano + 6)).toBe("Ano inválido.");
+    expect(erro(1800)).toBeUndefined();
+    expect(erro(1799)).toBe("Ano inválido.");
+  });
+
+  test("limite dos números pequenos", () => {
+    expect(validarImovel({ ...entradaValida(), suites: "100" }, "publicado").erros.suites).toBe("Use só números.");
+  });
+
+  test("valor de locação é aceito com finalidade venda", async () => {
+    const r = await salvarImovel(amb.admin, null, { ...entradaValida(), finalidade: "venda", valorLocacao: "5000" }, "publicar", new Date(), amb.db);
+    if (!r.ok) throw new Error("esperava ok");
+    expect((await obterParaEdicao(amb.admin, r.id, amb.db))!.entrada.valorLocacao).toBe("5000");
+  });
+
   test("rascunho salva incompleto e não aparece no site", async () => {
     const r = await salvarImovel(amb.mariana, null, vazia, "rascunho", new Date(), amb.db);
     expect(r).toMatchObject({ ok: true, codigo: "CZ1036", situacao: "rascunho", novo: true });

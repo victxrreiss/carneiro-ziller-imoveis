@@ -68,7 +68,7 @@ export type EntradaImovel = {
 /** Salvar rascunho · Publicar · Salvar alterações (situação do campo). */
 export type Intencao = "rascunho" | "publicar" | "salvar";
 
-export type CampoImovel = "finalidade" | "tipo" | "titulo" | "bairro" | "cidade" | "uf" | "valor" | "area" | "quartos" | "vagas" | "banheiros" | "suites" | "areaTotal" | "condominio" | "iptu" | "valorLocacao" | "andar" | "anoConstrucao" | "cep" | "descricao" | "fotos";
+export type CampoImovel = "finalidade" | "tipo" | "titulo" | "bairro" | "cidade" | "uf" | "valor" | "area" | "quartos" | "vagas" | "banheiros" | "suites" | "areaTotal" | "condominio" | "iptu" | "valorLocacao" | "andar" | "anoConstrucao" | "empreendimento" | "endereco" | "numero" | "complemento" | "cep" | "descricao" | "fotos";
 
 export type ErrosImovel = Partial<Record<CampoImovel, string>>;
 
@@ -92,6 +92,10 @@ export const ORDEM_CAMPOS: { campo: CampoImovel; rotulo: string }[] = [
   { campo: "valorLocacao", rotulo: "Valor de locação" },
   { campo: "andar", rotulo: "Andar" },
   { campo: "anoConstrucao", rotulo: "Ano de construção" },
+  { campo: "empreendimento", rotulo: "Empreendimento" },
+  { campo: "endereco", rotulo: "Endereço" },
+  { campo: "numero", rotulo: "Número" },
+  { campo: "complemento", rotulo: "Complemento" },
   { campo: "cep", rotulo: "CEP" },
   { campo: "descricao", rotulo: "Descrição" },
   { campo: "fotos", rotulo: "Fotos" },
@@ -190,14 +194,14 @@ export function validarImovel(e: EntradaImovel, destino: SituacaoImovel): { erro
     if (ano >= 1800 && ano <= new Date().getFullYear() + 5) anoConstrucao = ano;
     else erros.anoConstrucao = "Ano inválido.";
   }
-  const textoCurto = (campo: string, v: string) => {
+  const textoCurto = (campo: CampoImovel, v: string) => {
     const t = texto(v);
-    if (t.length > LIMITES.textoCurto) erros[campo as CampoImovel] = `Use até ${LIMITES.textoCurto} caracteres.`;
+    if (t.length > LIMITES.textoCurto) erros[campo] = `Use até ${LIMITES.textoCurto} caracteres.`;
     return t;
   };
   const empreendimento = textoCurto("empreendimento", e.empreendimento);
   const endereco = textoCurto("endereco", e.endereco);
-  const numeroEnd = textoCurto("numero", e.numero);
+  const numeroImovel = textoCurto("numero", e.numero);
   const complemento = textoCurto("complemento", e.complemento);
   let cep = "";
   if (e.cep.trim()) {
@@ -214,7 +218,7 @@ export function validarImovel(e: EntradaImovel, destino: SituacaoImovel): { erro
 
   return {
     erros,
-    dados: { finalidade, lancamento: Boolean(e.lancamento), tipo, titulo, bairro, cidade, uf, valor, area, quartos, vagas, banheiros, suites, areaTotal, condominio, iptu, valorLocacao, andar, anoConstrucao, empreendimento, endereco, numero: numeroEnd, complemento, cep, caracteristicas, descricao },
+    dados: { finalidade, lancamento: Boolean(e.lancamento), tipo, titulo, bairro, cidade, uf, valor, area, quartos, vagas, banheiros, suites, areaTotal, condominio, iptu, valorLocacao, andar, anoConstrucao, empreendimento, endereco, numero: numeroImovel, complemento, cep, caracteristicas, descricao },
   };
 }
 
