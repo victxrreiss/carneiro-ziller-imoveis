@@ -27,7 +27,7 @@ const normalizar = (s: string) =>
 /** Publicado com todos os campos que o site exibe (a publicação exige todos). */
 type Completo = RegistroImovel & { finalidade: NonNullable<RegistroImovel["finalidade"]>; tipo: string; valor: number; area: number };
 
-function completo(r: RegistroImovel): r is Completo {
+export function completo(r: RegistroImovel): r is Completo {
   return r.finalidade !== null && r.tipo !== null && r.valor !== null && r.area !== null;
 }
 

@@ -162,7 +162,7 @@ describe("importarLoft", () => {
 
     const r = await importarLoft(amb.db, lista(), opcoes({ agora: new Date("2026-10-30T12:00:00Z") }));
 
-    expect(r).toMatchObject({ criados: [], atualizados: [], camposPreservados: [], indisponibilizados: [], excluidosNoPainel: [], fotosBaixadas: 0, fotosFalhas: [], exemplosRemovidos: [], oportunidade: null });
+    expect(r).toMatchObject({ criados: [], atualizados: [], camposPreservados: [], indisponibilizados: [], ausentesRascunho: [], excluidosNoPainel: [], fotosBaixadas: 0, fotosFalhas: [], exemplosRemovidos: [], oportunidade: null });
     expect(baixadas).toEqual([]);
     expect({ imoveis: await contar(imoveis), fotos: await contar(fotos), ligacoes: await contar(imovelFotos), controle: await contar(importacaoLoft) }).toEqual(antes);
     expect(memoria().objetos.size).toBe(objetos);
@@ -304,6 +304,46 @@ describe("importarLoft", () => {
     expect(r2.fotosFalhas).toEqual([{ referencia: "902", url: pdf, erro: expect.stringMatching(/tipo/i) }]);
     expect(await chavesDe(a.id)).toEqual(urls901.map((u) => chaveLoft("901", u)));
     expect(r2.atualizados).toEqual(["901"]);
+  });
+
+  test("rascunho que sumiu da rodada não vira indisponível (a página de indisponível é pública)", async () => {
+    await importarLoft(amb.db, lista(), opcoes());
+    const r = await importarLoft(amb.db, lista().filter((i) => i.referencia !== "906"), opcoes());
+    expect(r.indisponibilizados).toEqual([]);
+    expect(r.ausentesRascunho).toEqual(["906"]);
+    expect(await porRef("906")).toMatchObject({ situacao: "rascunho", publicadoEm: null });
+  });
+
+  test("Oportunidade só vai para um imóvel que a Home mostra (completo: tipo e área)", async () => {
+    // 905 é o de maior valor, publicado, à venda e com foto, mas sem área: não serve.
+    const r = await importarLoft(amb.db, mudar(lista(), "905", (i) => (i.area = null)), opcoes());
+    expect((await porRef("905")).situacao).toBe("publicado");
+    expect(r.oportunidade).toBe((await porRef("903")).id);
+
+    // A Oportunidade atual que ficou incompleta (sem tipo) também é trocada.
+    await amb.db.update(imoveis).set({ tipo: null }).where(eq(imoveis.referenciaLoft, "903"));
+    const r2 = await importarLoft(amb.db, mudar(lista(), "905", (i) => (i.area = null)), opcoes());
+    expect(r2.oportunidade).toBe((await porRef("904")).id);
+    expect(await oportunidade()).toBe((await porRef("904")).id);
+  });
+
+  test("campo sem entrada no snapshot: adota o do feed se a coluna está vazia; senão preserva", async () => {
+    await importarLoft(amb.db, lista(), opcoes());
+    for (const [ref, campo] of [["901", "andar"], ["903", "quartos"]] as const) {
+      const [ctl] = await amb.db.select().from(importacaoLoft).where(eq(importacaoLoft.referencia, ref));
+      const valores = { ...ctl.valores };
+      delete valores[campo];
+      await amb.db.update(importacaoLoft).set({ valores }).where(eq(importacaoLoft.referencia, ref));
+    }
+    await amb.db.update(imoveis).set({ andar: null }).where(eq(imoveis.referenciaLoft, "901"));
+
+    const r = await importarLoft(amb.db, mudar(lista(), "903", (i) => (i.quartos = 9)), opcoes());
+
+    expect((await porRef("901")).andar).toBe(7);
+    const [ctl] = await amb.db.select().from(importacaoLoft).where(eq(importacaoLoft.referencia, "901"));
+    expect(ctl.valores.andar).toBe(7);
+    expect(r.camposPreservados).toEqual([{ referencia: "903", campos: ["quartos"] }]);
+    expect((await porRef("903")).quartos).not.toBe(9);
   });
 
   test("lista vazia é recusada (feed vazio indisponibilizaria tudo)", async () => {

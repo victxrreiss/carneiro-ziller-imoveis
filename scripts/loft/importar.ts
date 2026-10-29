@@ -8,9 +8,10 @@
 //   (ninguém mexeu). Os outros ficam como a equipe deixou e vão para `camposPreservados`.
 //   As fotos contam como um campo: se a lista (ordem) mudou no painel, não são tocadas.
 // - Excluído no painel (`imovelId` nulo): não volta.
-// - Sumiu da rodada e o imóvel ainda é igual ao snapshot: vira indisponível.
+// - Sumiu da rodada: se foi importado como publicado e ainda é igual ao snapshot, vira
+//   indisponível; rascunho que sumiu não muda (`ausentesRascunho`), para não ganhar página pública.
 // - Primeira rodada: os 3 imóveis de exemplo saem, com as fotos deles (pelas chaves).
-// - Oportunidade vazia ou fora do ar: o publicado à venda de maior valor, com foto.
+// - Oportunidade vazia ou que a Home não mostra: o publicado completo à venda de maior valor, com foto.
 //
 // Apagar só alvos identificados: imóveis pelo id, fotos pelos ids (e só as sem vínculo).
 import { and, asc, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
@@ -18,6 +19,8 @@ import { createHash } from "node:crypto";
 import { assinaturaConfere, type ArmazenamentoFotos } from "../../src/lib/armazenamento";
 import type { Db } from "../../src/lib/dados/criar-conexao";
 import { fotos as tabFotos, imovelFotos, imoveis, importacaoLoft } from "../../src/lib/dados/esquema";
+import { carregarImovel } from "../../src/lib/dados/consultas";
+import { completo } from "../../src/lib/imoveis/catalogo";
 import { configuracao, descartarFotos, gravarConfiguracao, proximoCodigo } from "../../src/lib/painel/imoveis";
 import { LIMITES, TIPOS_FOTO, validarImovel, type EntradaImovel } from "../../src/lib/painel/regras";
 import { EXEMPLOS, sementeImoveis } from "../semente-imoveis";
@@ -31,6 +34,8 @@ export type Relatorio = {
   atualizados: string[];
   camposPreservados: { referencia: string; campos: string[] }[];
   indisponibilizados: string[];
+  /** Saíram da rodada, mas foram importados como rascunho: ficam como estão. */
+  ausentesRascunho: string[];
   excluidosNoPainel: string[];
   fotosBaixadas: number;
   fotosFalhas: { referencia: string; url: string; erro: string }[];
@@ -62,6 +67,9 @@ const CAMPOS = Object.keys(TODOS_OS_CAMPOS) as Campo[];
 
 type LinhaImovel = typeof imoveis.$inferSelect;
 type Valores = { [K in Campo]: LinhaImovel[K] };
+
+/** Valor de coluna vazia (o padrão: `null`, `""` ou lista vazia). */
+const vazio = (v: unknown) => v === null || v === "" || (Array.isArray(v) && v.length === 0);
 
 /** Igualdade exata no formato das colunas (arrays na ordem; `null` ≠ `""`). */
 const igual = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
@@ -194,7 +202,7 @@ export async function importarLoft(db: Db, lista: ImovelLoft[], o: OpcoesLoft): 
   if (!lista.length) throw new Error("Lista de imóveis vazia: nada foi alterado.");
   const agora = o.agora ?? new Date();
   const r: Relatorio = {
-    criados: [], atualizados: [], camposPreservados: [], indisponibilizados: [], excluidosNoPainel: [],
+    criados: [], atualizados: [], camposPreservados: [], indisponibilizados: [], ausentesRascunho: [], excluidosNoPainel: [],
     fotosBaixadas: 0, fotosFalhas: [], avisos: [], exemplosRemovidos: [], oportunidade: null,
   };
   const aviso = (referencia: string, texto: string) => r.avisos.push({ referencia, aviso: texto });
@@ -265,7 +273,9 @@ export async function importarLoft(db: Db, lista: ImovelLoft[], o: OpcoesLoft): 
       const mudar: Partial<Valores> = {};
       const preservados: string[] = [];
       for (const k of CAMPOS) {
-        if (!(k in anterior) || !igual(atual[k], anterior[k])) {
+        // Campo sem entrada no snapshot (chave nova de ImovelLoft): adota o do feed se a coluna está vazia.
+        const seguir = k in anterior ? igual(atual[k], anterior[k]) : vazio(atual[k]);
+        if (!seguir) {
           preservados.push(k);
           continue;
         }
@@ -310,10 +320,14 @@ export async function importarLoft(db: Db, lista: ImovelLoft[], o: OpcoesLoft): 
     await descartarFotos(db, fotosQueSairam, o.armazenamento);
   }
 
-  // Sumiu da rodada: indisponível, se ninguém mexeu no imóvel desde a última importação.
+  // Sumiu da rodada: indisponível, se foi importado publicado e ninguém mexeu nele desde então.
   for (const c of controle.values()) {
     if (vistos.has(c.referencia) || !c.imovelId) continue;
     const imovelId = c.imovelId;
+    const situacaoImportada = (c.valores as Partial<Valores>).situacao;
+    if (situacaoImportada === "rascunho") r.ausentesRascunho.push(c.referencia);
+    // Rascunho que sumiu não vira indisponível: a página de indisponível é pública e mostraria o código.
+    if (situacaoImportada !== "publicado") continue;
     const resultado = await db.transaction(async (tx) => {
       const [atual] = await tx.select().from(imoveis).where(eq(imoveis.id, imovelId)).for("update").limit(1);
       if (!atual) return "nada" as const;
@@ -330,18 +344,22 @@ export async function importarLoft(db: Db, lista: ImovelLoft[], o: OpcoesLoft): 
     if (resultado === "editado") aviso(c.referencia, "Saiu da Loft, mas foi editado no painel: a situação foi mantida.");
   }
 
-  // Oportunidade de hoje vazia ou fora do ar: o publicado à venda de maior valor, com foto.
+  // Oportunidade de hoje vazia ou que a Home não mostra (mesma regra de `oportunidadeDeHoje`):
+  // o publicado completo à venda de maior valor, com foto.
   const cfg = await configuracao(db);
-  const [op] = cfg.oportunidadeId ? await db.select({ situacao: imoveis.situacao }).from(imoveis).where(eq(imoveis.id, cfg.oportunidadeId)).limit(1) : [];
-  if (op?.situacao !== "publicado") {
+  const op = cfg.oportunidadeId ? await carregarImovel(db, cfg.oportunidadeId) : null;
+  if (!op || op.situacao !== "publicado" || !completo(op)) {
     const [melhor] = await db
       .select({ id: imoveis.id })
       .from(imoveis)
       .where(
         and(
           eq(imoveis.situacao, "publicado"),
+          // Os campos de `completo` (catalogo.ts): finalidade, tipo, valor e área.
           eq(imoveis.finalidade, "venda"),
+          isNotNull(imoveis.tipo),
           isNotNull(imoveis.valor),
+          isNotNull(imoveis.area),
           sql`exists (select 1 from imovel_fotos where imovel_fotos.imovel_id = ${imoveis.id})`,
         ),
       )
