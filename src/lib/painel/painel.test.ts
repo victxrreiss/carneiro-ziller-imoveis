@@ -10,6 +10,7 @@ import {
   abrirSessao,
   BLOQUEIO_MIN,
   convidar,
+  criarToken,
   definirSenha,
   definirSenhaProvisoria,
   desativar,
@@ -653,5 +654,28 @@ describe("senha provisória", () => {
     expect((await lerSessao(token, AGORA + 1000, amb.db)).usuario).toBeNull();
     expect(await amb.db.select().from(tentativasLogin).where(eq(tentativasLogin.email, amb.ricardo.email))).toHaveLength(0);
     expect(await amb.db.select().from(tokensSenha).where(eq(tokensSenha.usuarioId, amb.ricardo.id))).toHaveLength(0);
+  });
+
+  test("definirSenha por link de redefinição encerra o regime da provisória", async () => {
+    await gerar(amb.mariana.id);
+    const token = await criarToken(amb.db, amb.mariana.id, "redefinicao", AGORA);
+    const nova = `${amb.senha}-link`;
+    expect((await definirSenha(token, nova, nova, AGORA + 1000, amb.db)).ok).toBe(true);
+    expect((await entrar(amb.mariana.email, nova, AGORA + 73 * H, amb.db)).ok).toBe(true);
+    const sessao = await abrirSessao(amb.mariana.id, AGORA + 73 * H, amb.db);
+    expect((await lerSessao(sessao, AGORA + 73 * H, amb.db)).usuario?.trocarSenha).toBe(false);
+  });
+
+  test("trocarSenha (Minha conta) encerra o regime da provisória", async () => {
+    const provisoria = await gerar(amb.mariana.id);
+    const nova = `${amb.senha}-conta`;
+    expect(await trocarSenha(amb.mariana.id, provisoria, nova, nova, amb.db)).toEqual({ ok: true });
+    expect((await entrar(amb.mariana.email, nova, AGORA + 73 * H, amb.db)).ok).toBe(true);
+    const sessao = await abrirSessao(amb.mariana.id, AGORA + 73 * H, amb.db);
+    expect((await lerSessao(sessao, AGORA + 73 * H, amb.db)).usuario?.trocarSenha).toBe(false);
+  });
+
+  test("uuid bem formado que não existe é inexistente", async () => {
+    expect(await definirSenhaProvisoria(amb.admin, "00000000-0000-4000-8000-000000000000", AGORA, amb.db)).toEqual({ ok: false, erro: "inexistente" });
   });
 });

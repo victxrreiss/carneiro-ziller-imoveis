@@ -204,7 +204,13 @@ export async function definirSenha(
     if (!t) return { ok: false as const, expirado: true as const, tipo: leitura.tipo };
     const [u] = await tx
       .update(usuarios)
-      .set({ senhaHash, situacao: sql`case when ${usuarios.situacao} = 'pendente' then 'ativo'::situacao_usuario else ${usuarios.situacao} end` })
+      .set({
+        senhaHash,
+        situacao: sql`case when ${usuarios.situacao} = 'pendente' then 'ativo'::situacao_usuario else ${usuarios.situacao} end`,
+        // Senha nova escolhida pela própria pessoa encerra o regime da provisória.
+        trocarSenha: false,
+        senhaProvisoriaExpiraEm: null,
+      })
       .where(eq(usuarios.id, t.usuarioId))
       .returning();
     await tx.delete(tentativasLogin).where(eq(tentativasLogin.email, u.email));
@@ -376,7 +382,7 @@ export async function trocarSenha(
   }
   if (erros.atual || erros.nova || erros.confirmacao) return { ok: false, erros };
   if (!(await conferirSenha(atual, u.senhaHash))) return { ok: false, erros: { atual: "A senha atual está incorreta." } };
-  await db.update(usuarios).set({ senhaHash: await gerarHashSenha(nova) }).where(eq(usuarios.id, u.id));
+  await db.update(usuarios).set({ senhaHash: await gerarHashSenha(nova), trocarSenha: false, senhaProvisoriaExpiraEm: null }).where(eq(usuarios.id, u.id));
   return { ok: true };
 }
 
