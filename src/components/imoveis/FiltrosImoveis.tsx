@@ -11,6 +11,7 @@ import {
   FINALIDADES,
   filtrosParaQuery,
   MINIMOS_QUARTOS,
+  MINIMOS_SUITES,
   MINIMOS_VAGAS,
   rotulosFiltros,
   semFiltro,
@@ -18,6 +19,7 @@ import {
   type ChaveFiltro,
   type Filtros,
 } from "@/lib/imoveis/filtros";
+import { CARACTERISTICAS_FILTRO, rotuloCaracteristica } from "@/lib/imoveis/caracteristicas";
 import { Dropdown } from "./Dropdown";
 
 type Props = {
@@ -214,10 +216,42 @@ export function FiltrosImoveis({ filtros, onAplicar, contar, totalAtual }: Props
                     valor={ativos.vagas}
                     onChange={set("vagas")}
                   />
+                  <Dropdown
+                    rotulo="SUÍTES"
+                    vazio="Qualquer"
+                    opcoes={opcoesMinimo(MINIMOS_SUITES)}
+                    valor={ativos.suites}
+                    onChange={set("suites")}
+                  />
                   <button type="button" className="clear" disabled={chips.length === 0} onClick={() => onAplicar(LIMPOS)}>
                     <IcX size={14} stroke="currentColor" width={1.8} />
                     LIMPAR FILTROS
                   </button>
+                  <div className="f-carac" role="group" aria-label="Características">
+                    <span className="lbl" aria-hidden="true">
+                      CARACTERÍSTICAS
+                    </span>
+                    {CARACTERISTICAS_FILTRO.map((c) => {
+                      const marcada = ativos.carac?.includes(c) ?? false;
+                      return (
+                        <button
+                          key={c}
+                          type="button"
+                          className="tog"
+                          aria-pressed={marcada}
+                          onClick={() =>
+                            mudar({
+                              ...ativos,
+                              carac: marcada ? ativos.carac?.filter((x) => x !== c) : [...(ativos.carac ?? []), c],
+                              pagina: 1,
+                            })
+                          }
+                        >
+                          {rotuloCaracteristica(c)}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
               <div className="f-panel-foot">
@@ -235,11 +269,11 @@ export function FiltrosImoveis({ filtros, onAplicar, contar, totalAtual }: Props
                 <span className="chips-lbl">FILTROS ATIVOS</span>
                 {chips.map((c) => (
                   <button
-                    key={c.chave}
+                    key={`${c.chave}${c.valor ?? ""}`}
                     type="button"
                     className="chip"
                     aria-label={`Remover filtro ${c.rotulo}`}
-                    onClick={() => onAplicar(semFiltro(filtros, c.chave))}
+                    onClick={() => onAplicar(semFiltro(filtros, c.chave, c.valor))}
                   >
                     {c.rotulo}
                     <span className="x">

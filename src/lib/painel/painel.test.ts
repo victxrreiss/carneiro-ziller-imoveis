@@ -5,12 +5,14 @@ import { oportunidadeDeHoje } from "@/lib/imoveis/catalogo";
 import { remetente, type remetenteMemoria } from "@/lib/email";
 import { configuracaoSite, fotos, imovelFotos, imoveis, sessoes, tentativasLogin, tokensSenha, usuarios } from "@/lib/dados/esquema";
 import { criarAmbiente, type Ambiente } from "@/lib/dados/testes";
-import { conferirSenha, hashToken } from "@/lib/seguranca/senha";
+import { conferirSenha, gerarSenhaProvisoria, hashToken } from "@/lib/seguranca/senha";
 import {
   abrirSessao,
   BLOQUEIO_MIN,
   convidar,
+  criarToken,
   definirSenha,
+  definirSenhaProvisoria,
   desativar,
   entrar,
   lerSessao,
@@ -20,6 +22,7 @@ import {
   reativar,
   reenviarConvite,
   trocarSenha,
+  trocarSenhaObrigatoria,
 } from "./contas";
 import {
   avisoOportunidadeVazia,
@@ -30,7 +33,7 @@ import {
   prepararEnvioFoto,
   salvarImovel,
 } from "./imoveis";
-import type { EntradaImovel } from "./regras";
+import { erroNovaSenha, validarImovel, type EntradaImovel } from "./regras";
 
 let amb: Ambiente;
 beforeAll(async () => {
@@ -56,11 +59,16 @@ const contar = async (tabela: typeof usuarios | typeof imoveis | typeof fotos | 
 const vazia: EntradaImovel = {
   finalidade: "", lancamento: false, tipo: "", titulo: "", bairro: "", cidade: "", uf: "MG",
   valor: "", area: "", quartos: "", vagas: "", descricao: "", fotos: [], situacao: "rascunho",
+  banheiros: "", suites: "", areaTotal: "", condominio: "", iptu: "", valorLocacao: "", andar: "", anoConstrucao: "",
+  empreendimento: "", endereco: "", numero: "", complemento: "", cep: "", caracteristicas: [],
 };
 const completa: EntradaImovel = {
   ...vazia, finalidade: "venda", tipo: "Casa", titulo: "Casa no Sion", bairro: "Sion", cidade: "Belo Horizonte",
   valor: "2500000", area: "320", quartos: "4", descricao: "Casa ampla.\n\nPerto de tudo.",
 };
+
+/** Entrada publicável (os obrigatórios preenchidos). */
+const entradaValida = (): EntradaImovel => ({ ...completa });
 
 const JPG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 
@@ -76,6 +84,64 @@ async function fotoConfirmada(u = amb.mariana, bytes = JPG) {
 }
 
 describe("cadastro de imóvel", () => {
+  test("salva e relê os campos novos", async () => {
+    const r = await salvarImovel(
+      amb.admin, null,
+      { ...entradaValida(), banheiros: "3", suites: "2", areaTotal: "450", condominio: "1250", iptu: "4800", valorLocacao: "", andar: "4", anoConstrucao: "2015", empreendimento: "  Edifício   Soho ", endereco: "Rua X", numero: "110", complemento: "403", cep: "34006-083", caracteristicas: ["piscina", "invalida", "academia", "piscina"] },
+      "publicar", new Date(), amb.db,
+    );
+    if (!r.ok) throw new Error("esperava ok");
+    const ed = (await obterParaEdicao(amb.admin, r.id, amb.db))!;
+    expect(ed.entrada).toMatchObject({ banheiros: "3", suites: "2", areaTotal: "450", condominio: "1250", iptu: "4800", valorLocacao: "", andar: "4", anoConstrucao: "2015", empreendimento: "Edifício Soho", endereco: "Rua X", numero: "110", complemento: "403", cep: "34006-083" });
+    expect(ed.entrada.caracteristicas).toEqual(["piscina", "academia"]);
+    expect(ed.referenciaLoft).toBeNull();
+    const linha = (await listarImoveis(amb.admin, amb.db)).find((l) => l.id === r.id)!;
+    expect(linha).toMatchObject({ empreendimento: "Edifício Soho", referenciaLoft: null });
+  });
+
+  test("formatos inválidos dos campos novos são erro, vazio não é", () => {
+    const { erros } = validarImovel({ ...entradaValida(), suites: "dois", anoConstrucao: "1700", cep: "abc", condominio: "" }, "publicado");
+    expect(erros).toEqual({ suites: "Use só números.", anoConstrucao: "Ano inválido.", cep: "CEP inválido. Use 00000-000." });
+  });
+
+  test("valor de locação só com finalidade venda", () => {
+    const { erros } = validarImovel({ ...entradaValida(), finalidade: "locacao", valorLocacao: "5000" }, "publicado");
+    expect(erros.valorLocacao).toBe("Use o campo Valor mensal para imóveis de locação.");
+  });
+
+  test("textos acima de 120 caracteres são erro no próprio campo", () => {
+    const longo = "x".repeat(121);
+    for (const campo of ["empreendimento", "endereco", "numero", "complemento"] as const) {
+      const { erros } = validarImovel({ ...entradaValida(), [campo]: longo }, "publicado");
+      expect(erros).toEqual({ [campo]: "Use até 120 caracteres." });
+    }
+  });
+
+  test("CEP sem hífen é gravado com hífen", async () => {
+    const r = await salvarImovel(amb.admin, null, { ...entradaValida(), cep: "34006083" }, "publicar", new Date(), amb.db);
+    if (!r.ok) throw new Error("esperava ok");
+    expect((await obterParaEdicao(amb.admin, r.id, amb.db))!.entrada.cep).toBe("34006-083");
+  });
+
+  test("ano de construção: limites", () => {
+    const ano = new Date().getFullYear();
+    const erro = (v: number) => validarImovel({ ...entradaValida(), anoConstrucao: String(v) }, "publicado").erros.anoConstrucao;
+    expect(erro(ano + 5)).toBeUndefined();
+    expect(erro(ano + 6)).toBe("Ano inválido.");
+    expect(erro(1800)).toBeUndefined();
+    expect(erro(1799)).toBe("Ano inválido.");
+  });
+
+  test("limite dos números pequenos", () => {
+    expect(validarImovel({ ...entradaValida(), suites: "100" }, "publicado").erros.suites).toBe("Use só números.");
+  });
+
+  test("valor de locação é aceito com finalidade venda", async () => {
+    const r = await salvarImovel(amb.admin, null, { ...entradaValida(), finalidade: "venda", valorLocacao: "5000" }, "publicar", new Date(), amb.db);
+    if (!r.ok) throw new Error("esperava ok");
+    expect((await obterParaEdicao(amb.admin, r.id, amb.db))!.entrada.valorLocacao).toBe("5000");
+  });
+
   test("rascunho salva incompleto e não aparece no site", async () => {
     const r = await salvarImovel(amb.mariana, null, vazia, "rascunho", new Date(), amb.db);
     expect(r).toMatchObject({ ok: true, codigo: "CZ1036", situacao: "rascunho", novo: true });
@@ -474,6 +540,7 @@ describe("usuários", () => {
     caixa().falhar = true;
     const r = await convidar(amb.admin, "Fernanda Lima", "fernanda@exemplo.test", Date.now(), amb.db);
     expect(r).toMatchObject({ ok: false, erros: { email: expect.stringContaining("Reenviar convite") } });
+    expect(r).toMatchObject({ ok: false, erros: { email: expect.stringContaining("Definir senha provisória") } });
     expect(await amb.db.select().from(usuarios).where(eq(usuarios.email, "fernanda@exemplo.test"))).toHaveLength(1);
     expect(JSON.stringify(vi.mocked(console.error).mock.calls)).not.toContain("token=");
     caixa().falhar = false;
@@ -507,5 +574,109 @@ describe("usuários", () => {
   test("ids que não são uuid não chegam ao banco", async () => {
     expect(await desativar(amb.admin, "'; drop table usuarios;--", amb.db)).toBe(false);
     expect(await reativar("u3", amb.db)).toBe(false);
+  });
+});
+
+describe("senha provisória", () => {
+  const AGORA = Date.UTC(2026, 9, 29, 12, 0, 0);
+  const H = 3600_000;
+  const gerar = async (id: string) => {
+    const r = await definirSenhaProvisoria(amb.admin, id, AGORA, amb.db);
+    if (!r.ok) throw new Error("não gerou");
+    return r.senha;
+  };
+
+  test("gerarSenhaProvisoria: 12 caracteres sem ambíguos e válida na política", () => {
+    for (let i = 0; i < 50; i++) {
+      const s = gerarSenhaProvisoria();
+      expect(s).toMatch(/^[^0O1lI]{12}$/);
+      expect(s).toMatch(/^[A-Za-z2-9]{12}$/);
+      expect(erroNovaSenha(s)).toBeNull();
+    }
+  });
+
+  test("ADMIN gera, a pessoa entra e fica obrigada a trocar", async () => {
+    const r = await definirSenhaProvisoria(amb.admin, amb.juliana.id, AGORA, amb.db);
+    if (!r.ok) throw new Error();
+    expect(erroNovaSenha(r.senha)).toBeNull();
+    const e = await entrar(amb.juliana.email, r.senha, AGORA + 1000, amb.db);
+    expect(e.ok).toBe(true);
+    const token = await abrirSessao(amb.juliana.id, AGORA, amb.db);
+    expect((await lerSessao(token, AGORA + 1000, amb.db)).usuario?.trocarSenha).toBe(true);
+  });
+
+  test("provisória vencida não entra", async () => {
+    const senha = await gerar(amb.juliana.id);
+    expect(await entrar(amb.juliana.email, senha, AGORA + 73 * H, amb.db)).toEqual({ ok: false, erro: "credenciais" });
+    expect((await entrar(amb.juliana.email, senha, AGORA + 71 * H, amb.db)).ok).toBe(true);
+  });
+
+  test("depois da troca, a provisória não vale mais e a flag some", async () => {
+    const senha = await gerar(amb.juliana.id);
+    const nova = `${amb.senha}-nova`;
+    expect(await trocarSenhaObrigatoria(amb.juliana.id, nova, nova, amb.db)).toEqual({ ok: true });
+    expect(await entrar(amb.juliana.email, senha, AGORA + 1000, amb.db)).toEqual({ ok: false, erro: "credenciais" });
+    expect((await entrar(amb.juliana.email, nova, AGORA + 1000, amb.db)).ok).toBe(true);
+    const token = await abrirSessao(amb.juliana.id, AGORA, amb.db);
+    expect((await lerSessao(token, AGORA + 1000, amb.db)).usuario?.trocarSenha).toBe(false);
+    const [u] = await amb.db.select().from(usuarios).where(eq(usuarios.id, amb.juliana.id));
+    expect(u.senhaProvisoriaExpiraEm).toBeNull();
+    // Passado o prazo, a nova senha continua valendo.
+    expect((await entrar(amb.juliana.email, nova, AGORA + 100 * H, amb.db)).ok).toBe(true);
+  });
+
+  test("igual à provisória é recusada; validações de senha valem", async () => {
+    const senha = await gerar(amb.juliana.id);
+    const r = await trocarSenhaObrigatoria(amb.juliana.id, senha, senha, amb.db);
+    expect(r).toEqual({ ok: false, erros: { nova: "Use uma senha diferente da provisória." } });
+    const curta = await trocarSenhaObrigatoria(amb.juliana.id, "abc", "abc", amb.db);
+    expect(curta.ok === false && curta.erros.nova).toBeTruthy();
+    const dif = await trocarSenhaObrigatoria(amb.juliana.id, `${amb.senha}-x`, "outra", amb.db);
+    expect(dif.ok === false && dif.erros.confirmacao).toBeTruthy();
+  });
+
+  test("trocarSenhaObrigatoria exige a flag", async () => {
+    const r = await trocarSenhaObrigatoria(amb.mariana.id, `${amb.senha}-x`, `${amb.senha}-x`, amb.db);
+    expect(r.ok).toBe(false);
+    expect(await conferirSenha(amb.senha, (await amb.db.select().from(usuarios).where(eq(usuarios.id, amb.mariana.id)))[0].senhaHash)).toBe(true);
+  });
+
+  test("só ADMIN, nunca para si nem para ADMIN; desativado recusa", async () => {
+    expect(await definirSenhaProvisoria(amb.mariana, amb.ricardo.id, AGORA, amb.db)).toEqual({ ok: false, erro: "proibido" });
+    expect(await definirSenhaProvisoria(amb.admin, amb.admin.id, AGORA, amb.db)).toEqual({ ok: false, erro: "proibido" });
+    expect(await definirSenhaProvisoria(amb.admin, amb.paulo.id, AGORA, amb.db)).toEqual({ ok: false, erro: "desativado" });
+    expect(await definirSenhaProvisoria(amb.admin, "nao-e-uuid", AGORA, amb.db)).toEqual({ ok: false, erro: "inexistente" });
+  });
+
+  test("gerar de novo derruba sessões, tokens e bloqueio do usuário", async () => {
+    const token = await abrirSessao(amb.ricardo.id, AGORA, amb.db);
+    await amb.db.insert(tentativasLogin).values({ email: amb.ricardo.email, falhas: 3, bloqueadoAte: null });
+    await gerar(amb.ricardo.id);
+    expect((await lerSessao(token, AGORA + 1000, amb.db)).usuario).toBeNull();
+    expect(await amb.db.select().from(tentativasLogin).where(eq(tentativasLogin.email, amb.ricardo.email))).toHaveLength(0);
+    expect(await amb.db.select().from(tokensSenha).where(eq(tokensSenha.usuarioId, amb.ricardo.id))).toHaveLength(0);
+  });
+
+  test("definirSenha por link de redefinição encerra o regime da provisória", async () => {
+    await gerar(amb.mariana.id);
+    const token = await criarToken(amb.db, amb.mariana.id, "redefinicao", AGORA);
+    const nova = `${amb.senha}-link`;
+    expect((await definirSenha(token, nova, nova, AGORA + 1000, amb.db)).ok).toBe(true);
+    expect((await entrar(amb.mariana.email, nova, AGORA + 73 * H, amb.db)).ok).toBe(true);
+    const sessao = await abrirSessao(amb.mariana.id, AGORA + 73 * H, amb.db);
+    expect((await lerSessao(sessao, AGORA + 73 * H, amb.db)).usuario?.trocarSenha).toBe(false);
+  });
+
+  test("trocarSenha (Minha conta) encerra o regime da provisória", async () => {
+    const provisoria = await gerar(amb.mariana.id);
+    const nova = `${amb.senha}-conta`;
+    expect(await trocarSenha(amb.mariana.id, provisoria, nova, nova, amb.db)).toEqual({ ok: true });
+    expect((await entrar(amb.mariana.email, nova, AGORA + 73 * H, amb.db)).ok).toBe(true);
+    const sessao = await abrirSessao(amb.mariana.id, AGORA + 73 * H, amb.db);
+    expect((await lerSessao(sessao, AGORA + 73 * H, amb.db)).usuario?.trocarSenha).toBe(false);
+  });
+
+  test("uuid bem formado que não existe é inexistente", async () => {
+    expect(await definirSenhaProvisoria(amb.admin, "00000000-0000-4000-8000-000000000000", AGORA, amb.db)).toEqual({ ok: false, erro: "inexistente" });
   });
 });

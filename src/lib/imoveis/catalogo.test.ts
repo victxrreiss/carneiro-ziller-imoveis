@@ -124,3 +124,67 @@ describe("banco vazio (produção começa assim)", () => {
     expect(await listarIdsImoveis()).toEqual([]);
   });
 });
+
+describe("ficha completa e privacidade do endereço", () => {
+  const secreto = { endereco: "Rua Secreta", numero: "99", complemento: "1201", cep: "30000-000", referenciaLoft: "777" };
+
+  test("o Imovel público não tem endereço nem referência da Loft", async () => {
+    await mudar("cz1009", secreto);
+    const r = await obterImovel("cz1009");
+    if (r.situacao !== "disponivel") throw new Error("esperava disponível");
+    for (const k of ["endereco", "numero", "complemento", "cep", "referenciaLoft"]) expect(r.imovel).not.toHaveProperty(k);
+    expect(JSON.stringify(r.imovel)).not.toMatch(/Rua Secreta|30000-000|1201|777/);
+  });
+
+  test("busca pública não encontra pelo endereço nem pela referência", async () => {
+    await mudar("cz1009", secreto);
+    expect((await buscarImoveis({ q: "Rua Secreta", pagina: 1 })).total).toBe(0);
+    expect((await buscarImoveis({ q: "30000-000", pagina: 1 })).total).toBe(0);
+    expect((await buscarImoveis({ q: "777", pagina: 1 })).total).toBe(0);
+  });
+
+  test("a ficha traz os campos novos; característica desconhecida cai fora", async () => {
+    await mudar("cz1009", {
+      banheiros: 5,
+      suites: 3,
+      areaTotal: 500,
+      condominio: 4200,
+      iptu: 9000,
+      valorLocacao: 25000,
+      andar: 12,
+      anoConstrucao: 2015,
+      empreendimento: "Edifício Aurora",
+      caracteristicas: ["piscina", "inexistente", "academia"],
+    });
+    const r = await obterImovel("cz1009");
+    if (r.situacao !== "disponivel") throw new Error("esperava disponível");
+    expect(r.imovel).toMatchObject({ banheiros: 5, suites: 3, areaTotal: 500, condominio: 4200, iptu: 9000, valorLocacao: 25000, andar: 12, anoConstrucao: 2015, empreendimento: "Edifício Aurora" });
+    expect(r.imovel.caracteristicas).toEqual([
+      { chave: "piscina", rotulo: "Piscina" },
+      { chave: "academia", rotulo: "Academia" },
+    ]);
+  });
+
+  test("busca encontra pelo empreendimento", async () => {
+    await mudar("cz1009", { empreendimento: "Edifício Aurora" });
+    expect((await buscarImoveis({ q: "aurora", pagina: 1 })).itens.map((i) => i.id)).toEqual(["cz1009"]);
+  });
+
+  test("alugar inclui venda com valor de locação, e a faixa usa o valor de locação", async () => {
+    await mudar("cz1009", { valorLocacao: 12000 });
+    const r = await buscarImoveis({ finalidade: "alugar", preco: "10k-30k", pagina: 1 });
+    expect(r.itens.map((i) => i.id)).toContain("cz1009");
+    expect(r.itens.find((i) => i.id === "cz1009")?.valorLocacao).toBe(12000);
+    expect((await buscarImoveis({ finalidade: "alugar", preco: "60k+", pagina: 1 })).itens.map((i) => i.id)).not.toContain("cz1009");
+  });
+
+  test("filtros de suítes e características", async () => {
+    await mudar("cz1009", { suites: 2, caracteristicas: ["piscina", "academia"] });
+    await mudar("cz1010", { suites: 1, caracteristicas: ["piscina"] });
+    const ids = async (f: Filtros) => (await buscarImoveis(f)).itens.map((i) => i.id).sort();
+    expect(await ids({ suites: "2", pagina: 1 })).toEqual(["cz1009"]);
+    expect(await ids({ suites: "1", pagina: 1 })).toEqual(["cz1009", "cz1010"]);
+    expect(await ids({ carac: ["piscina"], pagina: 1 })).toEqual(["cz1009", "cz1010"]);
+    expect(await ids({ carac: ["piscina", "academia"], pagina: 1 })).toEqual(["cz1009"]);
+  });
+});

@@ -11,8 +11,7 @@ import { configBanco } from "../src/lib/config";
 import { criarConexao } from "../src/lib/dados/criar-conexao";
 import { usuarios } from "../src/lib/dados/esquema";
 import { importarImoveis } from "./importar-imoveis";
-
-export const EXEMPLOS = ["cz1001", "cz1009", "cz1010"];
+import { EXEMPLOS } from "./semente-imoveis";
 
 async function main() {
   const { db, fechar } = criarConexao(configBanco().urlDireta, { max: 1 });

@@ -7,6 +7,6 @@ import { sessaoAtual } from "@/lib/painel/sessao";
  */
 export default async function PainelAppLayout({ children }: LayoutProps<"/painel">) {
   const s = await sessaoAtual();
-  if (!s.usuario) return children;
+  if (!s.usuario || s.usuario.trocarSenha) return children;
   return <Shell usuario={{ nome: s.usuario.nome, papel: s.usuario.papel }}>{children}</Shell>;
 }

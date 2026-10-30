@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import {
   convidarAction,
+  definirSenhaProvisoriaAction,
   desativarAction,
   editarUsuarioAction,
   reativarAction,
@@ -13,7 +14,7 @@ import {
 import { Portal } from "@/components/ui/Portal";
 import { useDialog } from "@/components/ui/useDialog";
 import type { LinhaUsuario } from "@/lib/painel/contas";
-import { IcBloqueio, IcConvite, IcEditar, IcEmail, IcFechar, IcImoveis, IcMais, IcReativar, IcReticencias, IcUsuarios } from "../Icones";
+import { IcBloqueio, IcConta, IcConvite, IcEditar, IcEmail, IcFechar, IcImoveis, IcMais, IcReativar, IcReticencias, IcUsuarios } from "../Icones";
 import { Aviso, Confirmacao, ErroCampo } from "../ui";
 
 type Linha = LinhaUsuario & { ultimoTexto: string };
@@ -253,13 +254,69 @@ function GavetaUsuario({ gaveta, onFechar, onConcluido }: { gaveta: Gaveta; onFe
   );
 }
 
+function DialogoSenhaProvisoria({ nome, senha, onFechar }: { nome: string; senha: string; onFechar: () => void }) {
+  const painelRef = useRef<HTMLDivElement>(null);
+  const fecharRef = useRef<HTMLButtonElement>(null);
+  const [copiada, setCopiada] = useState<boolean | null>(null);
+  // Esc e clique fora não fecham: a senha só aparece uma vez.
+  useDialog({ aberto: true, onFechar: () => {}, painelRef, focoInicialRef: fecharRef });
+
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(senha);
+      setCopiada(true);
+    } catch {
+      setCopiada(false);
+    }
+  }
+
+  return (
+    <Portal>
+      <div className="scrim" />
+      <div ref={painelRef} className="pn-modal" role="dialog" aria-modal="true" aria-labelledby="pn-prov-t">
+        <div className="pn-modal-body">
+          <h2 id="pn-prov-t">Senha provisória</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <p>
+              Passe esta senha para <strong>{nome}</strong> por um canal seguro. No primeiro acesso, a pessoa precisa criar a própria senha.
+            </p>
+            <code className="pn-ro" style={{ userSelect: "all", fontSize: 18, letterSpacing: "0.04em", overflowWrap: "anywhere" }}>
+              {senha}
+            </code>
+            <div className="pn-warn">
+              <IcConta size={16} stroke="#0F1D24" width={1.6} />
+              <span>Ela aparece só agora. Vale por 72 horas.</span>
+            </div>
+            <span className="sr-only" aria-live="polite">
+              {copiada === true ? "Senha copiada." : copiada === false ? "Não foi possível copiar. Selecione o texto e copie." : ""}
+            </span>
+            {copiada === false && <p className="pn-hint">Não foi possível copiar. Selecione o texto e copie.</p>}
+            {copiada === true && <p className="pn-hint">Senha copiada.</p>}
+          </div>
+        </div>
+        <div className="pn-modal-foot">
+          <button type="button" className="btn btn-ghost" onClick={copiar}>
+            COPIAR
+          </button>
+          <button ref={fecharRef} type="button" className="btn" onClick={onFechar}>
+            CONCLUIR
+          </button>
+        </div>
+      </div>
+    </Portal>
+  );
+}
+
 export function ListaUsuarios({ usuarios, eu }: { usuarios: Linha[]; eu: string }) {
   const router = useRouter();
   const [gaveta, setGaveta] = useState<Gaveta | null>(null);
   const [desativar, setDesativar] = useState<Linha | null>(null);
+  const [confirmarProv, setConfirmarProv] = useState<Linha | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [ocupado, iniciar] = useTransition();
   const [erro, setErro] = useState<string | null>(null);
+  // A senha só existe neste estado; fechar o diálogo a descarta.
+  const [provisoria, setProvisoria] = useState<{ nome: string; senha: string } | null>(null);
 
   function executar(acao: () => Promise<boolean>, sucesso: string, depois?: () => void) {
     setErro(null);
@@ -282,6 +339,29 @@ export function ListaUsuarios({ usuarios, eu }: { usuarios: Linha[]; eu: string 
   }
 
   const reenviar = (u: Linha) => executar(() => reenviarConviteAction(u.id), `Convite reenviado para ${u.email}. O link anterior deixou de valer.`);
+  const pedirProvisoria = (u: Linha) => (u.situacao === "ativo" ? setConfirmarProv(u) : definirProvisoria(u));
+
+  function definirProvisoria(u: Linha) {
+    setErro(null);
+    iniciar(async () => {
+      try {
+        const r = await definirSenhaProvisoriaAction(u.id);
+        if (!r.ok) {
+          setConfirmarProv(null);
+          setErro(r.erro);
+          router.refresh();
+          return;
+        }
+        setConfirmarProv(null);
+        setProvisoria({ nome: u.nome, senha: r.senha });
+        router.refresh();
+      } catch {
+        setConfirmarProv(null);
+        setErro("Não foi possível concluir. A lista foi atualizada; tente de novo.");
+        router.refresh();
+      }
+    });
+  }
   const reativar = (u: Linha) => executar(() => reativarAction(u.id), `${u.nome} voltou a ter acesso ao painel.`);
 
   const ativos = usuarios.filter((u) => u.situacao === "ativo").length;
@@ -398,6 +478,14 @@ export function ListaUsuarios({ usuarios, eu }: { usuarios: Linha[]; eu: string 
                                 </button>
                               </MenuItem>
                             )}
+                            {u.situacao !== "desativado" && (
+                              <MenuItem as="li">
+                                <button type="button" onClick={() => pedirProvisoria(u)}>
+                                  <IcConta />
+                                  Definir senha provisória
+                                </button>
+                              </MenuItem>
+                            )}
                             {u.situacao !== "desativado" ? (
                               <MenuItem as="li">
                                 <button type="button" className="is-danger" onClick={() => setDesativar(u)}>
@@ -457,6 +545,11 @@ export function ListaUsuarios({ usuarios, eu }: { usuarios: Linha[]; eu: string 
                 {!souEu && u.situacao === "pendente" && (
                   <button type="button" className="btn-plain" disabled={ocupado} onClick={() => reenviar(u)}>
                     REENVIAR CONVITE
+                  </button>
+                )}
+                {!souEu && u.situacao !== "desativado" && (
+                  <button type="button" className="btn-plain" disabled={ocupado} onClick={() => pedirProvisoria(u)}>
+                    SENHA PROVISÓRIA
                   </button>
                 )}
                 {!souEu && u.situacao !== "desativado" && (
@@ -529,6 +622,20 @@ export function ListaUsuarios({ usuarios, eu }: { usuarios: Linha[]; eu: string 
           }}
         />
       )}
+
+      {confirmarProv && (
+        <Confirmacao
+          titulo={`Definir senha provisória para ${confirmarProv.nome}?`}
+          rotuloConfirmar="CONTINUAR"
+          ocupado={ocupado}
+          onCancelar={() => !ocupado && setConfirmarProv(null)}
+          onConfirmar={() => definirProvisoria(confirmarProv)}
+        >
+          <p>Isso troca a senha atual de {primeiro(confirmarProv.nome)} e encerra as sessões abertas. Continuar?</p>
+        </Confirmacao>
+      )}
+
+      {provisoria && <DialogoSenhaProvisoria nome={provisoria.nome} senha={provisoria.senha} onFechar={() => setProvisoria(null)} />}
 
       {aviso && <Aviso titulo={aviso} onFechar={() => setAviso(null)} />}
     </>

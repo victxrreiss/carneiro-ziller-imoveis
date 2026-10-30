@@ -43,9 +43,10 @@
 .cz .im-title{margin:0;font-family:var(--serif);font-weight:400;font-size:clamp(30px,2.8vw,40px);line-height:1.08;color:var(--azul-noite)}
 .cz .im-loc{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--cinza)}
 .cz .im-loc svg{flex:none}
-.cz .im-specs{display:flex;margin:4px 0 0;padding:0;border-top:1px solid var(--areia);border-bottom:1px solid var(--areia)}
+.cz .im-specs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:4px 0 0;padding:0;border-top:1px solid var(--areia);border-bottom:1px solid var(--areia)}
 .cz .im-spec{flex:1 1 0;min-width:0;padding:16px 0 16px 16px;border-left:1px solid var(--areia);display:flex;flex-direction:column;gap:4px}
-.cz .im-spec:first-child{padding-left:0;border-left:none}
+.cz .im-spec:nth-child(3n+1){padding-left:0;border-left:none}
+.cz .im-spec:nth-child(n+4){border-top:1px solid var(--areia)}
 .cz .im-spec dt{font-size:10px;letter-spacing:.22em;color:var(--cinza)}
 .cz .im-spec dd{margin:0;font-size:17px;font-weight:500;color:var(--grafite);font-variant-numeric:tabular-nums}
 .cz .im-price{display:flex;flex-direction:column;gap:2px;padding-top:6px}
@@ -60,6 +61,19 @@
 .cz .im-desc{margin-top:64px;display:flex;flex-direction:column;gap:16px;max-width:680px}
 .cz .im-h2{margin:0;font-family:var(--serif);font-weight:400;font-size:clamp(28px,2.6vw,36px);line-height:1.1;color:var(--azul-noite)}
 .cz .im-desc p{margin:0;font-size:16px;line-height:1.8;color:var(--texto-secundario)}
+/* Valores, detalhes e características */
+.cz .im-vals{margin:0;padding:0;display:flex;flex-direction:column}
+.cz .im-val{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--areia);font-size:14px}
+.cz .im-val dt{font-size:10px;letter-spacing:.22em;color:var(--cinza);align-self:center}
+.cz .im-val dd{margin:0;font-weight:500;color:var(--grafite);font-variant-numeric:tabular-nums}
+.cz .im-det{margin-top:48px;display:flex;flex-direction:column;gap:16px;max-width:680px}
+.cz .im-det-list{margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0 24px}
+.cz .im-det-list div{padding:12px 0;border-bottom:1px solid var(--areia);display:flex;flex-direction:column;gap:4px}
+.cz .im-det-list dt{font-size:10px;letter-spacing:.22em;color:var(--cinza)}
+.cz .im-det-list dd{margin:0;font-size:15px;color:var(--grafite)}
+.cz .im-carac{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px 24px}
+.cz .im-carac li{font-size:15px;color:var(--texto-secundario);padding-left:14px;position:relative}
+.cz .im-carac li::before{content:"";position:absolute;left:0;top:.7em;width:5px;height:5px;background:var(--vinho)}
 /* Barra de ação fixa (mobile) */
 .cz .im-bar{display:none}
 /* Skeleton */

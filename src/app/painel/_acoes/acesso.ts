@@ -3,9 +3,9 @@
 // Server Actions das telas de acesso (Entrar, Esqueci minha senha, Definir senha) e Sair.
 import { redirect } from "next/navigation";
 import { after } from "next/server";
-import { definirSenha, entrar, pedirRedefinicao, type ErrosSenha } from "@/lib/painel/contas";
+import { definirSenha, entrar, pedirRedefinicao, trocarSenhaObrigatoria, type ErrosSenha } from "@/lib/painel/contas";
 import { emailValido } from "@/lib/painel/regras";
-import { iniciarSessao, terminarSessao } from "@/lib/painel/sessao";
+import { iniciarSessao, sessaoAtual, terminarSessao } from "@/lib/painel/sessao";
 import type { TipoToken } from "@/lib/dados/tipos";
 import { destinoSeguro, painel } from "@/lib/routes";
 
@@ -35,6 +35,7 @@ export async function entrarAction(anterior: EstadoEntrar, fd: FormData): Promis
   const r = await entrar(email, senha);
   if (!r.ok) return { email, credenciais: r.erro === "credenciais", bloqueado: r.erro === "bloqueado", tentativa };
   await iniciarSessao(r.usuario.id);
+  if (r.usuario.trocarSenha) redirect(painel.trocarSenha);
   redirect(destinoSeguro(texto(fd, "voltar") || undefined));
 }
 
@@ -65,4 +66,15 @@ export async function definirSenhaAction(anterior: EstadoDefinirSenha, fd: FormD
   if (r.ok) return { situacao: "sucesso", email: r.email };
   if ("expirado" in r) return { situacao: "expirado", tipo: r.tipo };
   return { situacao: "form", erros: r.erros, tentativa: (anterior.situacao === "form" ? anterior.tentativa : 0) + 1 };
+}
+
+export type EstadoTrocaObrigatoria = { erros: ErrosSenha; tentativa: number };
+
+/** Lê a sessão sem `usuarioDaAcao` (que mandaria de volta para esta mesma tela). */
+export async function trocarSenhaObrigatoriaAction(anterior: EstadoTrocaObrigatoria, fd: FormData): Promise<EstadoTrocaObrigatoria> {
+  const s = await sessaoAtual();
+  if (!s.usuario) redirect(s.motivo === "expirada" ? painel.entrarExpirada() : painel.entrar);
+  const r = await trocarSenhaObrigatoria(s.usuario.id, texto(fd, "nova"), texto(fd, "confirmacao"));
+  if (!r.ok) return { erros: r.erros, tentativa: anterior.tentativa + 1 };
+  redirect(painel.imoveis);
 }

@@ -37,6 +37,7 @@ export const painel = {
     `/painel/entrar?motivo=sessao-expirada${voltar ? `&voltar=${encodeURIComponent(voltar)}` : ""}`,
   esqueci: "/painel/esqueci-senha",
   definirSenha: "/painel/definir-senha",
+  trocarSenha: "/painel/trocar-senha",
   imoveis: "/painel/imoveis",
   novoImovel: "/painel/imoveis/novo",
   imovel: (id: string) => `/painel/imoveis/${encodeURIComponent(id)}`,
@@ -46,7 +47,7 @@ export const painel = {
 
 /** Só caminhos do painel servem de destino depois de entrar (evita redirecionamento aberto). */
 export function destinoSeguro(voltar: string | undefined): string {
-  return voltar && /^\/painel\/(?!entrar|esqueci-senha|definir-senha)[\w\-/]*$/.test(voltar) ? voltar : painel.imoveis;
+  return voltar && /^\/painel\/(?!entrar|esqueci-senha|definir-senha|trocar-senha)[\w\-/]*$/.test(voltar) ? voltar : painel.imoveis;
 }
 
 export type NavKey = "home" | "lancamentos" | "imoveis" | "contato" | "sobre";

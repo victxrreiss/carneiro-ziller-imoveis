@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { salvarImovelAction, type RespostaSalvar } from "@/app/painel/_acoes/imoveis";
 import type { Finalidade, SituacaoImovel } from "@/lib/dados/tipos";
+import { CARACTERISTICAS } from "@/lib/imoveis/caracteristicas";
 import { TIPOS } from "@/lib/imoveis/filtros";
 import { data, dataHora } from "@/lib/painel/datas";
 import type { ImovelEdicao } from "@/lib/painel/imoveis";
@@ -30,6 +31,20 @@ type Campos = {
   area: string;
   quartos: string;
   vagas: string;
+  banheiros: string;
+  suites: string;
+  areaTotal: string;
+  condominio: string;
+  iptu: string;
+  valorLocacao: string;
+  andar: string;
+  anoConstrucao: string;
+  empreendimento: string;
+  endereco: string;
+  numero: string;
+  complemento: string;
+  cep: string;
+  caracteristicas: string[];
   descricao: string;
   situacao: SituacaoImovel;
   responsavelId: string;
@@ -48,6 +63,20 @@ const NOMES: Record<keyof Campos | "fotos", string> = {
   area: "a área",
   quartos: "os quartos",
   vagas: "as vagas",
+  banheiros: "os banheiros",
+  suites: "as suítes",
+  areaTotal: "a área total",
+  condominio: "o condomínio",
+  iptu: "o IPTU",
+  valorLocacao: "o valor de locação",
+  andar: "o andar",
+  anoConstrucao: "o ano de construção",
+  empreendimento: "o empreendimento",
+  endereco: "o endereço",
+  numero: "o número",
+  complemento: "o complemento",
+  cep: "o CEP",
+  caracteristicas: "as características",
   descricao: "a descrição",
   fotos: "as fotos",
   situacao: "a situação",
@@ -66,6 +95,19 @@ const ID_CAMPO: Record<CampoImovel, string> = {
   area: "pn-f-area",
   quartos: "pn-f-quartos",
   vagas: "pn-f-vagas",
+  banheiros: "pn-f-banheiros",
+  suites: "pn-f-suites",
+  areaTotal: "pn-f-area-total",
+  condominio: "pn-f-condominio",
+  iptu: "pn-f-iptu",
+  valorLocacao: "pn-f-valor-locacao",
+  andar: "pn-f-andar",
+  anoConstrucao: "pn-f-ano",
+  empreendimento: "pn-f-empreendimento",
+  endereco: "pn-f-endereco",
+  numero: "pn-f-numero",
+  complemento: "pn-f-complemento",
+  cep: "pn-f-cep",
   descricao: "pn-f-desc",
   fotos: "pn-fotos",
 };
@@ -89,6 +131,20 @@ function camposDe(imovel: ImovelEdicao | null, usuarioId: string): Campos {
     area: e?.area ?? "",
     quartos: e?.quartos ?? "",
     vagas: e?.vagas ?? "",
+    banheiros: e?.banheiros ?? "",
+    suites: e?.suites ?? "",
+    areaTotal: e?.areaTotal ?? "",
+    condominio: e?.condominio ?? "",
+    iptu: e?.iptu ?? "",
+    valorLocacao: e?.valorLocacao ?? "",
+    andar: e?.andar ?? "",
+    anoConstrucao: e?.anoConstrucao ?? "",
+    empreendimento: e?.empreendimento ?? "",
+    endereco: e?.endereco ?? "",
+    numero: e?.numero ?? "",
+    complemento: e?.complemento ?? "",
+    cep: e?.cep ?? "",
+    caracteristicas: e?.caracteristicas ?? [],
     descricao: e?.descricao ?? "",
     situacao: imovel?.situacao ?? "rascunho",
     responsavelId: imovel?.responsavelId ?? usuarioId,
@@ -311,6 +367,8 @@ export function FormImovel({
         salvo?.id ?? null,
         {
           ...c,
+          // Valor de locação só existe para imóvel à venda.
+          valorLocacao: c.finalidade === "venda" ? c.valorLocacao : "",
           fotos: fotos.map((f) => ({ id: f.id!, alt: f.alt })),
           responsavelId: usuario.admin ? c.responsavelId : undefined,
           oportunidade: usuario.admin ? c.oportunidade && podeMarcarOportunidade : undefined,
@@ -408,6 +466,68 @@ export function FormImovel({
       {erroDe(k) && <ErroCampo id={`${ID_CAMPO[k]}-err`}>{erroDe(k)}</ErroCampo>}
     </div>
   );
+
+  type CampoNumero = "quartos" | "vagas" | "condominio" | "iptu" | "valorLocacao" | "areaTotal" | "banheiros" | "suites" | "andar" | "anoConstrucao";
+  /** Número só com dígitos; `milhar` mostra o ponto de milhar como o campo Valor. */
+  const campoNumero = (k: CampoNumero, rotulo: string, max: number, milharOn: boolean, opcional = true) => (
+    <div className={classeCampo(k)}>
+      <label className="im-lbl" htmlFor={ID_CAMPO[k]}>
+        {rotulo}
+        {opcional && <span className="pn-opt">opcional</span>}
+      </label>
+      {so ? (
+        <div className="pn-ro">{c[k] ? (milharOn ? milhar(c[k]) : c[k]) : "—"}</div>
+      ) : (
+        <input
+          id={ID_CAMPO[k]}
+          className="im-input"
+          type="text"
+          inputMode="numeric"
+          value={milharOn ? milhar(c[k]) : c[k]}
+          onChange={(e) => mudar(k, digitos(e.target.value).slice(0, max))}
+          aria-invalid={erros[k] ? true : undefined}
+          aria-describedby={descr(k)}
+        />
+      )}
+      {erroDe(k) && <ErroCampo id={`${ID_CAMPO[k]}-err`}>{erroDe(k)}</ErroCampo>}
+    </div>
+  );
+
+  type CampoLivre = "empreendimento" | "endereco" | "numero" | "complemento" | "cep";
+  const campoLivre = (k: CampoLivre, rotulo: string, max: number, extra = "", placeholder?: string) => (
+    <div className={classeCampo(k, extra)}>
+      <label className="im-lbl" htmlFor={ID_CAMPO[k]}>
+        {rotulo}
+        <span className="pn-opt">opcional</span>
+      </label>
+      {so ? (
+        <div className="pn-ro">{c[k] || "—"}</div>
+      ) : (
+        <input
+          id={ID_CAMPO[k]}
+          className="im-input"
+          type="text"
+          maxLength={max}
+          placeholder={placeholder}
+          value={c[k]}
+          onChange={(e) => mudar(k, e.target.value)}
+          aria-invalid={erros[k] ? true : undefined}
+          aria-describedby={descr(k)}
+        />
+      )}
+      {erroDe(k) && <ErroCampo id={`${ID_CAMPO[k]}-err`}>{erroDe(k)}</ErroCampo>}
+    </div>
+  );
+
+  function alternarCaracteristica(chave: string, marcada: boolean) {
+    const conjunto = new Set(c.caracteristicas);
+    if (marcada) conjunto.add(chave);
+    else conjunto.delete(chave);
+    mudar(
+      "caracteristicas",
+      CARACTERISTICAS.map((x) => x.chave).filter((x) => conjunto.has(x)),
+    );
+  }
 
   const botoesDesktop = (
     <div className="pn-btns">
@@ -546,7 +666,17 @@ export function FormImovel({
                 </div>
                 {novo && <p className="pn-hint">O sistema gera o código no formato CZ#### ao salvar.</p>}
               </div>
-              <div className={classeCampo("finalidade", "pn-span2")} id="pn-f-fin">
+              {salvo?.referenciaLoft && (
+                <div className="im-field">
+                  <span className="im-lbl" id="pn-l-loft">
+                    REF. LOFT
+                  </span>
+                  <div className="pn-ro is-code" aria-labelledby="pn-l-loft">
+                    {salvo.referenciaLoft}
+                  </div>
+                </div>
+              )}
+              <div className={classeCampo("finalidade", salvo?.referenciaLoft ? "" : "pn-span2")} id="pn-f-fin">
                 <span className="im-lbl" id="pn-l-fin">
                   FINALIDADE <span className="req" aria-hidden="true">*</span>
                 </span>
@@ -607,6 +737,7 @@ export function FormImovel({
               )}
               {campoTexto("titulo", "TÍTULO", "pn-span2", "Ex.: Apartamento no Belvedere")}
             </div>
+            <div className="pn-row is-2">{campoLivre("empreendimento", "EMPREENDIMENTO", LIMITES.textoCurto, "", "Ex.: Residencial Aurora")}</div>
             <div className="im-field">
               <span className="im-lbl" id="pn-l-lanc">
                 LANÇAMENTO<span className="pn-opt">opcional</span>
@@ -674,13 +805,13 @@ export function FormImovel({
             </div>
           </section>
 
-          {/* 3. Valor e medidas */}
+          {/* 3. Valores e medidas */}
           <section className="pn-section" aria-labelledby="pn-s3">
             <div className="pn-section-h">
-              <h2 id="pn-s3">Valor e medidas</h2>
-              <p>Quartos e vagas são opcionais: deixe em branco para terreno, sala ou laje. O site só mostra o que estiver preenchido.</p>
+              <h2 id="pn-s3">Valores e medidas</h2>
+              <p>Tudo é opcional, exceto valor e área privativa. Deixe em branco o que não se aplica (terreno, sala, laje): o site só mostra o que estiver preenchido.</p>
             </div>
-            <div className="pn-row is-val">
+            <div className={c.finalidade === "venda" ? "pn-row is-4" : "pn-row"}>
               <div className={classeCampo("valor")}>
                 <label className="im-lbl" htmlFor="pn-f-valor">
                   {valorRotulo} <span className="req" aria-hidden="true">*</span>
@@ -713,56 +844,80 @@ export function FormImovel({
                 </p>
                 {erros.valor && <ErroCampo id="pn-f-valor-err">{erros.valor}</ErroCampo>}
               </div>
+              {campoNumero("condominio", "CONDOMÍNIO (R$/MÊS)", 9, true)}
+              {campoNumero("iptu", "IPTU (R$/ANO)", 9, true)}
+              {c.finalidade === "venda" && campoNumero("valorLocacao", "VALOR DE LOCAÇÃO", 9, true)}
+            </div>
+            <div className="pn-row is-4">
               <div className={classeCampo("area")}>
                 <label className="im-lbl" htmlFor="pn-f-area">
-                  ÁREA <span className="req" aria-hidden="true">*</span>
+                  ÁREA PRIVATIVA (M²) <span className="req" aria-hidden="true">*</span>
                 </label>
                 {so ? (
                   <div className="pn-ro">{c.area ? `${milhar(c.area)} m²` : "—"}</div>
                 ) : (
-                  <div className="pn-affix is-suffix">
-                    <input
-                      id="pn-f-area"
-                      className="im-input"
-                      type="text"
-                      inputMode="numeric"
-                      value={milhar(c.area)}
-                      onChange={(e) => mudar("area", digitos(e.target.value).slice(0, 7))}
-                      aria-required="true"
-                      aria-invalid={erros.area ? true : undefined}
-                      aria-describedby={descr("area")}
-                    />
-                    <span className="pn-affix-txt" aria-hidden="true">
-                      m²
-                    </span>
-                  </div>
+                  <input
+                    id="pn-f-area"
+                    className="im-input"
+                    type="text"
+                    inputMode="numeric"
+                    value={milhar(c.area)}
+                    onChange={(e) => mudar("area", digitos(e.target.value).slice(0, 7))}
+                    aria-required="true"
+                    aria-invalid={erros.area ? true : undefined}
+                    aria-describedby={descr("area")}
+                  />
                 )}
                 {erros.area && <ErroCampo id="pn-f-area-err">{erros.area}</ErroCampo>}
               </div>
-              {(["quartos", "vagas"] as const).map((k) => (
-                <div key={k} className={classeCampo(k)}>
-                  <label className="im-lbl" htmlFor={ID_CAMPO[k]}>
-                    {k === "quartos" ? "QUARTOS" : "VAGAS"}
-                    <span className="pn-opt">opcional</span>
-                  </label>
-                  {so ? (
-                    <div className="pn-ro">{c[k] || "—"}</div>
-                  ) : (
-                    <input
-                      id={ID_CAMPO[k]}
-                      className="im-input"
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={2}
-                      value={c[k]}
-                      onChange={(e) => mudar(k, digitos(e.target.value).slice(0, 2))}
-                      aria-invalid={erros[k] ? true : undefined}
-                      aria-describedby={descr(k)}
-                    />
-                  )}
-                  {erros[k] && <ErroCampo id={`${ID_CAMPO[k]}-err`}>{erros[k]}</ErroCampo>}
-                </div>
-              ))}
+              {campoNumero("areaTotal", "ÁREA TOTAL (M²)", 7, true)}
+              {campoNumero("quartos", "QUARTOS", 2, false)}
+              {campoNumero("suites", "SUÍTES", 2, false)}
+              {campoNumero("banheiros", "BANHEIROS", 2, false)}
+              {campoNumero("vagas", "VAGAS", 2, false)}
+              {campoNumero("andar", "ANDAR", 2, false)}
+              {campoNumero("anoConstrucao", "ANO DE CONSTRUÇÃO", 4, false)}
+            </div>
+          </section>
+
+          {/* 3b. Características */}
+          <section className="pn-section" aria-labelledby="pn-s-car">
+            <div className="pn-section-h">
+              <h2 id="pn-s-car">Características</h2>
+              <p>Marque o que o imóvel ou o condomínio oferece. Aparece na página do imóvel e alimenta os filtros do site.</p>
+            </div>
+            {so ? (
+              <div className="pn-ro is-text">
+                {CARACTERISTICAS.filter((x) => c.caracteristicas.includes(x.chave))
+                  .map((x) => x.rotulo)
+                  .join(", ") || "—"}
+              </div>
+            ) : (
+              <div className="pn-checks" role="group" aria-labelledby="pn-s-car">
+                {CARACTERISTICAS.map((x) => {
+                  const marcada = c.caracteristicas.includes(x.chave);
+                  return (
+                    <label key={x.chave} className={marcada ? "pn-check is-on" : "pn-check"}>
+                      <input type="checkbox" checked={marcada} onChange={(e) => alternarCaracteristica(x.chave, e.target.checked)} />
+                      <span>{x.rotulo}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          {/* 3c. Endereço (interno) */}
+          <section className="pn-section" aria-labelledby="pn-s-end">
+            <div className="pn-section-h">
+              <h2 id="pn-s-end">Endereço (uso interno — não aparece no site)</h2>
+              <p>Só a equipe vê. O site mostra apenas bairro, cidade e UF.</p>
+            </div>
+            <div className="pn-row">
+              {campoLivre("endereco", "ENDEREÇO", LIMITES.textoCurto, "pn-span2")}
+              {campoLivre("numero", "NÚMERO", 20)}
+              {campoLivre("complemento", "COMPLEMENTO", LIMITES.textoCurto, "pn-span2")}
+              {campoLivre("cep", "CEP", 9, "", "00000-000")}
             </div>
           </section>
 

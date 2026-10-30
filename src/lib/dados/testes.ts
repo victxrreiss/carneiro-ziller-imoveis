@@ -40,11 +40,11 @@ export async function criarAmbiente(): Promise<Ambiente> {
   const amb = { db, senha } as Ambiente;
 
   amb.reiniciar = async (opcoes = {}) => {
-    await db.execute(sql`truncate usuarios, imoveis, fotos, imovel_fotos, sessoes, tokens_senha, tentativas_login, configuracao_site, interesses, limites_envio restart identity cascade`);
+    await db.execute(sql`truncate usuarios, imoveis, importacao_loft, fotos, imovel_fotos, sessoes, tokens_senha, tentativas_login, configuracao_site, interesses, limites_envio restart identity cascade`);
     await db.execute(sql`alter sequence imovel_codigo_seq restart with 1001`);
     const criar = async (nome: string, email: string, extra: Partial<typeof usuarios.$inferInsert>) => {
       const [u] = await db.insert(usuarios).values({ nome, email, papel: "corretor", situacao: "ativo", senhaHash: hash, ...extra }).returning();
-      return { id: u.id, nome: u.nome, email: u.email, papel: u.papel } satisfies UsuarioLogado;
+      return { id: u.id, nome: u.nome, email: u.email, papel: u.papel, trocarSenha: false } satisfies UsuarioLogado;
     };
     amb.admin = await criar("Ana Admin", "admin@exemplo.test", { papel: "admin" });
     amb.mariana = await criar("Mariana Costa", "mariana@exemplo.test", {});

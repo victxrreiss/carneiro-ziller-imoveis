@@ -11,6 +11,8 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    // O PGlite com as migrações demora a subir quando muitos arquivos rodam em paralelo.
+    hookTimeout: 30_000,
     setupFiles: ["./vitest.setup.ts"],
     include: ["src/**/*.test.{ts,tsx}", "scripts/**/*.test.ts"],
   },

@@ -22,14 +22,21 @@ export async function sessaoAtual(): Promise<LeituraSessao> {
 /** Para páginas: sem sessão vai para Entrar; sessão expirada avisa. Nos dois casos, volta para `voltar` depois. */
 export async function exigirUsuario(voltar: string): Promise<UsuarioLogado> {
   const s = await sessaoAtual();
-  if (s.usuario) return s.usuario;
+  if (s.usuario) {
+    // Entrou com senha provisória: nada do painel antes de criar a própria senha.
+    if (s.usuario.trocarSenha) redirect(painel.trocarSenha);
+    return s.usuario;
+  }
   redirect(s.motivo === "expirada" ? painel.entrarExpirada(voltar) : painel.entrarVoltando(voltar));
 }
 
 /** Para Server Actions: a permissão é conferida de novo em cada chamada. */
 export async function usuarioDaAcao(): Promise<UsuarioLogado> {
   const s = await sessaoAtual();
-  if (s.usuario) return s.usuario;
+  if (s.usuario) {
+    if (s.usuario.trocarSenha) redirect(painel.trocarSenha);
+    return s.usuario;
+  }
   redirect(s.motivo === "expirada" ? painel.entrarExpirada() : painel.entrar);
 }
 

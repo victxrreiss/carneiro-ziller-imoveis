@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { excluirImovelAction } from "@/app/painel/_acoes/imoveis";
 import type { SituacaoImovel } from "@/lib/dados/tipos";
+import { TIPOS } from "@/lib/imoveis/filtros";
 import { formatarReais } from "@/lib/imoveis/formato";
 import type { LinhaImovel } from "@/lib/painel/imoveis";
 import { painel, routes } from "@/lib/routes";
@@ -16,7 +17,7 @@ import { Aviso, Confirmacao, Selecao, type Opcao } from "../ui";
 export type LinhaLista = LinhaImovel & { data: string; hora: string };
 type Usuario = { id: string; nome: string; admin: boolean };
 
-const POR_PAGINA = 20;
+const POR_PAGINA = 30;
 
 const SITUACAO: Record<SituacaoImovel, { rotulo: string; cls: string }> = {
   publicado: { rotulo: "PUBLICADO", cls: "pn-status is-pub" },
@@ -67,6 +68,8 @@ export function ListaImoveis({ linhas, usuario, avisoOportunidade }: { linhas: L
   const [sit, setSit] = useState("");
   const [fin, setFin] = useState("");
   const [resp, setResp] = useState("");
+  const [tipo, setTipo] = useState("");
+  const [cidade, setCidade] = useState("");
   const [lanc, setLanc] = useState(false);
   const [pagina, setPagina] = useState(1);
   const [excluir, setExcluir] = useState<LinhaLista | null>(null);
@@ -87,23 +90,33 @@ export function ListaImoveis({ linhas, usuario, avisoOportunidade }: { linhas: L
     ];
   }, [todas, usuario]);
 
+  const cidades: Opcao[] = useMemo(
+    () => [
+      { valor: "", rotulo: "Todas as cidades" },
+      ...[...new Set(todas.map((l) => l.cidade).filter(Boolean))].sort((a, b) => a.localeCompare(b)).map((c) => ({ valor: c, rotulo: c })),
+    ],
+    [todas],
+  );
+
   const filtradas = useMemo(() => {
     const termo = normalizar(q);
     return todas.filter(
       (l) =>
-        (!termo || normalizar(`${l.codigo} ${l.titulo}`).includes(termo)) &&
+        (!termo || normalizar(`${l.codigo} ${l.titulo} ${l.bairro} ${l.empreendimento ?? ""} ${l.referenciaLoft ?? ""}`).includes(termo)) &&
         (!sit || l.situacao === sit) &&
         (!fin || l.finalidade === fin) &&
         (!resp || l.responsavelId === resp) &&
+        (!tipo || l.tipo === tipo) &&
+        (!cidade || l.cidade === cidade) &&
         (!lanc || l.lancamento),
     );
-  }, [todas, q, sit, fin, resp, lanc]);
+  }, [todas, q, sit, fin, resp, tipo, cidade, lanc]);
 
   const paginas = Math.max(1, Math.ceil(filtradas.length / POR_PAGINA));
   const atual = Math.min(pagina, paginas);
   const inicio = (atual - 1) * POR_PAGINA;
   const visiveis = filtradas.slice(inicio, inicio + POR_PAGINA);
-  const temFiltro = Boolean(q || sit || fin || resp || lanc);
+  const temFiltro = Boolean(q || sit || fin || resp || tipo || cidade || lanc);
 
   const contagem = { publicado: 0, rascunho: 0, indisponivel: 0 };
   for (const l of todas) contagem[l.situacao]++;
@@ -126,6 +139,8 @@ export function ListaImoveis({ linhas, usuario, avisoOportunidade }: { linhas: L
     setSit("");
     setFin("");
     setResp("");
+    setTipo("");
+    setCidade("");
     setLanc(false);
     setPagina(1);
   };
@@ -154,7 +169,7 @@ export function ListaImoveis({ linhas, usuario, avisoOportunidade }: { linhas: L
   }
 
   const textoBusca = q ? ` a “${q}”` : "";
-  const textoSemResultado = `Nenhum imóvel corresponde${textoBusca}${sit || fin || resp || lanc ? (q ? " com os filtros atuais" : " aos filtros atuais") : ""}. Confira o código ou limpe a busca.`;
+  const textoSemResultado = `Nenhum imóvel corresponde${textoBusca}${sit || fin || resp || tipo || cidade || lanc ? (q ? " com os filtros atuais" : " aos filtros atuais") : ""}. Confira a busca ou limpe os filtros.`;
 
   const acoes = (l: LinhaLista, cards: boolean) => {
     const publicado = l.situacao === "publicado";
@@ -278,9 +293,9 @@ export function ListaImoveis({ linhas, usuario, avisoOportunidade }: { linhas: L
             <div className="pn-search">
               <IcBusca stroke="#6D6E71" />
               <label htmlFor="pn-q" className="sr-only">
-                Buscar por código ou título
+                Buscar por código, título, bairro, empreendimento ou referência Loft
               </label>
-              <input id="pn-q" type="search" placeholder="Buscar por código ou título" autoComplete="off" value={q} onChange={(e) => mudar(setQ)(e.target.value)} />
+              <input id="pn-q" type="search" placeholder="Buscar por código, título, empreendimento ou ref. Loft" autoComplete="off" value={q} onChange={(e) => mudar(setQ)(e.target.value)} />
               {q && (
                 <button type="button" className="pn-clear-q" aria-label="Limpar busca" onClick={() => mudar(setQ)("")}>
                   <IcFechar size={14} width={2} />
@@ -312,6 +327,15 @@ export function ListaImoveis({ linhas, usuario, avisoOportunidade }: { linhas: L
                 { valor: "locacao", rotulo: "Locação" },
               ]}
             />
+            <Selecao
+              rotulo="Tipo"
+              rotuloOculto
+              vazio="Todos os tipos"
+              valor={tipo}
+              onChange={mudar(setTipo)}
+              opcoes={[{ valor: "", rotulo: "Todos os tipos" }, ...TIPOS.map((t) => ({ valor: t, rotulo: t }))]}
+            />
+            <Selecao rotulo="Cidade" rotuloOculto vazio="Todas as cidades" valor={cidade} onChange={mudar(setCidade)} opcoes={cidades} />
             <Selecao rotulo="Responsável" rotuloOculto vazio="Todos os responsáveis" valor={resp} onChange={mudar(setResp)} opcoes={responsaveis} />
             <Toggle ativo={lanc} onClick={() => mudar(setLanc)(!lanc)}>
               LANÇAMENTOS

@@ -6,11 +6,13 @@ import { and, asc, count, eq, gt, lt, sql } from "drizzle-orm";
 import { conexao, type Db } from "@/lib/dados/conexao";
 import { imoveis, sessoes, tentativasLogin, tokensSenha, usuarios } from "@/lib/dados/esquema";
 import type { RegistroUsuario, TipoToken } from "@/lib/dados/tipos";
-import { conferirSenha, gerarHashSenha, gerarToken, hashToken } from "@/lib/seguranca/senha";
+import { conferirSenha, gerarHashSenha, gerarSenhaProvisoria, gerarToken, hashToken } from "@/lib/seguranca/senha";
 import { emailConvite, emailRedefinicao, enviar, VALIDADE_CONVITE_H, VALIDADE_REDEFINICAO_H } from "./emails";
 import { LIMITES, emailValido, erroConfirmacao, erroNovaSenha, type UsuarioLogado } from "./regras";
 
 const MIN = 60_000;
+/** A senha provisória gerada pelo ADMIN vale por 72 horas. */
+export const VALIDADE_PROVISORIA_H = 72;
 export const TENTATIVAS_MAX = 5;
 export const BLOQUEIO_MIN = 15;
 /** Sessão sem uso por mais que isto expira. */
@@ -38,11 +40,13 @@ function paraRegistro(r: LinhaUsuarioBanco): RegistroUsuario {
     senhaHash: r.senhaHash,
     ultimoAcesso: iso(r.ultimoAcesso),
     conviteEnviadoEm: iso(r.conviteEnviadoEm),
+    trocarSenha: r.trocarSenha,
+    senhaProvisoriaExpiraEm: iso(r.senhaProvisoriaExpiraEm),
   };
 }
 
 export function paraLogado(u: RegistroUsuario): UsuarioLogado {
-  return { id: u.id, nome: u.nome, email: u.email, papel: u.papel };
+  return { id: u.id, nome: u.nome, email: u.email, papel: u.papel, trocarSenha: u.trocarSenha };
 }
 
 async function porEmail(db: Db, email: string): Promise<LinhaUsuarioBanco | undefined> {
@@ -75,7 +79,9 @@ export async function entrar(email: string, senha: string, agora = Date.now(), d
   const u = await porEmail(db, chave);
   hashFicticio ??= gerarHashSenha(gerarToken());
   const confere = await conferirSenha(senha, u?.senhaHash ?? (await hashFicticio));
-  if (u && confere && u.situacao === "ativo") {
+  // Provisória vencida conta como senha errada (e como tentativa), sem revelar o motivo.
+  const provisoriaVencida = !!u?.trocarSenha && !!u.senhaProvisoriaExpiraEm && u.senhaProvisoriaExpiraEm.getTime() < agora;
+  if (u && confere && u.situacao === "ativo" && !provisoriaVencida) {
     await db.delete(tentativasLogin).where(eq(tentativasLogin.email, chave));
     const [atualizado] = await db.update(usuarios).set({ ultimoAcesso: new Date(agora) }).where(eq(usuarios.id, u.id)).returning();
     return { ok: true, usuario: paraRegistro(atualizado) };
@@ -198,7 +204,13 @@ export async function definirSenha(
     if (!t) return { ok: false as const, expirado: true as const, tipo: leitura.tipo };
     const [u] = await tx
       .update(usuarios)
-      .set({ senhaHash, situacao: sql`case when ${usuarios.situacao} = 'pendente' then 'ativo'::situacao_usuario else ${usuarios.situacao} end` })
+      .set({
+        senhaHash,
+        situacao: sql`case when ${usuarios.situacao} = 'pendente' then 'ativo'::situacao_usuario else ${usuarios.situacao} end`,
+        // Senha nova escolhida pela própria pessoa encerra o regime da provisória.
+        trocarSenha: false,
+        senhaProvisoriaExpiraEm: null,
+      })
       .where(eq(usuarios.id, t.usuarioId))
       .returning();
     await tx.delete(tentativasLogin).where(eq(tentativasLogin.email, u.email));
@@ -299,7 +311,7 @@ export async function convidar(
     await enviar(emailConvite({ nome: n, email: e, convidadoPor: admin.nome, token: await criarToken(db, criado.id, "convite", agora), agora }));
   } catch (erro) {
     console.error("[e-mail] falha ao enviar o convite", { usuarioId: criado.id, erro: erro instanceof Error ? erro.message : String(erro) });
-    return { ok: false, erros: { email: "O usuário foi criado, mas o e-mail não saiu. Use “Reenviar convite” na lista." } };
+    return { ok: false, erros: { email: "O usuário foi criado, mas o e-mail não saiu. Use “Reenviar convite” ou “Definir senha provisória” na lista." } };
   }
   return { ok: true, usuario: (await listarUsuarios(db)).find((l) => l.id === criado.id)! };
 }
@@ -370,7 +382,69 @@ export async function trocarSenha(
   }
   if (erros.atual || erros.nova || erros.confirmacao) return { ok: false, erros };
   if (!(await conferirSenha(atual, u.senhaHash))) return { ok: false, erros: { atual: "A senha atual está incorreta." } };
-  await db.update(usuarios).set({ senhaHash: await gerarHashSenha(nova) }).where(eq(usuarios.id, u.id));
+  await db.update(usuarios).set({ senhaHash: await gerarHashSenha(nova), trocarSenha: false, senhaProvisoriaExpiraEm: null }).where(eq(usuarios.id, u.id));
+  return { ok: true };
+}
+
+// ---------- Senha provisória (acesso sem e-mail) ----------
+
+/**
+ * Só o ADMIN, e nunca para a própria conta nem para outro ADMIN. Devolve a senha
+ * em texto uma única vez; no banco fica só o hash. Derruba sessões, links e bloqueios.
+ */
+export async function definirSenhaProvisoria(
+  admin: UsuarioLogado,
+  usuarioId: string,
+  agora = Date.now(),
+  db: Db = conexao(),
+): Promise<{ ok: true; senha: string } | { ok: false; erro: "proibido" | "inexistente" | "desativado" }> {
+  if (admin.papel !== "admin" || admin.id === usuarioId) return { ok: false, erro: "proibido" };
+  const u = await porId(db, usuarioId);
+  if (!u) return { ok: false, erro: "inexistente" };
+  if (u.papel === "admin") return { ok: false, erro: "proibido" };
+  if (u.situacao === "desativado") return { ok: false, erro: "desativado" };
+
+  const senha = gerarSenhaProvisoria();
+  const senhaHash = await gerarHashSenha(senha);
+  const expira = new Date(agora + VALIDADE_PROVISORIA_H * 3600_000);
+  const ok = await db.transaction(async (tx) => {
+    // Atômico: se a conta foi desativada no meio do caminho, não reativa.
+    const [atualizado] = await tx
+      .update(usuarios)
+      .set({ senhaHash, situacao: "ativo", trocarSenha: true, senhaProvisoriaExpiraEm: expira })
+      .where(and(eq(usuarios.id, u.id), sql`${usuarios.situacao} <> 'desativado'`, sql`${usuarios.papel} <> 'admin'`))
+      .returning({ id: usuarios.id });
+    if (!atualizado) return false;
+    await tx.delete(sessoes).where(eq(sessoes.usuarioId, u.id));
+    await tx.delete(tokensSenha).where(eq(tokensSenha.usuarioId, u.id));
+    await tx.delete(tentativasLogin).where(eq(tentativasLogin.email, u.email));
+    return true;
+  });
+  return ok ? { ok: true, senha } : { ok: false, erro: "desativado" };
+}
+
+/** Primeira troca de quem entrou com a provisória. Mantém a sessão atual aberta. */
+export async function trocarSenhaObrigatoria(
+  usuarioId: string,
+  nova: string,
+  confirmacao: string,
+  db: Db = conexao(),
+): Promise<{ ok: true } | { ok: false; erros: ErrosSenha }> {
+  const u = await porId(db, usuarioId);
+  if (!u || !u.trocarSenha || u.situacao !== "ativo") return { ok: false, erros: { nova: "Sessão inválida." } };
+  const erroNova = erroNovaSenha(nova);
+  if (erroNova) return { ok: false, erros: { nova: erroNova } };
+  if (await conferirSenha(nova, u.senhaHash)) return { ok: false, erros: { nova: "Use uma senha diferente da provisória." } };
+  const erroConf = erroConfirmacao(nova, confirmacao);
+  if (erroConf) return { ok: false, erros: { confirmacao: erroConf } };
+
+  // Atômico: só vale enquanto a provisória que conferimos ainda é a senha da conta.
+  const [atualizado] = await db
+    .update(usuarios)
+    .set({ senhaHash: await gerarHashSenha(nova), trocarSenha: false, senhaProvisoriaExpiraEm: null })
+    .where(and(eq(usuarios.id, u.id), eq(usuarios.trocarSenha, true), eq(usuarios.senhaHash, u.senhaHash ?? "")))
+    .returning({ id: usuarios.id });
+  if (!atualizado) return { ok: false, erros: { nova: "Sessão inválida." } };
   return { ok: true };
 }
 

@@ -1,7 +1,8 @@
 // Filtros do grid de imóveis. Vivem na URL
-// (?finalidade=&q=&tipo=&preco=&area=&quartos=&vagas=&pagina=), para o link ser
+// (?finalidade=&q=&tipo=&preco=&area=&quartos=&vagas=&suites=&carac=&pagina=), para o link ser
 // compartilhável e para o "Voltar aos resultados" da tela do imóvel.
 import { routes } from "@/lib/routes";
+import { CARACTERISTICAS_FILTRO, rotuloCaracteristica } from "./caracteristicas";
 import type { ImovelResumo } from "./types";
 
 export type FinalidadeFiltro = "comprar" | "alugar" | "lancamentos";
@@ -14,6 +15,9 @@ export type Filtros = {
   area?: string;
   quartos?: string;
   vagas?: string;
+  suites?: string;
+  /** Chaves de CARACTERISTICAS_FILTRO; o imóvel precisa ter todas. */
+  carac?: string[];
   pagina: number;
 };
 
@@ -33,10 +37,12 @@ export const FINALIDADES: readonly { valor: FinalidadeFiltro | undefined; rotulo
  * Lançamento não é finalidade: é uma marcação do imóvel. "Comprar" e "Alugar"
  * filtram pela finalidade; "Lançamentos" filtra pela marcação.
  */
-export function combinaFinalidade(filtro: FinalidadeFiltro | undefined, i: Pick<ImovelResumo, "finalidade" | "lancamento">): boolean {
+export function combinaFinalidade(filtro: FinalidadeFiltro | undefined, i: Pick<ImovelResumo, "finalidade" | "lancamento" | "valorLocacao">): boolean {
   if (!filtro) return true;
   if (filtro === "lancamentos") return i.lancamento;
-  return i.finalidade === (filtro === "comprar" ? "venda" : "locacao");
+  if (filtro === "comprar") return i.finalidade === "venda";
+  // Imóvel à venda com valor de locação também pode ser alugado.
+  return i.finalidade === "locacao" || (i.finalidade === "venda" && i.valorLocacao !== null);
 }
 
 const rotuloChipFinalidade: Record<FinalidadeFiltro, string> = {
@@ -48,6 +54,8 @@ const rotuloChipFinalidade: Record<FinalidadeFiltro, string> = {
 export const TIPOS = [
   "Apartamento",
   "Cobertura",
+  "Studio",
+  "Loft",
   "Casa em condomínio",
   "Casa",
   "Terreno",
@@ -81,6 +89,7 @@ export const FAIXAS_AREA: readonly Faixa[] = [
 
 export const MINIMOS_QUARTOS = ["1", "2", "3", "4", "5"] as const;
 export const MINIMOS_VAGAS = ["1", "2", "3", "4"] as const;
+export const MINIMOS_SUITES = ["1", "2", "3", "4"] as const;
 
 const TAMANHO_MAX_BUSCA = 80;
 
@@ -96,6 +105,12 @@ function ler(entrada: Entrada, chave: string): string | undefined {
   if (entrada instanceof URLSearchParams) return entrada.get(chave) ?? undefined;
   const v = entrada[chave];
   return Array.isArray(v) ? v[0] : v;
+}
+
+function lerLista(entrada: Entrada, chave: string): string[] {
+  if (entrada instanceof URLSearchParams) return entrada.getAll(chave);
+  const v = entrada[chave];
+  return v === undefined ? [] : Array.isArray(v) ? v : [v];
 }
 
 function seEm<T extends string>(valor: string | undefined, lista: readonly T[]): T | undefined {
@@ -118,12 +133,14 @@ export function lerFiltros(entrada: Entrada): Filtros {
     area,
     quartos: seEm(ler(entrada, "quartos"), MINIMOS_QUARTOS),
     vagas: seEm(ler(entrada, "vagas"), MINIMOS_VAGAS),
+    suites: seEm(ler(entrada, "suites"), MINIMOS_SUITES),
+    carac: lerLista(entrada, "carac").filter((c, i, l) => CARACTERISTICAS_FILTRO.includes(c) && l.indexOf(c) === i),
     pagina: Number.isInteger(pagina) && pagina > 1 ? pagina : 1,
   };
-  return Object.fromEntries(Object.entries(filtros).filter(([, v]) => v !== undefined)) as Filtros;
+  return Object.fromEntries(Object.entries(filtros).filter(([, v]) => v !== undefined && !(Array.isArray(v) && v.length === 0))) as Filtros;
 }
 
-const ORDEM: ChaveFiltro[] = ["finalidade", "q", "tipo", "preco", "area", "quartos", "vagas"];
+const ORDEM: Exclude<ChaveFiltro, "carac">[] = ["finalidade", "q", "tipo", "preco", "area", "quartos", "vagas", "suites"];
 
 export function filtrosParaQuery(filtros: Filtros): string {
   const p = new URLSearchParams();
@@ -131,6 +148,8 @@ export function filtrosParaQuery(filtros: Filtros): string {
     const v = filtros[chave];
     if (v) p.set(chave, v);
   }
+  // Ordem canônica, para a mesma seleção dar sempre a mesma URL.
+  for (const c of CARACTERISTICAS_FILTRO) if (filtros.carac?.includes(c)) p.append("carac", c);
   if (filtros.pagina > 1) p.set("pagina", String(filtros.pagina));
   return p.toString();
 }
@@ -141,7 +160,8 @@ export function urlGrid(filtros: Filtros): string {
 }
 
 /** Remove um filtro; sem finalidade, a faixa de preço também sai. */
-export function semFiltro(filtros: Filtros, chave: ChaveFiltro): Filtros {
+export function semFiltro(filtros: Filtros, chave: ChaveFiltro, valor?: string): Filtros {
+  if (chave === "carac" && valor) return { ...filtros, carac: filtros.carac?.filter((c) => c !== valor), pagina: 1 };
   const proximo: Filtros = { ...filtros, [chave]: undefined, pagina: 1 };
   if (chave === "finalidade") proximo.preco = undefined;
   return proximo;
@@ -157,8 +177,15 @@ export function contarFiltrosPainel(filtros: Filtros): number {
   return rotulosFiltros(filtros).filter((r) => r.chave !== "q").length;
 }
 
-export function rotulosFiltros(filtros: Filtros): { chave: ChaveFiltro; rotulo: string }[] {
-  const r: { chave: ChaveFiltro; rotulo: string }[] = [];
+export type RotuloFiltro = {
+  chave: ChaveFiltro;
+  rotulo: string;
+  /** Qual característica, quando `chave` é "carac". */
+  valor?: string;
+};
+
+export function rotulosFiltros(filtros: Filtros): RotuloFiltro[] {
+  const r: RotuloFiltro[] = [];
   const faixa = (lista: readonly Faixa[], v?: string) => lista.find(([valor]) => valor === v)?.[1];
   if (filtros.finalidade) r.push({ chave: "finalidade", rotulo: rotuloChipFinalidade[filtros.finalidade] });
   if (filtros.q) r.push({ chave: "q", rotulo: `“${filtros.q}”` });
@@ -169,6 +196,8 @@ export function rotulosFiltros(filtros: Filtros): { chave: ChaveFiltro; rotulo: 
   if (area) r.push({ chave: "area", rotulo: area });
   if (filtros.quartos) r.push({ chave: "quartos", rotulo: `${filtros.quartos}+ quartos` });
   if (filtros.vagas) r.push({ chave: "vagas", rotulo: `${filtros.vagas}+ vagas` });
+  if (filtros.suites) r.push({ chave: "suites", rotulo: `${filtros.suites}+ suítes` });
+  for (const c of filtros.carac ?? []) r.push({ chave: "carac", valor: c, rotulo: rotuloCaracteristica(c) ?? c });
   return r;
 }
 

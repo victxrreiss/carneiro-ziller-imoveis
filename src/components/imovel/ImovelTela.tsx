@@ -2,7 +2,7 @@ import Link from "next/link";
 import { IcCasa, IcPin } from "@/components/ui/IconesSite";
 import type { Imovel } from "@/lib/imoveis";
 import type { ContextoVolta } from "@/lib/imoveis/filtros";
-import { formatarArea, formatarReais, rotuloEtiqueta } from "@/lib/imoveis/formato";
+import { formatarAnual, formatarArea, formatarMensal, formatarReais, rotuloEtiqueta } from "@/lib/imoveis/formato";
 import { routes } from "@/lib/routes";
 import { AgendarProvider, BotaoAgendar } from "./Agendar";
 import { BarraVolta, LinkVolta } from "./BarraVolta";
@@ -29,8 +29,23 @@ export function ImovelTela({ imovel, volta }: { imovel: Imovel; volta: ContextoV
   const specs = [
     { rotulo: "ÁREA", valor: formatarArea(imovel.area) },
     imovel.quartos ? { rotulo: "QUARTOS", valor: String(imovel.quartos) } : null,
+    imovel.suites ? { rotulo: "SUÍTES", valor: String(imovel.suites) } : null,
+    imovel.banheiros ? { rotulo: "BANHEIROS", valor: String(imovel.banheiros) } : null,
     imovel.vagas ? { rotulo: "VAGAS", valor: String(imovel.vagas) } : null,
+    imovel.areaTotal && imovel.areaTotal > imovel.area ? { rotulo: "ÁREA TOTAL", valor: formatarArea(imovel.areaTotal) } : null,
   ].filter((s) => s !== null);
+  const locacao = imovel.finalidade === "locacao";
+  const valores = [
+    { rotulo: locacao ? "LOCAÇÃO" : "VENDA", valor: locacao ? formatarMensal(imovel.valor) : formatarReais(imovel.valor) },
+    !locacao && imovel.valorLocacao !== null ? { rotulo: "LOCAÇÃO", valor: formatarMensal(imovel.valorLocacao) } : null,
+    imovel.condominio !== null ? { rotulo: "CONDOMÍNIO", valor: formatarMensal(imovel.condominio) } : null,
+    imovel.iptu !== null ? { rotulo: "IPTU", valor: formatarAnual(imovel.iptu) } : null,
+  ].filter((v) => v !== null);
+  const detalhes = [
+    imovel.andar !== null ? { rotulo: "ANDAR", valor: `${imovel.andar}º` } : null,
+    imovel.anoConstrucao !== null ? { rotulo: "ANO DE CONSTRUÇÃO", valor: String(imovel.anoConstrucao) } : null,
+    imovel.empreendimento ? { rotulo: "EMPREENDIMENTO", valor: imovel.empreendimento } : null,
+  ].filter((d) => d !== null);
 
   return (
     <main>
@@ -55,6 +70,35 @@ export function ImovelTela({ imovel, volta }: { imovel: Imovel; volta: ContextoV
                   ))}
                 </section>
               )}
+              {detalhes.length > 0 && (
+                <section className="im-det" aria-labelledby="im-det-titulo">
+                  <div className="eyebrow">DETALHES</div>
+                  <h2 id="im-det-titulo" className="im-h2">
+                    Sobre o prédio
+                  </h2>
+                  <dl className="im-det-list">
+                    {detalhes.map((d) => (
+                      <div key={d.rotulo}>
+                        <dt>{d.rotulo}</dt>
+                        <dd>{d.valor}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+              )}
+              {imovel.caracteristicas.length > 0 && (
+                <section className="im-det" aria-labelledby="im-carac-titulo">
+                  <div className="eyebrow">CARACTERÍSTICAS</div>
+                  <h2 id="im-carac-titulo" className="im-h2">
+                    Características
+                  </h2>
+                  <ul className="im-carac">
+                    {imovel.caracteristicas.map((c) => (
+                      <li key={c.chave}>{c.rotulo}</li>
+                    ))}
+                  </ul>
+                </section>
+              )}
             </div>
             <aside className="im-card" aria-label="Resumo do imóvel">
               <span className="im-badge">{rotuloEtiqueta(imovel)}</span>
@@ -77,6 +121,16 @@ export function ImovelTela({ imovel, volta }: { imovel: Imovel; volta: ContextoV
                 ))}
               </dl>
               <Preco imovel={imovel} />
+              {valores.length > 1 && (
+                <dl className="im-vals" aria-label="Valores">
+                  {valores.map((v) => (
+                    <div key={v.rotulo} className="im-val">
+                      <dt>{v.rotulo}</dt>
+                      <dd>{v.valor}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
               <BotaoAgendar id="im-cta" />
             </aside>
           </div>

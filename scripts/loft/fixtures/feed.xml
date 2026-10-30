@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListingDataFeed xmlns="http://www.vivareal.com/schemas/1.0/VRSync" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.vivareal.com/schemas/1.0/VRSync http://xml.vivareal.com/vrsync.xsd">
+  <Listings>
+    <Header>
+      <Provider>Vista</Provider>
+      <Email>contato@exemplo.test</Email>
+      <ContactName>RESPONSAVEL EXEMPLO</ContactName>
+      <PublishDate>2026-10-29T14:48:41</PublishDate>
+      <Telephone>00-0000 0000</Telephone>
+    </Header>
+    <Listing>
+      <ListingID>901</ListingID>
+      <ContactInfo>
+        <Email>contato@exemplo.test</Email>
+        <Name>IMOBILIARIA EXEMPLO</Name>
+      </ContactInfo>
+      <Details>
+        <Bathrooms>0</Bathrooms>
+        <Bedrooms>2</Bedrooms>
+        <Description><![CDATA[Apartamento amplo à venda no Edifício Exemplo, com 2 dormitórios, 1 suíte e 1 vaga de garagem. Agende sua visita!]]></Description>
+        <Garage>1</Garage>
+        <LivingArea>56</LivingArea>
+        <LotArea>0</LotArea>
+        <PropertyAdministrationFee>1250</PropertyAdministrationFee>
+        <PropertyType>Residential / Apartment</PropertyType>
+        <Suites>1</Suites>
+        <UnitFloor>7</UnitFloor>
+        <YearBuilt>2015</YearBuilt>
+        <YearlyTax>5500</YearlyTax>
+        <Features>
+          <Feature>Gym</Feature>
+          <Feature>Pool</Feature>
+          <Feature>Number of stories</Feature>
+          <Feature>Rooftop</Feature>
+        </Features>
+        <Warranties/>
+        <ListPrice currency="BRL">990000</ListPrice>
+      </Details>
+      <Location displayAddress="Neighborhood">
+        <Address>Rua Exemplo</Address>
+        <City><![CDATA[Cidade Exemplo]]></City>
+        <Complement>101</Complement>
+        <Neighborhood><![CDATA[Bairro Exemplo]]></Neighborhood>
+        <PostalCode>34000-000</PostalCode>
+        <State abbreviation="MG">Minas Gerais</State>
+        <StreetNumber>100</StreetNumber>
+      </Location>
+      <PublicationType>STANDARD</PublicationType>
+      <Title><![CDATA[Apartamento à venda no Bairro Exemplo, Cidade Exemplo]]></Title>
+      <Media>
+        <Item medium="image" caption="">https://cdn.exemplo.test/fotos/901/2.jpg</Item>
+        <Item medium="image" caption="" primary="true">https://cdn.exemplo.test/fotos/901/1.jpg</Item>
+        <Item medium="image" caption="">https://cdn.exemplo.test/fotos/901/3.jpg</Item>
+      </Media>
+      <TransactionType>For Sale</TransactionType>
+    </Listing>
+    <Listing>
+      <ListingID>902</ListingID>
+      <ContactInfo>
+        <Email>contato@exemplo.test</Email>
+        <Name>IMOBILIARIA EXEMPLO</Name>
+      </ContactInfo>
+      <Details>
+        <Bathrooms>0</Bathrooms>
+        <Bedrooms>0</Bedrooms>
+        <Description><![CDATA[Terreno plano em condomínio fechado, pronto para construir.]]></Description>
+        <LivingArea>0</LivingArea>
+        <LotArea>633</LotArea>
+        <PropertyAdministrationFee>0</PropertyAdministrationFee>
+        <PropertyType>Residential / Land Lot</PropertyType>
+        <YearlyTax>0</YearlyTax>
+        <Features/>
+        <Warranties/>
+        <ListPrice currency="BRL">1500000</ListPrice>
+      </Details>
+      <Location displayAddress="Neighborhood">
+        <Address>Rua Exemplo Dois</Address>
+        <City><![CDATA[Cidade Exemplo]]></City>
+        <Complement/>
+        <Neighborhood><![CDATA[Bairro Exemplo]]></Neighborhood>
+        <PostalCode>34000-000</PostalCode>
+        <State abbreviation="MG">Minas Gerais</State>
+        <StreetNumber>S/N</StreetNumber>
+      </Location>
+      <PublicationType>STANDARD</PublicationType>
+      <Title><![CDATA[Terreno à venda no Bairro Exemplo, Cidade Exemplo]]></Title>
+      <Media>
+        <Item medium="image" caption="" primary="true">https://cdn.exemplo.test/fotos/902/1.jpg</Item>
+        <Item medium="image" caption="">https://cdn.exemplo.test/fotos/902/2.jpg</Item>
+      </Media>
+      <TransactionType>For Sale</TransactionType>
+    </Listing>
+    <Listing>
+      <ListingID>903</ListingID>
+      <ContactInfo>
+        <Email>contato@exemplo.test</Email>
+        <Name>IMOBILIARIA EXEMPLO</Name>
+      </ContactInfo>
+      <Details>
+        <Bathrooms>3</Bathrooms>
+        <Bedrooms>3</Bedrooms>
+        <Description><![CDATA[Cobertura para venda ou locação, com terraço e vista livre.]]></Description>
+        <Garage>2</Garage>
+        <LivingArea>180</LivingArea>
+        <LotArea>0</LotArea>
+        <PropertyAdministrationFee>2000</PropertyAdministrationFee>
+        <PropertyType>Residential / Penthouse</PropertyType>
+        <Suites>2</Suites>
+        <YearlyTax>0</YearlyTax>
+        <Features>
+          <Feature>Balcony</Feature>
+        </Features>
+        <Warranties/>
+        <ListPrice currency="BRL">3200000</ListPrice>
+        <RentalPrice currency="BRL" period="Monthly">15000</RentalPrice>
+      </Details>
+      <Location displayAddress="Neighborhood">
+        <Address>Rua Exemplo Tres</Address>
+        <City><![CDATA[Cidade Exemplo]]></City>
+        <Complement>1201</Complement>
+        <Neighborhood><![CDATA[Bairro Exemplo]]></Neighborhood>
+        <PostalCode>34000-000</PostalCode>
+        <State abbreviation="MG">Minas Gerais</State>
+        <StreetNumber>300</StreetNumber>
+      </Location>
+      <PublicationType>STANDARD</PublicationType>
+      <Title><![CDATA[Cobertura à venda no Bairro Exemplo, Cidade Exemplo]]></Title>
+      <Media>
+        <Item medium="image" caption="" primary="true">https://cdn.exemplo.test/fotos/903/1.jpg</Item>
+      </Media>
+      <TransactionType>Sale/Rent</TransactionType>
+    </Listing>
+    <Listing>
+      <ListingID>904</ListingID>
+      <ContactInfo>
+        <Email>contato@exemplo.test</Email>
+        <Name>IMOBILIARIA EXEMPLO</Name>
+      </ContactInfo>
+      <Details>
+        <Bathrooms>2</Bathrooms>
+        <Bedrooms>3</Bedrooms>
+        <Description><![CDATA[Apartamento reformado, pronto para morar.]]></Description>
+        <Garage>2</Garage>
+        <LivingArea>120</LivingArea>
+        <LotArea>0</LotArea>
+        <PropertyAdministrationFee>0</PropertyAdministrationFee>
+        <PropertyType>Residential / Apartment</PropertyType>
+        <YearlyTax>0</YearlyTax>
+        <Features/>
+        <Warranties/>
+        <ListPrice currency="BRL">1800000</ListPrice>
+      </Details>
+      <Location displayAddress="Neighborhood">
+        <Address>Rua Exemplo Quatro</Address>
+        <City><![CDATA[Cidade Exemplo]]></City>
+        <Complement>22</Complement>
+        <Neighborhood><![CDATA[Bairro Exemplo]]></Neighborhood>
+        <PostalCode>34000-000</PostalCode>
+        <State abbreviation="MG">Minas Gerais</State>
+        <StreetNumber>400</StreetNumber>
+      </Location>
+      <PublicationType>STANDARD</PublicationType>
+      <Media>
+        <Item medium="image" caption="" primary="true">https://cdn.exemplo.test/fotos/904/1.jpg</Item>
+      </Media>
+      <TransactionType>For Sale</TransactionType>
+    </Listing>
+    <Listing>
+      <ListingID>905</ListingID>
+      <ContactInfo>
+        <Email>contato@exemplo.test</Email>
+        <Name>IMOBILIARIA EXEMPLO</Name>
+      </ContactInfo>
+      <Details>
+        <Bathrooms>5</Bathrooms>
+        <Bedrooms>5</Bedrooms>
+        <Description><![CDATA[Excelente casa em condomínio localizada na Rua Exemplo Cinco, 500, com área privativa de 500 m² e total de 5000 m².]]></Description>
+        <Garage>10</Garage>
+        <LivingArea>500</LivingArea>
+        <LotArea>5000</LotArea>
+        <PropertyAdministrationFee>2700</PropertyAdministrationFee>
+        <PropertyType>Residential / Condo</PropertyType>
+        <Suites>3</Suites>
+        <YearlyTax>23300</YearlyTax>
+        <Features>
+          <Feature>Backyard</Feature>
+          <Feature>Fenced Yard</Feature>
+          <Feature>Pool</Feature>
+        </Features>
+        <Warranties/>
+        <ListPrice currency="BRL">4300000</ListPrice>
+      </Details>
+      <Location displayAddress="Neighborhood">
+        <Address>Rua Exemplo Cinco</Address>
+        <City><![CDATA[Cidade Exemplo]]></City>
+        <Complement>01</Complement>
+        <Neighborhood><![CDATA[Bairro Exemplo]]></Neighborhood>
+        <PostalCode>34000-000</PostalCode>
+        <State abbreviation="MG">Minas Gerais</State>
+        <StreetNumber>500</StreetNumber>
+      </Location>
+      <PublicationType>STANDARD</PublicationType>
+      <Title><![CDATA[Casa em condomínio à venda no Bairro Exemplo, Cidade Exemplo]]></Title>
+      <Media>
+        <Item medium="image" caption="" primary="true">https://cdn.exemplo.test/fotos/905/1.jpg</Item>
+        <Item medium="image" caption="">https://cdn.exemplo.test/fotos/905/2.jpg</Item>
+      </Media>
+      <TransactionType>For Sale</TransactionType>
+    </Listing>
+  </Listings>
+</ListingDataFeed>

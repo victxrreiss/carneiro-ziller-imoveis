@@ -37,6 +37,24 @@ export type RegistroImovel = {
   area: number | null;
   quartos: number | null;
   vagas: number | null;
+  banheiros: number | null;
+  suites: number | null;
+  areaTotal: number | null;
+  condominio: number | null;
+  /** Anual. */
+  iptu: number | null;
+  valorLocacao: number | null;
+  /** Chaves de `lib/imoveis/caracteristicas.ts`. */
+  caracteristicas: string[];
+  andar: number | null;
+  anoConstrucao: number | null;
+  empreendimento: string | null;
+  endereco: string | null;
+  numero: string | null;
+  complemento: string | null;
+  cep: string | null;
+  /** Referência na Loft, quando o imóvel veio da importação. */
+  referenciaLoft: string | null;
   /** Parágrafos separados por linha em branco. */
   descricao: string;
   /** Em ordem; a primeira é a capa. */
@@ -60,6 +78,9 @@ export type RegistroUsuario = {
   senhaHash: string | null;
   ultimoAcesso: string | null;
   conviteEnviadoEm: string | null;
+  /** Senha provisória: precisa ser trocada no primeiro acesso. */
+  trocarSenha: boolean;
+  senhaProvisoriaExpiraEm: string | null;
 };
 
 export type TipoToken = "convite" | "redefinicao";

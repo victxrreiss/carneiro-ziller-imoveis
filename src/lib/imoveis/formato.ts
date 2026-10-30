@@ -11,6 +11,16 @@ export function formatarPreco(valor: number, finalidade: Finalidade): string {
   return formatarReais(valor) + (finalidade === "locacao" ? "/mês" : "");
 }
 
+/** Valor mensal (locação, condomínio): "R$ 1.250/mês". */
+export function formatarMensal(n: number): string {
+  return `${formatarReais(n)}/mês`;
+}
+
+/** Valor anual (IPTU): "R$ 4.800/ano". */
+export function formatarAnual(n: number): string {
+  return `${formatarReais(n)}/ano`;
+}
+
 export function formatarArea(m2: number): string {
   return `${milhar(m2)} m²`;
 }

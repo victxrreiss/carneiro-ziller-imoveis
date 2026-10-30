@@ -203,3 +203,6 @@ export function sementeImoveis(): SementeImovel[] {
 
 /** Imóvel da Oportunidade de hoje na semente. */
 export const OPORTUNIDADE_INICIAL = "cz1009";
+
+/** Os 3 imóveis de exemplo com que a produção estreou (`deploy.sh exemplos`); a primeira importação da Loft os remove. */
+export const EXEMPLOS = ["cz1001", "cz1009", "cz1010"];

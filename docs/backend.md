@@ -10,6 +10,7 @@ Requisitos: Node 22+, Docker.
 npm install
 cp .env.example .env.local     # valores do Docker local
 npm run db:subir               # Postgres 17, S3 local (MinIO) e Mailpit; cria os buckets
+# Portas do host ocupadas por outro projeto? Defina CZ_PORTA_BANCO, CZ_PORTA_S3, CZ_PORTA_S3_CONSOLE, CZ_PORTA_SMTP e CZ_PORTA_MAILPIT em `.env` (padrões: 5432, 9000, 9001, 1025, 8025) e ajuste `.env.local` às mesmas portas.
 npm run db:migrar              # aplica drizzle/*.sql
 npm run admin:criar -- --nome "Seu Nome" --email "voce@dominio.com"   # imprime o link para definir a senha
 npm run db:semente             # opcional: 35 imóveis de exemplo + fotos (exige o ADMIN acima)
@@ -30,6 +31,7 @@ npm run dev
 | `npm run db:gerar` | Gera nova migration SQL a partir de `src/lib/dados/esquema.ts` |
 | `npm run db:semente` | Só local: importa os imóveis de exemplo. Recusa produção e qualquer banco/S3 fora de `localhost` |
 | `npm run admin:criar` | Cria o único ADMIN e imprime o link de convite (72 h). Recusa se já houver ADMIN |
+| `npm run loft:importar` | Importa os imóveis da Loft (`--feed <url\|arquivo> --ativos <csv> --pendentes <csv> --responsavel <email>`; `--simular` só mostra o resumo). Idempotente; grava `relatorio-loft-<data>.json`. Em produção: `deploy/deploy.sh importar-loft` (veja `deploy/README.md`) |
 | `npm run fotos:limpar` | Apaga fotos órfãs (não confirmadas ou sem imóvel, com mais de 24 h), sessões/links vencidos e limites antigos. Na Vercel roda sozinho todo dia (`vercel.json` → `/api/cron/limpeza`) |
 | `vercel-build` | Usado pela Vercel no lugar de `build`: `scripts/implantar.ts` (migrations; em produção, ADMIN inicial) + `next build` |
 | `npm run e2e:preparar` | Zera e prepara o banco `cz_e2e` e o bucket `cz-e2e` (usado pelo `test:e2e`) |
