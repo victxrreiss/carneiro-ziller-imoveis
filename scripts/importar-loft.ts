@@ -118,30 +118,32 @@ async function main() {
   try {
     args = lerArgumentos(process.argv.slice(2));
   } catch (e) {
-    console.error(e instanceof Error ? e.message : e);
-    console.error("Uso: npm run loft:importar -- --feed <url|arquivo> --ativos <csv> --pendentes <csv> --responsavel <email> [--simular]");
+    // Mensagem própria (nunca a do parseArgs, que poderia repetir a URL do feed).
+    const falta = e instanceof Error && e.message.startsWith("Informe --") ? `${e.message} ` : "";
+    console.error(`${falta}Argumentos inválidos. Uso: npm run loft:importar -- --feed <url|arquivo> --ativos <csv> --pendentes <csv> --responsavel <email> [--simular]`);
     process.exit(1);
-  }
-
-  const feed = await lerFeed(args.feed);
-  console.log(`feed: ${feed.nome}`);
-  const lista = juntar(
-    lerVrsync(feed.xml),
-    lerPlanilha(await readFile(args.ativos, "utf8")),
-    lerPlanilha(await readFile(args.pendentes, "utf8")),
-  );
-
-  if (args.simular) {
-    console.log(resumoSimulacao(lista));
-    return;
   }
 
   const { db, fechar } = criarConexao(configBanco().urlDireta, { max: 1 });
   try {
+    // Confere o responsável antes de baixar o feed (vale também na simulação).
     const email = args.responsavel.trim().toLowerCase();
     const [resp] = await db.select({ id: usuarios.id, situacao: usuarios.situacao }).from(usuarios).where(eq(usuarios.email, email)).limit(1);
     if (!resp) throw new Error(`Responsável não encontrado: ${email}. Crie o usuário no painel antes.`);
     if (resp.situacao === "desativado") throw new Error(`O responsável ${email} está desativado: use um usuário ativo ou pendente.`);
+
+    const feed = await lerFeed(args.feed);
+    console.log(`feed: ${feed.nome}`);
+    const lista = juntar(
+      lerVrsync(feed.xml),
+      lerPlanilha(await readFile(args.ativos, "utf8")),
+      lerPlanilha(await readFile(args.pendentes, "utf8")),
+    );
+
+    if (args.simular) {
+      console.log(resumoSimulacao(lista));
+      return;
+    }
 
     const relatorio = await importarLoft(db, lista, { responsavelId: resp.id, armazenamento: armazenamentoS3(), baixar, dimensoes });
     console.log(resumoRelatorio(relatorio));

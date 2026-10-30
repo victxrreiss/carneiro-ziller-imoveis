@@ -97,7 +97,8 @@ case "${1:-implantar}" in
     npm run -s loft:importar -- "$@" || status=$?
     case " $* " in
       *" --simular "*) ;;
-      *) echo "Lembrete: rode deploy/deploy.sh para regenerar as páginas (o cache do catálogo também expira sozinho em até 5 min)." ;;
+      *) [ "$status" -eq 0 ] || [ "$status" -eq 2 ] || exit "$status"
+         echo "Lembrete: rode deploy/deploy.sh para regenerar as páginas (o cache do catálogo também expira sozinho em até 5 min)." ;;
     esac
     exit "$status"
     ;;

@@ -73,17 +73,17 @@ Passo a passo (produção):
 
 1. **Deploy primeiro** (`deploy/deploy.sh`), para as migrations e o código novos estarem na VPS.
 2. **Crie o Matheus** como Corretor pelo painel (`/painel/usuarios`, logado como ADMIN) e use "Definir senha provisória" nele. Passe a senha a ele (vale 72 h; ele a troca no primeiro acesso). Os imóveis importados ficam no nome dele; se for outra pessoa, use o e-mail dela. O responsável precisa existir e estar ativo ou pendente.
-3. **Simule** (não grava nada; mostra contagens, tipos sem mapa e avisos):
+3. **Simule** (não grava nada; confere o responsável e mostra contagens, tipos sem mapa e avisos):
    ```bash
    deploy/deploy.sh importar-loft --simular \
-     --feed "<URL do VRSync>" --ativos ~/caminho/imoveis.csv --pendentes "~/caminho/imoveis filtro.csv" \
+     --feed "<URL do VRSync>" --ativos "$HOME/caminho/imoveis.csv" --pendentes "$HOME/caminho/imoveis filtro.csv" \
      --responsavel matheus@dominio.com
    ```
    Em 2026-10-29: 348 publicados, 74 rascunhos, 0 tipos sem mapa. `--feed` aceita a URL ou um arquivo XML salvo. A URL do feed é sensível (dá acesso aos dados de todos os anúncios): nunca vai para o git, e o comando não a imprime.
 4. **Rodada real**: o mesmo comando sem `--simular`. Baixa as fotos (milhares; leva alguns minutos), cria os imóveis, tira os 3 exemplos e escolhe a Oportunidade da Home.
 5. **Regenere as páginas**: `deploy/deploy.sh` de novo (o cache do catálogo também expira sozinho em até 5 min).
 
-Como ler o relatório (impresso e salvo em `relatorio-loft-<data>.json` na pasta atual, fora do git):
+Como ler o relatório (impresso e salvo em `relatorio-loft-<data>.json` na raiz do repositório quando rodado por `deploy/deploy.sh`, fora do git):
 
 | Campo | Significa |
 |---|---|
