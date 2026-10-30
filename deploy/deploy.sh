@@ -5,7 +5,7 @@
 #   deploy/deploy.sh admin "Nome" email    cria o único ADMIN e imprime o link de senha
 #   deploy/deploy.sh exemplos              importa os 3 imóveis de exemplo (banco vazio)
 #   deploy/deploy.sh importar-loft --feed <url|arquivo> --ativos <csv> --pendentes <csv> \
-#                    --responsavel <email> [--simular]   importa os imóveis da Loft
+#                    --responsavel <email> [--simular] [--forcar]   importa os imóveis da Loft
 #
 # Banco e S3 da VPS só escutam em 127.0.0.1; um túnel SSH os traz para as mesmas
 # portas aqui. Por ele rodam as migrations, o bucket e o `next build`, que lê o banco

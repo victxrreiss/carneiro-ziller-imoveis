@@ -46,7 +46,8 @@ beforeEach(async () => {
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
-const opcoes = (extra: { agora?: Date } = {}) => ({
+const opcoes = (extra: { agora?: Date; forcar?: boolean } = {}) => ({
+  forcar: extra.forcar,
   responsavelId: amb.mariana.id,
   armazenamento: armazenamento(),
   agora: extra.agora ?? AGORA,
@@ -256,7 +257,10 @@ describe("importarLoft", () => {
     await salvarNoPainel(amb.admin, editado.id, (e) => (e.descricao = "Descrição da equipe."));
 
     const sem = () => lista().filter((i) => i.referencia !== "905" && i.referencia !== "904");
-    const r = await importarLoft(amb.db, sem(), opcoes());
+    // Tirar 2 de 5 publicados parece feed truncado: precisa de --forcar.
+    await expect(importarLoft(amb.db, sem(), opcoes())).rejects.toThrow(/incompleto/);
+    expect((await porRef("905")).situacao).toBe("publicado");
+    const r = await importarLoft(amb.db, sem(), opcoes({ forcar: true }));
 
     expect(r.indisponibilizados).toEqual(["905"]);
     expect((await porRef("905")).situacao).toBe("indisponivel");
@@ -267,7 +271,7 @@ describe("importarLoft", () => {
     expect(r.oportunidade).toBe(novaOp);
     expect(await oportunidade()).toBe(novaOp);
 
-    const r2 = await importarLoft(amb.db, sem(), opcoes());
+    const r2 = await importarLoft(amb.db, sem(), opcoes({ forcar: true }));
     expect(r2.indisponibilizados).toEqual([]);
     expect(r2.oportunidade).toBeNull();
 
@@ -320,11 +324,11 @@ describe("importarLoft", () => {
     expect((await porRef("905")).situacao).toBe("publicado");
     expect(r.oportunidade).toBe((await porRef("903")).id);
 
-    // A Oportunidade atual que ficou incompleta (sem tipo) também é trocada.
+    // Rodadas seguintes respeitam a Oportunidade atual, mesmo incompleta (o ADMIN decide).
     await amb.db.update(imoveis).set({ tipo: null }).where(eq(imoveis.referenciaLoft, "903"));
     const r2 = await importarLoft(amb.db, mudar(lista(), "905", (i) => (i.area = null)), opcoes());
-    expect(r2.oportunidade).toBe((await porRef("904")).id);
-    expect(await oportunidade()).toBe((await porRef("904")).id);
+    expect(r2.oportunidade).toBeNull();
+    expect(await oportunidade()).toBe((await porRef("903")).id);
   });
 
   test("campo sem entrada no snapshot: adota o do feed se a coluna está vazia; senão preserva", async () => {
@@ -344,6 +348,53 @@ describe("importarLoft", () => {
     expect(ctl.valores.andar).toBe(7);
     expect(r.camposPreservados).toEqual([{ referencia: "903", campos: ["quartos"] }]);
     expect((await porRef("903")).quartos).not.toBe(9);
+  });
+
+  test("Oportunidade esvaziada pelo ADMIN (ou com aviso no painel) não é reatribuída fora da primeira rodada", async () => {
+    await importarLoft(amb.db, lista(), opcoes());
+    const aviso = { porId: amb.admin.id, codigo: "CZ1", titulo: "X", motivo: "desmarcado" as const, em: AGORA.toISOString() };
+    await amb.db.update(configuracaoSite).set({ oportunidadeId: null, aviso });
+    const r = await importarLoft(amb.db, lista(), opcoes());
+    expect(r.oportunidade).toBeNull();
+    const [cfg] = await amb.db.select().from(configuracaoSite);
+    expect(cfg.oportunidadeId).toBeNull();
+    expect(cfg.aviso).toMatchObject({ motivo: "desmarcado" });
+  });
+
+  test("aoProgredir: uma chamada por imóvel, só com referência, código e fotos; parcial a cada N", async () => {
+    const eventos: { n: number; total: number; referencia: string; acao: string; codigo?: string; fotos?: { ok: number; total: number } }[] = [];
+    const parciais: number[] = [];
+    const op = { ...opcoes(), intervaloParcial: 3, aoProgredir: (p: (typeof eventos)[number]) => eventos.push(p), aoGravarParcial: (r: { criados: string[] }) => void parciais.push(r.criados.length) };
+    await importarLoft(amb.db, lista(), op);
+    expect(eventos).toHaveLength(8);
+    expect(eventos.map((e) => e.n)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(eventos.every((e) => e.total === 8 && e.acao === "criado" && /^CZ\d+$/.test(e.codigo!))).toBe(true);
+    expect(eventos.find((e) => e.referencia === "901")!.fotos).toEqual({ ok: 3, total: 3 });
+    expect(Object.keys(eventos[0]).sort()).toEqual(["acao", "codigo", "fotos", "n", "referencia", "total"]);
+    expect(parciais).toEqual([3, 6]);
+    const eventos2: string[] = [];
+    await importarLoft(amb.db, lista(), { ...opcoes(), aoProgredir: (p) => eventos2.push(p.acao) });
+    expect(eventos2.every((a) => a === "sem mudança")).toBe(true);
+  });
+
+  test("feed truncado: aborta antes de gravar; --forcar segue", async () => {
+    await importarLoft(amb.db, lista(), opcoes());
+    const antes = await contar(importacaoLoft);
+    const poucos = lista().filter((i) => ["901", "902"].includes(i.referencia));
+    await expect(importarLoft(amb.db, poucos, opcoes())).rejects.toThrow(/incompleto.*--forcar/);
+    expect((await porRef("905")).situacao).toBe("publicado");
+    expect(await contar(importacaoLoft)).toBe(antes);
+    const r = await importarLoft(amb.db, poucos, opcoes({ forcar: true }));
+    expect(r.indisponibilizados.length).toBeGreaterThan(0);
+  });
+
+  test("envio de foto que nunca responde estoura o tempo e vira fotosFalhas", async () => {
+    const travado = { ...armazenamento(), enviar: () => new Promise<void>(() => {}) } as ReturnType<typeof armazenamento>;
+    const r = await importarLoft(amb.db, lista(), { ...opcoes(), armazenamento: travado, tempoEnvioMs: 20 });
+    expect(r.criados).toHaveLength(8);
+    expect(r.fotosBaixadas).toBe(0);
+    expect(r.fotosFalhas.length).toBe(9);
+    expect(r.fotosFalhas[0].erro).toMatch(/Envio da foto passou/);
   });
 
   test("lista vazia é recusada (feed vazio indisponibilizaria tudo)", async () => {

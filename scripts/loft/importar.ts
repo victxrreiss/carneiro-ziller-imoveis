@@ -11,7 +11,10 @@
 // - Sumiu da rodada: se foi importado como publicado e ainda é igual ao snapshot, vira
 //   indisponível; rascunho que sumiu não muda (`ausentesRascunho`), para não ganhar página pública.
 // - Primeira rodada: os 3 imóveis de exemplo saem, com as fotos deles (pelas chaves).
-// - Oportunidade vazia ou que a Home não mostra: o publicado completo à venda de maior valor, com foto.
+// - Oportunidade: só é escolhida sozinha na primeira rodada ou quando a atual era um imóvel importado que
+//   saiu do ar nesta rodada (o publicado completo à venda de maior valor, com foto). Nas demais, fica como está.
+// - Feed truncado: se menos de 80% dos importados como publicados aparecem na rodada, aborta antes de gravar
+//   (a menos que `forcar`).
 //
 // Apagar só alvos identificados: imóveis pelo id, fotos pelos ids (e só as sem vínculo).
 import { and, asc, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
@@ -44,6 +47,18 @@ export type Relatorio = {
   oportunidade: string | null;
 };
 
+export type Progresso = {
+  /** 1 a `total`, na ordem da lista (referências repetidas contam uma vez). */
+  n: number;
+  total: number;
+  referencia: string;
+  acao: "criado" | "atualizado" | "preservado" | "sem mudança" | "excluído" | "ignorado";
+  /** Código do imóvel (CZ1011), quando existe. */
+  codigo?: string;
+  /** Fotos que ficaram ligadas / fotos esperadas; ausente quando as fotos não foram tocadas. */
+  fotos?: { ok: number; total: number };
+};
+
 export type OpcoesLoft = {
   /** Responsável dos imóveis criados (e autor das alterações da importação). */
   responsavelId: string;
@@ -53,6 +68,15 @@ export type OpcoesLoft = {
   agora?: Date;
   /** Downloads simultâneos (padrão 4). */
   concorrencia?: number;
+  /** Chamado a cada imóvel processado (nunca receba endereço aqui: só referência e código). */
+  aoProgredir?: (p: Progresso) => void;
+  /** Chamado a cada `intervaloParcial` imóveis com o relatório até ali (padrão 25). */
+  aoGravarParcial?: (r: Relatorio) => void | Promise<void>;
+  intervaloParcial?: number;
+  /** Segue mesmo com o feed parecendo truncado. */
+  forcar?: boolean;
+  /** Limite de cada envio de foto ao armazenamento (padrão 60 s). */
+  tempoEnvioMs?: number;
 };
 
 /** Campos do snapshot: exatamente as chaves de `ImovelLoft` que viram colunas de `imoveis`. */
@@ -114,6 +138,19 @@ async function emLotes<T, R>(itens: T[], n: number, f: (t: T) => Promise<R>): Pr
   return saida;
 }
 
+/** Falha se `p` não resolver no prazo; a foto vai para `fotosFalhas` e é retentada na próxima rodada. */
+async function comTempo<T>(p: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const prazo = new Promise<never>((_, rejeitar) => {
+    timer = setTimeout(() => rejeitar(new Error(`Envio da foto passou de ${Math.round(ms / 1000)} s.`)), ms);
+  });
+  try {
+    return await Promise.race([p, prazo]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function idsDasFotos(db: Db, imovelId: string): Promise<string[]> {
   const l = await db.select({ id: imovelFotos.fotoId }).from(imovelFotos).where(eq(imovelFotos.imovelId, imovelId)).orderBy(asc(imovelFotos.ordem));
   return l.map((f) => f.id);
@@ -156,7 +193,7 @@ async function obterFotos(db: Db, o: OpcoesLoft, referencia: string, imovelId: s
         return falhou(url, `Dimensões inválidas (${largura}×${altura}).`);
       }
       const chave = `${prefixoChave(referencia, url)}.${EXTENSAO[tipo]}`;
-      await o.armazenamento.enviar(chave, bytes, tipo);
+      await comTempo(o.armazenamento.enviar(chave, bytes, tipo), o.tempoEnvioMs ?? 60_000);
       await db
         .insert(tabFotos)
         .values({ chave, tipo, tamanho: bytes.byteLength, largura, altura, enviadoPorId: o.responsavelId, confirmada: true })
@@ -208,9 +245,32 @@ export async function importarLoft(db: Db, lista: ImovelLoft[], o: OpcoesLoft): 
   const aviso = (referencia: string, texto: string) => r.avisos.push({ referencia, aviso: texto });
 
   const controle = new Map((await db.select().from(importacaoLoft)).map((c) => [c.referencia, c]));
-  if (controle.size === 0) await removerExemplos(db, o, r);
+
+  // Proteção contra feed truncado: antes de gravar qualquer coisa.
+  if (!o.forcar) {
+    const refsDaRodada = new Set(lista.map((i) => i.referencia));
+    const publicados = [...controle.values()].filter((c) => c.imovelId && (c.valores as Partial<Valores>).situacao === "publicado");
+    const presentes = publicados.filter((c) => refsDaRodada.has(c.referencia)).length;
+    if (publicados.length > 0 && presentes < publicados.length * 0.8) {
+      throw new Error(
+        `Feed parece incompleto: só ${presentes} dos ${publicados.length} imóveis importados como publicados aparecem nesta rodada. Nada foi alterado. Se for isso mesmo, rode com --forcar.`,
+      );
+    }
+  }
+
+  const primeiraRodada = controle.size === 0;
+  if (primeiraRodada) await removerExemplos(db, o, r);
 
   const vistos = new Set<string>();
+  const total = new Set(lista.map((i) => i.referencia)).size;
+  const intervalo = o.intervaloParcial ?? 25;
+  let n = 0;
+  const progresso = async (referencia: string, acao: Progresso["acao"], codigo?: string, fotos?: Progresso["fotos"]) => {
+    n++;
+    o.aoProgredir?.({ n, total, referencia, acao, ...(codigo ? { codigo } : {}), ...(fotos ? { fotos } : {}) });
+    if (o.aoGravarParcial && n % intervalo === 0) await o.aoGravarParcial(r);
+  };
+
   for (const i of lista) {
     const ref = i.referencia;
     if (vistos.has(ref)) continue;
@@ -218,6 +278,7 @@ export async function importarLoft(db: Db, lista: ImovelLoft[], o: OpcoesLoft): 
     const c = controle.get(ref);
     if (c && c.imovelId === null) {
       r.excluidosNoPainel.push(ref);
+      await progresso(ref, "excluído");
       continue;
     }
     for (const a of i.avisos) aviso(ref, a);
@@ -227,6 +288,7 @@ export async function importarLoft(db: Db, lista: ImovelLoft[], o: OpcoesLoft): 
       const [dono] = await db.select({ id: imoveis.id }).from(imoveis).where(eq(imoveis.referenciaLoft, ref)).limit(1);
       if (dono) {
         aviso(ref, `O imóvel ${dono.id} já tem esta referência, sem registro da importação: ignorado.`);
+        await progresso(ref, "ignorado");
         continue;
       }
     }
@@ -240,9 +302,13 @@ export async function importarLoft(db: Db, lista: ImovelLoft[], o: OpcoesLoft): 
     const obtidas = fotosIntactas ? await obterFotos(db, o, ref, c?.imovelId ?? null, urls, r) : null;
     const novosIds = obtidas?.filter((id): id is string => id !== null) ?? null;
 
+    const fotosInfo = obtidas ? { ok: novosIds!.length, total: urls.length } : undefined;
+
     if (!c) {
+      let codigoNovo = "";
       await db.transaction(async (tx) => {
         const codigo = await proximoCodigo(tx);
+        codigoNovo = codigo;
         const id = codigo.toLowerCase();
         await tx.insert(imoveis).values({
           ...valores,
@@ -260,6 +326,7 @@ export async function importarLoft(db: Db, lista: ImovelLoft[], o: OpcoesLoft): 
         await tx.insert(importacaoLoft).values({ referencia: ref, imovelId: id, valores, fotosOrigem: urls, fotoIds: novosIds!, importadoEm: agora });
       });
       r.criados.push(ref);
+      await progresso(ref, "criado", codigoNovo, fotosInfo);
       continue;
     }
 
@@ -308,18 +375,21 @@ export async function importarLoft(db: Db, lista: ImovelLoft[], o: OpcoesLoft): 
           .where(eq(imoveis.id, imovelId));
       }
       await tx.update(importacaoLoft).set({ valores: snapshot, fotosOrigem, fotoIds, importadoEm: agora }).where(eq(importacaoLoft.referencia, ref));
-      return { mudou, preservados };
+      return { mudou, preservados, codigo: atual.codigo };
     });
     if (resultado === "excluido") {
       r.excluidosNoPainel.push(ref);
+      await progresso(ref, "excluído");
       continue;
     }
     if (resultado.mudou) r.atualizados.push(ref);
     if (resultado.preservados.length) r.camposPreservados.push({ referencia: ref, campos: resultado.preservados });
     // Só as que saíram desta lista, e só se ficaram sem vínculo.
     await descartarFotos(db, fotosQueSairam, o.armazenamento);
+    await progresso(ref, resultado.mudou ? "atualizado" : resultado.preservados.length ? "preservado" : "sem mudança", resultado.codigo, fotosInfo);
   }
 
+  const saiuDoAr = new Set<string>();
   // Sumiu da rodada: indisponível, se foi importado publicado e ninguém mexeu nele desde então.
   for (const c of controle.values()) {
     if (vistos.has(c.referencia) || !c.imovelId) continue;
@@ -340,15 +410,20 @@ export async function importarLoft(db: Db, lista: ImovelLoft[], o: OpcoesLoft): 
       await tx.update(importacaoLoft).set({ valores: { ...anterior, situacao: "indisponivel" }, importadoEm: agora }).where(eq(importacaoLoft.referencia, c.referencia));
       return "indisponivel" as const;
     });
-    if (resultado === "indisponivel") r.indisponibilizados.push(c.referencia);
+    if (resultado === "indisponivel") {
+      r.indisponibilizados.push(c.referencia);
+      saiuDoAr.add(imovelId);
+    }
     if (resultado === "editado") aviso(c.referencia, "Saiu da Loft, mas foi editado no painel: a situação foi mantida.");
   }
 
-  // Oportunidade de hoje vazia ou que a Home não mostra (mesma regra de `oportunidadeDeHoje`):
-  // o publicado completo à venda de maior valor, com foto.
+  // Oportunidade: só mexe sozinha na primeira rodada ou se a atual era um importado que acabou de sair
+  // do ar. Nos demais casos respeita o ADMIN (que pode ter esvaziado ou trocado) e não apaga o aviso do painel.
+  // Escolha: o publicado completo (mesma regra de `oportunidadeDeHoje`) à venda de maior valor, com foto.
   const cfg = await configuracao(db);
   const op = cfg.oportunidadeId ? await carregarImovel(db, cfg.oportunidadeId) : null;
-  if (!op || op.situacao !== "publicado" || !completo(op)) {
+  const reatribuir = primeiraRodada || (cfg.oportunidadeId !== null && saiuDoAr.has(cfg.oportunidadeId));
+  if (reatribuir && (!op || op.situacao !== "publicado" || !completo(op))) {
     const [melhor] = await db
       .select({ id: imoveis.id })
       .from(imoveis)

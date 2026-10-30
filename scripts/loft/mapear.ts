@@ -100,6 +100,12 @@ function citaRuaENumero(texto: string, rua: string, numero: string): boolean {
   return false;
 }
 
+/** O texto cita o nome da rua do imóvel (com ou sem número)? */
+function citaRua(texto: string, rua: string): boolean {
+  const r = semAcento(rua).trim();
+  return r.length >= 4 && semAcento(texto).includes(r);
+}
+
 function tituloGerado(tipo: string | null, finalidade: Finalidade | null, bairro: string, cidade: string): string {
   const base = `${tipo ?? "Imóvel"} ${finalidade === "locacao" ? "para alugar" : "à venda"}`;
   const local = [bairro, cidade].filter(Boolean).join(", ");
@@ -136,7 +142,9 @@ function doFeed(a: AnuncioVrsync, planilha: LinhaPlanilha | undefined): ImovelLo
     avisos.push("Título ausente, gerado");
   }
   if (!a.descricao) avisos.push("Descrição ausente");
-  if (citaRuaENumero(`${a.titulo}\n${a.descricao}`, a.endereco, a.numero)) avisos.push("Descrição cita o endereço (rua e número)");
+  const textoLivre = `${a.titulo}\n${a.descricao}`;
+  if (citaRuaENumero(textoLivre, a.endereco, a.numero)) avisos.push("Descrição cita o endereço (rua e número)");
+  else if (citaRua(textoLivre, a.endereco)) avisos.push("Descrição cita a rua do imóvel.");
 
   return {
     referencia: a.referencia,
@@ -229,6 +237,24 @@ function daPlanilha(l: LinhaPlanilha, situacao: SituacaoImovel): ImovelLoft {
  * - pendente ou suspenso: rascunho (vale também se ele ainda aparecer no feed).
  */
 export function juntar(feed: AnuncioVrsync[], ativos: LinhaPlanilha[], pendentes: LinhaPlanilha[]): ImovelLoft[] {
+  return juntarDetalhado(feed, ativos, pendentes).lista;
+}
+
+/** Registros sem referência que foram ignorados, por origem. */
+export type Ignorados = { feed: number; ativos: number; pendentes: number };
+
+/** Como `juntar`, mas também conta os registros ignorados por não terem referência. */
+export function juntarDetalhado(
+  feedTodo: AnuncioVrsync[],
+  ativosTodos: LinhaPlanilha[],
+  pendentesTodos: LinhaPlanilha[],
+): { lista: ImovelLoft[]; ignorados: Ignorados } {
+  const comRef = <T extends { referencia: string }>(l: T[]) => l.filter((x) => x.referencia.trim() !== "");
+  const feed = comRef(feedTodo);
+  const ativos = comRef(ativosTodos);
+  const pendentes = comRef(pendentesTodos);
+  const ignorados = { feed: feedTodo.length - feed.length, ativos: ativosTodos.length - ativos.length, pendentes: pendentesTodos.length - pendentes.length };
+
   const planilhas = new Map<string, LinhaPlanilha>();
   for (const l of [...ativos, ...pendentes]) planilhas.set(l.referencia, l);
   const refsPendentes = new Set(pendentes.map((l) => l.referencia));
@@ -252,5 +278,5 @@ export function juntar(feed: AnuncioVrsync[], ativos: LinhaPlanilha[], pendentes
     vistos.add(l.referencia);
     lista.push(daPlanilha(l, "rascunho"));
   }
-  return lista;
+  return { lista, ignorados };
 }

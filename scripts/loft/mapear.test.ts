@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test } from "vitest";
-import { juntar, mapearTipo } from "./mapear";
+import { juntar, juntarDetalhado, mapearTipo } from "./mapear";
 import { lerPlanilha } from "./planilha";
 import { lerVrsync } from "./vrsync";
 
@@ -134,4 +134,23 @@ test("cita rua e número em formas variadas", () => {
   expect(com("Fica na Rua Exemplo nº 100")).toBe(true);
   expect(com("Fica na Rua Exemplo, 1000")).toBe(false);
   expect(com("Fica na Rua Exemplo, perto de tudo")).toBe(false);
+});
+
+test("cita só a rua (sem número): aviso próprio; rua e número mantém o aviso antigo", () => {
+  const avisos = (d: string) => juntar([{ ...feed[0], descricao: d }], [], [])[0].avisos;
+  expect(avisos("Fica na Rua Exemplo, perto de tudo")).toContain("Descrição cita a rua do imóvel.");
+  expect(avisos("Fica na Rua Exemplo, perto de tudo")).not.toContain("Descrição cita o endereço (rua e número)");
+  expect(avisos("Fica na Rua Exemplo nº 100")).toContain("Descrição cita o endereço (rua e número)");
+  expect(avisos("Fica na Rua Exemplo nº 100")).not.toContain("Descrição cita a rua do imóvel.");
+});
+
+test("referência vazia: registro ignorado e contado por origem", () => {
+  const r = juntarDetalhado(
+    [{ ...feed[0], referencia: "" }, feed[1]],
+    [{ ...ativos[0], referencia: "  " }, ...ativos],
+    [{ ...pendentes[0], referencia: "" }],
+  );
+  expect(r.ignorados).toEqual({ feed: 1, ativos: 1, pendentes: 1 });
+  expect(r.lista.every((i) => i.referencia.trim() !== "")).toBe(true);
+  expect(juntar([{ ...feed[0], referencia: "" }], [], [])).toEqual([]);
 });

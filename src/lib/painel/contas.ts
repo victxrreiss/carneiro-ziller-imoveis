@@ -311,7 +311,7 @@ export async function convidar(
     await enviar(emailConvite({ nome: n, email: e, convidadoPor: admin.nome, token: await criarToken(db, criado.id, "convite", agora), agora }));
   } catch (erro) {
     console.error("[e-mail] falha ao enviar o convite", { usuarioId: criado.id, erro: erro instanceof Error ? erro.message : String(erro) });
-    return { ok: false, erros: { email: "O usuário foi criado, mas o e-mail não saiu. Use “Reenviar convite” na lista." } };
+    return { ok: false, erros: { email: "O usuário foi criado, mas o e-mail não saiu. Use “Reenviar convite” ou “Definir senha provisória” na lista." } };
   }
   return { ok: true, usuario: (await listarUsuarios(db)).find((l) => l.id === criado.id)! };
 }

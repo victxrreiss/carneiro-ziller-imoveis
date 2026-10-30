@@ -540,6 +540,7 @@ describe("usuários", () => {
     caixa().falhar = true;
     const r = await convidar(amb.admin, "Fernanda Lima", "fernanda@exemplo.test", Date.now(), amb.db);
     expect(r).toMatchObject({ ok: false, erros: { email: expect.stringContaining("Reenviar convite") } });
+    expect(r).toMatchObject({ ok: false, erros: { email: expect.stringContaining("Definir senha provisória") } });
     expect(await amb.db.select().from(usuarios).where(eq(usuarios.email, "fernanda@exemplo.test"))).toHaveLength(1);
     expect(JSON.stringify(vi.mocked(console.error).mock.calls)).not.toContain("token=");
     caixa().falhar = false;

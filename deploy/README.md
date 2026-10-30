@@ -73,15 +73,17 @@ Passo a passo (produção):
 
 1. **Deploy primeiro** (`deploy/deploy.sh`), para as migrations e o código novos estarem na VPS.
 2. **Crie o Matheus** como Corretor pelo painel (`/painel/usuarios`, logado como ADMIN) e use "Definir senha provisória" nele. Passe a senha a ele (vale 72 h; ele a troca no primeiro acesso). Os imóveis importados ficam no nome dele; se for outra pessoa, use o e-mail dela. O responsável precisa existir e estar ativo ou pendente.
-3. **Simule** (não grava nada; confere o responsável e mostra contagens, tipos sem mapa e avisos):
+3. **Baixe o feed para um arquivo** (recomendado: assim a URL, que é sensível, não fica no histórico do shell nem nos comandos seguintes) e use o arquivo em `--feed`.
+4. **Simule** (não grava nada; confere o responsável e mostra contagens, tipos sem mapa e avisos):
    ```bash
    deploy/deploy.sh importar-loft --simular \
-     --feed "<URL do VRSync>" --ativos "$HOME/caminho/imoveis.csv" --pendentes "$HOME/caminho/imoveis filtro.csv" \
+     --feed "$HOME/caminho/feed.xml" --ativos "$HOME/caminho/imoveis.csv" --pendentes "$HOME/caminho/imoveis filtro.csv" \
      --responsavel matheus@dominio.com
    ```
-   Em 2026-10-29: 348 publicados, 74 rascunhos, 0 tipos sem mapa. `--feed` aceita a URL ou um arquivo XML salvo. A URL do feed é sensível (dá acesso aos dados de todos os anúncios): nunca vai para o git, e o comando não a imprime.
-4. **Rodada real**: o mesmo comando sem `--simular`. Baixa as fotos (milhares; leva alguns minutos), cria os imóveis, tira os 3 exemplos e escolhe a Oportunidade da Home.
-5. **Regenere as páginas**: `deploy/deploy.sh` de novo (o cache do catálogo também expira sozinho em até 5 min).
+   Em 2026-10-29: 348 publicados, 74 rascunhos, 0 tipos sem mapa. `--feed` aceita um arquivo XML salvo (recomendado) ou uma URL `http(s)://`; um valor que não é URL nem arquivo existente dá "Feed não encontrado", sem repetir o valor. Se a planilha ou o feed tiverem registros sem referência, eles são ignorados e a contagem aparece no resumo. A URL do feed é sensível (dá acesso aos dados de todos os anúncios): nunca vai para o git, e o comando não a imprime.
+5. **Backup antes da primeira rodada real**: na VPS, rode `~/projetos/clientes/carneiro-ziller/site/backup.sh` e confira que o arquivo do dia existe em `backups/` (`banco-AAAA-MM-DD.sql.gz` e o das fotos, com tamanho razoável).
+6. **Rodada real**: o mesmo comando sem `--simular`. Baixa cerca de 6.500 fotos e as envia pelo túnel SSH: leva dezenas de minutos (depende da velocidade do upload). O terminal mostra uma linha por imóvel, `[n/422] ref 442 → criado CZ1011 (18/19 fotos)`, e o relatório parcial é regravado em `relatorio-loft-<data>.json` a cada 25 imóveis. Cria os imóveis, tira os 3 exemplos e escolhe a Oportunidade da Home (só na primeira rodada, ou se a Oportunidade importada sair do ar; nas outras o que o ADMIN definiu é respeitado). Cada envio de foto tem limite de 60 s; as que estourarem entram em `fotosFalhas` e a próxima rodada tenta de novo. Se menos de 80% dos publicados da rodada anterior aparecerem (feed truncado), o comando aborta sem gravar nada; confirme com `--forcar` só se for isso mesmo.
+7. **Regenere as páginas**: `deploy/deploy.sh` de novo (o cache do catálogo também expira sozinho em até 5 min).
 
 Como ler o relatório (impresso e salvo em `relatorio-loft-<data>.json` na raiz do repositório quando rodado por `deploy/deploy.sh`, fora do git):
 
@@ -94,6 +96,7 @@ Como ler o relatório (impresso e salvo em `relatorio-loft-<data>.json` na raiz 
 | `excluidosNoPainel` | Apagados no painel: não voltam |
 | `fotosBaixadas` / `fotosFalhas` | Fotos novas / as que falharam (referência, URL, erro). Com falhas o comando sai com código 2: rode de novo, só as que faltam são baixadas |
 | `avisos` | Dados da Loft que o site não aceitou como vieram (área, finalidade ausentes etc.): revisar no painel |
+| `ignorados` | Registros sem referência no feed/planilhas (por origem): não foram importados |
 | `exemplosRemovidos`, `oportunidade` | Exemplos apagados na primeira rodada; id da Oportunidade escolhida |
 
 Antes da virada: pode repetir a importação à vontade, trazendo o feed e as planilhas mais recentes. O que a equipe já ajustou no painel é preservado. Depois da virada, a equipe cadastra só pelo painel e a importação deixa de ser usada.
