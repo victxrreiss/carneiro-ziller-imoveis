@@ -388,6 +388,13 @@ describe("importarLoft", () => {
     expect(r.indisponibilizados.length).toBeGreaterThan(0);
   });
 
+  test("feed truncado com planilhas completas: publicados que voltam como rascunho também acionam a trava", async () => {
+    await importarLoft(amb.db, lista(), opcoes());
+    const soPlanilha = lista().map((i) => ({ ...i, situacao: "rascunho" as const }));
+    await expect(importarLoft(amb.db, soPlanilha, opcoes())).rejects.toThrow(/incompleto.*--forcar/);
+    expect((await porRef("905")).situacao).toBe("publicado");
+  });
+
   test("envio de foto que nunca responde estoura o tempo e vira fotosFalhas", async () => {
     const travado = { ...armazenamento(), enviar: () => new Promise<void>(() => {}) } as ReturnType<typeof armazenamento>;
     const r = await importarLoft(amb.db, lista(), { ...opcoes(), armazenamento: travado, tempoEnvioMs: 20 });

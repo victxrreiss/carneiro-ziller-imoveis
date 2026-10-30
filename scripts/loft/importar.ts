@@ -248,7 +248,9 @@ export async function importarLoft(db: Db, lista: ImovelLoft[], o: OpcoesLoft): 
 
   // Proteção contra feed truncado: antes de gravar qualquer coisa.
   if (!o.forcar) {
-    const refsDaRodada = new Set(lista.map((i) => i.referencia));
+    // Conta só os que continuam publicados: feed truncado com planilhas completas
+    // traria as referências de volta, mas como rascunho.
+    const refsDaRodada = new Set(lista.filter((i) => i.situacao === "publicado").map((i) => i.referencia));
     const publicados = [...controle.values()].filter((c) => c.imovelId && (c.valores as Partial<Valores>).situacao === "publicado");
     const presentes = publicados.filter((c) => refsDaRodada.has(c.referencia)).length;
     if (publicados.length > 0 && presentes < publicados.length * 0.8) {
