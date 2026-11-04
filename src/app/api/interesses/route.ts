@@ -3,6 +3,7 @@
 // avisa por e-mail o corretor responsável, o ADMIN e LEADS_EMAIL.
 import { after } from "next/server";
 import { enviar } from "@/lib/painel/emails";
+import { ipDoVisitante } from "@/lib/interesse/ip";
 import { registrarInteresse } from "@/lib/interesse/servidor";
 
 const STATUS = { dados: 422, imovel: 404, limite: 429 } as const;
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
   } catch {
     return Response.json({ ok: false, erro: "dados" }, { status: 400 });
   }
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "";
+  const ip = ipDoVisitante(request.headers);
   const r = await registrarInteresse(corpo && typeof corpo === "object" ? (corpo as Record<string, unknown>) : {}, ip);
   if (!r.ok) return Response.json({ ok: false, erro: r.erro }, { status: STATUS[r.erro] });
 
