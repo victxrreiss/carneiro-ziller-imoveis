@@ -7,14 +7,13 @@ import { SearchIcon } from "@/components/ui/Icons";
 import { TabList, type Tab } from "@/components/ui/TabList";
 import { routes } from "@/lib/routes";
 
-const finalidades: Tab[] = [
-  { id: "comprar", label: "COMPRAR" },
-  { id: "alugar", label: "ALUGAR" },
-  { id: "lancamentos", label: "LANÇAMENTOS" },
-];
+const comprar: Tab = { id: "comprar", label: "COMPRAR" };
+const alugar: Tab = { id: "alugar", label: "ALUGAR" };
+const lancamentos: Tab = { id: "lancamentos", label: "LANÇAMENTOS" };
 
 /** Busca do hero: GET para /imoveis?finalidade=…&q=… (Lacuna 4 do README). */
-export function SearchBox() {
+export function SearchBox({ temLancamentos }: { temLancamentos: boolean }) {
+  const finalidades = temLancamentos ? [comprar, alugar, lancamentos] : [comprar, alugar];
   const [finalidade, setFinalidade] = useState("comprar");
 
   return (

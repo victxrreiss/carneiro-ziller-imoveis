@@ -17,13 +17,13 @@ function formValues() {
 
 describe("SearchBox", () => {
   test("envia para /imoveis com finalidade comprar por padrão", () => {
-    render(<SearchBox />);
+    render(<SearchBox temLancamentos />);
     expect(screen.getByRole("search")).toHaveAttribute("action", "/imoveis");
     expect(formValues()).toEqual({ finalidade: "comprar", q: "" });
   });
 
   test("trocar a aba muda a finalidade enviada", async () => {
-    render(<SearchBox />);
+    render(<SearchBox temLancamentos />);
     await userEvent.click(screen.getByRole("tab", { name: "ALUGAR" }));
     expect(formValues().finalidade).toBe("alugar");
     await userEvent.click(screen.getByRole("tab", { name: "LANÇAMENTOS" }));
@@ -31,7 +31,7 @@ describe("SearchBox", () => {
   });
 
   test("campo rotulado, com nome q e limite de tamanho", async () => {
-    render(<SearchBox />);
+    render(<SearchBox temLancamentos />);
     const input = screen.getByLabelText("Buscar imóvel");
     expect(input).toHaveAttribute("name", "q");
     expect(input).toHaveAttribute("maxLength", "120");
@@ -40,8 +40,15 @@ describe("SearchBox", () => {
   });
 
   test("botão de envio acessível e link de busca avançada", () => {
-    render(<SearchBox />);
+    render(<SearchBox temLancamentos />);
     expect(screen.getByRole("button", { name: "Buscar" })).toHaveAttribute("type", "submit");
     expect(screen.getByRole("link", { name: /Busca avançada/ })).toHaveAttribute("href", "/imoveis");
+  });
+
+  test("sem lançamentos, a aba LANÇAMENTOS não é oferecida", () => {
+    render(<SearchBox temLancamentos={false} />);
+    expect(screen.getByRole("tab", { name: "COMPRAR" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "ALUGAR" })).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "LANÇAMENTOS" })).not.toBeInTheDocument();
   });
 });

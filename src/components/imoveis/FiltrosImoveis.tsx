@@ -30,6 +30,8 @@ type Props = {
   totalAtual: number;
   /** Cidades e bairros com imóveis publicados (`getOpcoesLocalizacao`). */
   localizacoes: { cidade: string; bairros: string[] }[];
+  /** Sem lançamentos publicados, a opção LANÇAMENTOS não é oferecida (a URL antiga continua valendo). */
+  temLancamentos: boolean;
 };
 
 const LIMPOS: Filtros = { pagina: 1 };
@@ -43,7 +45,7 @@ const opcoesLocalizacao = (lista: Props["localizacoes"]): Opcao[] =>
   ]);
 const opcoesMinimo = (lista: readonly string[]) => lista.map((v) => ({ valor: v, rotulo: `${v} ou mais` }));
 
-export function FiltrosImoveis({ filtros, onAplicar, contar, totalAtual, localizacoes }: Props) {
+export function FiltrosImoveis({ filtros, onAplicar, contar, totalAtual, localizacoes, temLancamentos }: Props) {
   const [busca, setBusca] = useState(filtros.q ?? "");
   const [painelAberto, setPainelAberto] = useState(false);
   const [rascunho, setRascunho] = useState(filtros);
@@ -101,9 +103,12 @@ export function FiltrosImoveis({ filtros, onAplicar, contar, totalAtual, localiz
   const noPainel = contarFiltrosPainel(filtros);
   const precos = faixasPreco(ativos.finalidade);
 
+  // Se a URL já pede lançamentos, a opção fica para refletir o estado atual.
+  const finalidadesVisiveis = FINALIDADES.filter((f) => f.valor !== "lancamentos" || temLancamentos || filtros.finalidade === "lancamentos");
+
   const segmentado = (classe: string) => (
     <div className={classe} role="radiogroup" aria-label="Finalidade">
-      {FINALIDADES.map((f) => (
+      {finalidadesVisiveis.map((f) => (
         <button
           key={f.rotulo}
           type="button"

@@ -5,6 +5,7 @@ import { SiteChrome } from "@/components/layout/SiteChrome";
 import { buscarImoveis, getContagemPorTipo, getOpcoesLocalizacao, type PaginaImoveis } from "@/lib/imoveis";
 import { validarLocal } from "@/lib/imoveis/catalogo";
 import { lerFiltros, tituloGrid } from "@/lib/imoveis/filtros";
+import { temLancamentosParaMenu } from "@/lib/imoveis/lancamentos";
 import { contarPorQuery } from "./actions";
 
 export async function generateMetadata({ searchParams }: PageProps<"/imoveis">): Promise<Metadata> {
@@ -15,7 +16,7 @@ export async function generateMetadata({ searchParams }: PageProps<"/imoveis">):
   };
 }
 
-async function Grid({ searchParams }: Pick<PageProps<"/imoveis">, "searchParams">) {
+async function Grid({ searchParams, temLancamentos }: Pick<PageProps<"/imoveis">, "searchParams"> & { temLancamentos: boolean }) {
   const pedidos = lerFiltros(await searchParams);
   let filtros = pedidos;
   let resultado: PaginaImoveis | null = null;
@@ -30,21 +31,22 @@ async function Grid({ searchParams }: Pick<PageProps<"/imoveis">, "searchParams"
   }
   return (
     <SiteChrome current={filtros.finalidade === "lancamentos" ? "lancamentos" : "imoveis"}>
-      <ImoveisView filtros={filtros} resultado={resultado} contar={contarPorQuery} localizacoes={localizacoes} tipos={tipos} />
+      <ImoveisView filtros={filtros} resultado={resultado} contar={contarPorQuery} localizacoes={localizacoes} tipos={tipos} temLancamentos={temLancamentos} />
     </SiteChrome>
   );
 }
 
-export default function ImoveisPage({ searchParams }: PageProps<"/imoveis">) {
+export default async function ImoveisPage({ searchParams }: PageProps<"/imoveis">) {
+  const temLancamentos = await temLancamentosParaMenu();
   return (
     <Suspense
       fallback={
         <SiteChrome current="imoveis">
-          <ImoveisView filtros={{ pagina: 1 }} resultado={null} contar={contarPorQuery} localizacoes={[]} tipos={[]} esqueleto />
+          <ImoveisView filtros={{ pagina: 1 }} resultado={null} contar={contarPorQuery} localizacoes={[]} tipos={[]} temLancamentos={temLancamentos} esqueleto />
         </SiteChrome>
       }
     >
-      <Grid searchParams={searchParams} />
+      <Grid searchParams={searchParams} temLancamentos={temLancamentos} />
     </Suspense>
   );
 }
