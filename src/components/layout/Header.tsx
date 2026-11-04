@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { getTemLancamentos } from "@/lib/imoveis";
+import { temLancamentosParaMenu } from "@/lib/imoveis/lancamentos";
 import { itensNavegacao, painel, routes, type NavKey } from "@/lib/routes";
 import { Logo } from "./Logo";
 import { MenuDrawer } from "./MenuDrawer";
 
 /** Header da Home, dentro do hero. As outras telas usam o SiteHeader. */
 export async function Header({ current }: { current: NavKey }) {
-  const items = itensNavegacao(await getTemLancamentos()).map((item) => ({ ...item, current: item.key === current }));
+  const items = itensNavegacao(await temLancamentosParaMenu()).map((item) => ({ ...item, current: item.key === current }));
 
   return (
     <header className="relative z-3">

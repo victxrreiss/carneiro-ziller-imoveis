@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { InstagramIcon, LinkedInIcon } from "@/components/ui/Icons";
-import { getTemLancamentos } from "@/lib/imoveis";
+import { temLancamentosParaMenu } from "@/lib/imoveis/lancamentos";
 import { itensNavegacao, routes } from "@/lib/routes";
 import { empresa, linkWhatsApp, social } from "@/lib/site";
 import { Logo } from "./Logo";
@@ -9,7 +9,7 @@ const privacidade = { key: "privacidade", label: "Política de privacidade", hre
 
 /** Rodapé do site (versão do grid/Imóvel). Precisa de um ancestral `.cz`. */
 export async function Footer() {
-  const footerNav = [...itensNavegacao(await getTemLancamentos()), privacidade];
+  const footerNav = [...itensNavegacao(await temLancamentosParaMenu()), privacidade];
   return (
     <footer className="footer">
       <div className="wrap">
