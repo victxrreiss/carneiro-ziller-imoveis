@@ -22,11 +22,6 @@ export function podeEditar(u: UsuarioLogado, imovel: { responsavelId: string }):
   return ehAdmin(u) || imovel.responsavelId === u.id;
 }
 
-/** ADMIN vê todo contato; corretor só os de imóvel de que é o responsável atual. */
-export function podeVerContato(u: UsuarioLogado, c: { responsavelId: string | null }): boolean {
-  return ehAdmin(u) || (c.responsavelId !== null && c.responsavelId === u.id);
-}
-
 // ---------- Cadastro de imóvel ----------
 
 export type EntradaImovel = {

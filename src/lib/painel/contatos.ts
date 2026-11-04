@@ -29,6 +29,7 @@ export async function listarContatos(
   pagina: number,
   db: Db = conexao(),
 ): Promise<{ itens: LinhaContato[]; total: number; pagina: number; paginas: number }> {
+  // Regra de visibilidade (vive aqui): ADMIN vê todo contato; corretor só os de imóvel de que é o responsável atual.
   const filtro = ehAdmin(u) ? undefined : eq(imoveis.responsavelId, u.id);
 
   const [{ total }] = await db

@@ -3,7 +3,6 @@ import { beforeAll, beforeEach, describe, expect, test } from "vitest";
 import { imoveis, interesses } from "@/lib/dados/esquema";
 import { criarAmbiente, type Ambiente } from "@/lib/dados/testes";
 import { CONTATOS_POR_PAGINA, listarContatos } from "./contatos";
-import { podeVerContato } from "./regras";
 
 let amb: Ambiente;
 beforeAll(async () => {
@@ -23,15 +22,6 @@ async function lead(imovelId: string | null, extra: Partial<typeof interesses.$i
   return r.id;
 }
 const dono = (id: string, responsavelId: string) => amb.db.update(imoveis).set({ responsavelId }).where(eq(imoveis.id, id));
-
-describe("podeVerContato", () => {
-  test("ADMIN sempre; corretor só como responsável", () => {
-    expect(podeVerContato(amb.admin, { responsavelId: null })).toBe(true);
-    expect(podeVerContato(amb.mariana, { responsavelId: amb.mariana.id })).toBe(true);
-    expect(podeVerContato(amb.mariana, { responsavelId: amb.ricardo.id })).toBe(false);
-    expect(podeVerContato(amb.mariana, { responsavelId: null })).toBe(false);
-  });
-});
 
 describe("listarContatos", () => {
   test("ADMIN vê tudo; corretor só o dos imóveis de que é responsável atual", async () => {
