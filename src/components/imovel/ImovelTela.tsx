@@ -36,7 +36,7 @@ function BotaoWhatsApp({ imovel, url, id }: { imovel: Imovel; url: string; id: s
       target="_blank"
       rel="noopener"
     >
-      WHATSAPP
+      WHATSAPP<span className="sr-only"> (abre em nova aba)</span>
     </a>
   );
 }

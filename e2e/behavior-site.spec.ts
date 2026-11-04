@@ -202,6 +202,7 @@ test.describe("mobile 390px", () => {
     const link = page.getByRole("link", { name: "WHATSAPP" }).first();
     await expect(link).toHaveAttribute("href", /^https:\/\/wa\.me\/5531995395988\?text=.*CZ1009/);
     await expect(link).toHaveAttribute("target", "_blank");
+    await expect(link).toHaveAccessibleName("WHATSAPP (abre em nova aba)");
   });
 
   test("barra fixa abre o formulário em tela cheia; Esc devolve o foco à barra", async ({ page }) => {
