@@ -224,6 +224,27 @@
   .cz .notice{padding:48px 20px}
   .cz .notice h2{font-size:26px}
 }
+/* Páginas institucionais (Contato, Sobre, Política de privacidade) */
+.cz .inst-body{padding-top:48px;padding-bottom:96px}
+.cz .inst-leitura{max-width:720px}
+.cz .inst-leitura p{margin:0 0 18px;font-size:16px;line-height:1.8;color:var(--grafite)}
+.cz .inst-leitura h2,.cz .ct-h2{margin:36px 0 12px;font-family:var(--serif);font-weight:400;font-size:26px;line-height:1.2;color:var(--azul-noite)}
+.cz .inst-leitura a,.cz .inst-dados a{text-decoration:underline;text-underline-offset:2px}
+.cz .inst-leitura .inst-data{margin-top:36px;font-size:13px;color:var(--cinza)}
+.cz .inst-acoes{justify-content:flex-start;margin-top:32px}
+.cz .inst-contato{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,480px);gap:64px;align-items:start}
+.cz .inst-texto{display:flex;flex-direction:column;align-items:flex-start;gap:28px}
+.cz .inst-lead{margin:0;font-size:17px;line-height:1.7;color:var(--texto-secundario);max-width:520px}
+.cz .inst-dados{margin:0;display:flex;flex-direction:column;gap:18px}
+.cz .inst-dados dt{font-size:10px;font-weight:600;letter-spacing:.24em;color:var(--cinza);margin-bottom:4px}
+.cz .inst-dados dd{margin:0;font-size:15px;line-height:1.6;color:var(--grafite)}
+.cz .ct-form{display:flex;flex-direction:column;gap:20px}
+.cz .ct-form .ct-h2{margin:0}
+.cz .ct-success #ct-ok{outline:none}
+@media (max-width:900px){
+  .cz .inst-contato{grid-template-columns:1fr;gap:40px}
+  .cz .inst-body{padding-top:32px;padding-bottom:56px}
+}
 @media (prefers-reduced-motion:reduce){
   .cz *{transition:none!important;animation:none!important}
 }

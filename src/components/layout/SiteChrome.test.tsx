@@ -7,4 +7,9 @@ describe("SiteHeader", () => {
     render(<SiteHeader current="imoveis" />);
     expect(screen.getByRole("link", { name: "SOU CORRETOR" })).toHaveAttribute("href", "/painel/entrar");
   });
+
+  test("sem current, nenhum item do menu fica marcado", () => {
+    const { container } = render(<SiteHeader />);
+    expect(container.querySelectorAll('[aria-current="page"]')).toHaveLength(0);
+  });
 });

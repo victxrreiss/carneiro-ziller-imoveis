@@ -115,6 +115,28 @@ test.describe("filtros do grid", () => {
   });
 });
 
+test.describe("páginas institucionais", () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test("contato geral chega", async ({ page }) => {
+    await page.goto("/contato");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Fale com a Carneiro & Ziller");
+    await expect(page.locator(".nav").getByRole("link", { name: "Contato" })).toHaveAttribute("aria-current", "page");
+    await page.getByLabel(/^NOME/).fill("Teste E2E Contato");
+    await page.getByLabel(/^TELEFONE/).fill("31998765432");
+    await page.getByLabel(/^E-MAIL/).fill("e2e.contato@example.com");
+    await page.getByLabel(/^MENSAGEM/).fill("Mensagem de teste do e2e.");
+    await page.getByRole("button", { name: "ENVIAR MENSAGEM" }).click();
+    await expect(page.getByText("Mensagem enviada. Nossa equipe vai falar com você em breve.")).toBeVisible();
+  });
+
+  test("política de privacidade não marca item do menu", async ({ page }) => {
+    await page.goto("/politica-de-privacidade");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Política de privacidade");
+    await expect(page.locator('.nav [aria-current="page"]')).toHaveCount(0);
+  });
+});
+
 test.describe("mobile 390px", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
@@ -177,7 +199,16 @@ test.describe("galeria", () => {
 });
 
 test.describe("acessibilidade (axe, WCAG A/AA)", () => {
-  const paginas = ["/imoveis", "/imoveis?finalidade=alugar&tipo=Terreno", "/imovel/cz1009", "/imovel/cz1021", "/imovel/cz9999"];
+  const paginas = [
+    "/imoveis",
+    "/imoveis?finalidade=alugar&tipo=Terreno",
+    "/imovel/cz1009",
+    "/imovel/cz1021",
+    "/imovel/cz9999",
+    "/contato",
+    "/sobre",
+    "/politica-de-privacidade",
+  ];
   for (const width of [390, 1440]) {
     for (const url of paginas) {
       test(`${url} em ${width}px`, async ({ page }) => {

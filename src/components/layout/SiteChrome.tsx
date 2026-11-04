@@ -21,8 +21,8 @@ export function Topbar() {
   );
 }
 
-export function SiteHeader({ current }: { current: NavKey }) {
-  const items = navItems.map((item) => ({ ...item, current: item.key === current }));
+export function SiteHeader({ current }: { current?: NavKey }) {
+  const items = navItems.map((item) => ({ ...item, current: current !== undefined && item.key === current }));
   return (
     <header className="site-header">
       <div className="wrap">
@@ -54,7 +54,7 @@ export function SiteChrome({
   className,
   children,
 }: {
-  current: NavKey;
+  current?: NavKey;
   className?: string;
   children: ReactNode;
 }) {

@@ -3,7 +3,7 @@ import { SiteChrome } from "@/components/layout/SiteChrome";
 import { IcCasa } from "@/components/ui/IconesSite";
 import { routes } from "@/lib/routes";
 
-/** 404 das páginas que ainda não existem (Contato, Sobre nós, Política…), com a moldura do site. */
+/** 404 do site, com a moldura das telas internas. */
 export default function NaoEncontrado() {
   return (
     <SiteChrome current="home">
