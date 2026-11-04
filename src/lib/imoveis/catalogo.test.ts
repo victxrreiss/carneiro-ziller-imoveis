@@ -9,6 +9,7 @@ import {
   listarIdsImoveis as listarIds,
   obterImovel as obter,
   opcoesLocalizacao as opcoes,
+  temLancamentos as temLanc,
   validarLocal,
 } from "./catalogo";
 import type { FinalidadeFiltro, Filtros } from "./filtros";
@@ -25,6 +26,7 @@ const buscarImoveis = (f: Filtros) => buscar(f, amb.db);
 const contarImoveis = (f: Filtros) => contar(f, amb.db);
 const opcoesLocalizacao = () => opcoes(amb.db);
 const contarPorTipo = (f: FinalidadeFiltro | undefined) => contarTipo(f, amb.db);
+const temLancamentos = () => temLanc(amb.db);
 const listarIdsImoveis = () => listarIds(amb.db);
 const obterImovel = (id: string) => obter(id, amb.db);
 const mudar = (id: string, valores: Partial<typeof imoveis.$inferInsert>) => amb.db.update(imoveis).set(valores).where(eq(imoveis.id, id));
@@ -290,5 +292,24 @@ describe("ficha completa e privacidade do endereço", () => {
     expect(await ids({ suites: "1", pagina: 1 })).toEqual(["cz1009", "cz1010"]);
     expect(await ids({ carac: ["piscina"], pagina: 1 })).toEqual(["cz1009", "cz1010"]);
     expect(await ids({ carac: ["piscina", "academia"], pagina: 1 })).toEqual(["cz1009"]);
+  });
+});
+
+describe("temLancamentos (menu)", () => {
+  test("verdadeiro com lançamento publicado na semente", async () => {
+    expect(await temLancamentos()).toBe(true);
+  });
+
+  test("falso sem nenhum lançamento", async () => {
+    await amb.db.update(imoveis).set({ lancamento: false });
+    expect(await temLancamentos()).toBe(false);
+  });
+
+  test("lançamento em rascunho não conta", async () => {
+    await amb.db.update(imoveis).set({ lancamento: false });
+    await mudar("cz1001", { lancamento: true, situacao: "rascunho" });
+    expect(await temLancamentos()).toBe(false);
+    await mudar("cz1001", { situacao: "publicado" });
+    expect(await temLancamentos()).toBe(true);
   });
 });

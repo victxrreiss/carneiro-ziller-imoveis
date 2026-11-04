@@ -47,6 +47,12 @@ export async function getLancamentos() {
   return catalogo.lancamentosHome();
 }
 
+export async function getTemLancamentos() {
+  "use cache";
+  marcar();
+  return catalogo.temLancamentos();
+}
+
 export async function getImoveisVenda() {
   "use cache";
   marcar();

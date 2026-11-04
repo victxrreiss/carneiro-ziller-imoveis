@@ -269,6 +269,11 @@ export function lancamentosHome(db: Db = conexao()): Promise<ImovelCard[]> {
   return recentes((r) => r.lancamento, db);
 }
 
+/** Há ao menos um lançamento publicado? Decide se o menu mostra "Lançamentos". */
+export async function temLancamentos(db: Db = conexao()): Promise<boolean> {
+  return (await publicados(db)).some((r) => r.lancamento);
+}
+
 /** Seção "Imóveis em destaque", aba Venda: automática, sem lançamentos (que têm seção própria). */
 export function vendaHome(db: Db = conexao()): Promise<ImovelCard[]> {
   return recentes((r) => r.finalidade === "venda" && !r.lancamento, db);

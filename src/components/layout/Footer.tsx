@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { InstagramIcon, LinkedInIcon } from "@/components/ui/Icons";
-import { navItems, routes } from "@/lib/routes";
+import { getTemLancamentos } from "@/lib/imoveis";
+import { itensNavegacao, routes } from "@/lib/routes";
 import { empresa, linkWhatsApp, social } from "@/lib/site";
 import { Logo } from "./Logo";
 
-const footerNav = [...navItems, { key: "privacidade", label: "Política de privacidade", href: routes.privacidade }];
+const privacidade = { key: "privacidade", label: "Política de privacidade", href: routes.privacidade };
 
 /** Rodapé do site (versão do grid/Imóvel). Precisa de um ancestral `.cz`. */
-export function Footer() {
+export async function Footer() {
+  const footerNav = [...itensNavegacao(await getTemLancamentos()), privacidade];
   return (
     <footer className="footer">
       <div className="wrap">

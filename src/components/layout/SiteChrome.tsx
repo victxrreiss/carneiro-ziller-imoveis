@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { navItems, painel, routes, type NavKey } from "@/lib/routes";
+import { getTemLancamentos } from "@/lib/imoveis";
+import { itensNavegacao, painel, routes, type NavKey } from "@/lib/routes";
 import { empresa } from "@/lib/site";
 import { Footer } from "./Footer";
 import { Logo } from "./Logo";
@@ -21,8 +22,8 @@ export function Topbar() {
   );
 }
 
-export function SiteHeader({ current }: { current?: NavKey }) {
-  const items = navItems.map((item) => ({ ...item, current: current !== undefined && item.key === current }));
+export async function SiteHeader({ current }: { current?: NavKey }) {
+  const items = itensNavegacao(await getTemLancamentos()).map((item) => ({ ...item, current: current !== undefined && item.key === current }));
   return (
     <header className="site-header">
       <div className="wrap">
