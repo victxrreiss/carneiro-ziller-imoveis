@@ -126,15 +126,21 @@ export function emailInteresse(o: {
   agora?: number;
 }): Mensagem {
   const quando = dataHora(o.agora ?? Date.now());
+  const geral = !o.imovel;
   const linkImovel = o.imovel ? `${urlBase()}/imovel/${o.imovel.id}` : "";
-  const linkPainel = o.imovel ? `${urlBase()}/painel/imoveis/${o.imovel.id}` : `${urlBase()}/painel`;
-  const ref = o.imovel ? `${o.imovel.codigo.toUpperCase()} · ${o.imovel.titulo}` : o.codigo.toUpperCase();
+  // Contato geral: lista de contatos do painel (rota `painel.contatos`, criada na Task 3).
+  const linkPainel = o.imovel ? `${urlBase()}/painel/imoveis/${o.imovel.id}` : `${urlBase()}/painel/contatos`;
+  const ref = o.imovel ? `${o.imovel.codigo.toUpperCase()} · ${o.imovel.titulo}` : "";
   const zap = o.telefone.replace(/\D/g, "");
-  const titulo = "Novo interesse em um imóvel";
+  const titulo = geral ? "Nova mensagem pelo site" : "Novo interesse em um imóvel";
+  const resumo = geral ? `${o.nome} enviou uma mensagem pelo site.` : `${o.nome} pediu contato sobre ${ref}.`;
+  const paragrafo = geral
+    ? `Um visitante enviou uma mensagem pela página de contato em ${quando}.`
+    : `Um visitante do site pediu contato sobre <strong style="color:#0F1D24;font-weight:600">${esc(ref)}</strong> em ${quando}.`;
   const html = layout(
-    `${o.nome} pediu contato sobre ${ref}.`,
+    resumo,
     titulo,
-    p(`Um visitante do site pediu contato sobre <strong style="color:#0F1D24;font-weight:600">${esc(ref)}</strong> em ${quando}.`) +
+    p(paragrafo) +
       caixa(
         `<strong style="color:#0F1D24">${esc(o.nome)}</strong><br>` +
           `Telefone: <a href="https://wa.me/${zap}" style="color:#0F1D24">${esc(o.telefone)}</a><br>` +
@@ -143,10 +149,12 @@ export function emailInteresse(o: {
       ) +
       (linkImovel ? botao("VER O IMÓVEL", linkImovel) : "") +
       alternativo(linkPainel),
-    "Você recebeu este aviso por ser o corretor responsável pelo imóvel, o administrador do painel ou um endereço cadastrado para receber os interesses do site.",
+    geral
+      ? "Você recebeu este aviso por ser o administrador do painel ou um endereço cadastrado para receber os contatos do site."
+      : "Você recebeu este aviso por ser o corretor responsável pelo imóvel, o administrador do painel ou um endereço cadastrado para receber os interesses do site.",
   );
-  const texto = `${titulo}\n\n${o.nome} pediu contato sobre ${ref} em ${quando}.\n\nTelefone: ${o.telefone}\nE-mail: ${o.email}${o.observacoes ? `\n\n${o.observacoes}` : ""}\n\n${linkImovel || linkPainel}`;
-  return { para: o.para, assunto: `Interesse em ${o.imovel ? o.imovel.codigo.toUpperCase() : o.codigo.toUpperCase()}: ${o.nome}`, html, texto, link: linkImovel || linkPainel };
+  const texto = `${titulo}\n\n${geral ? `Um visitante enviou uma mensagem pela página de contato em ${quando}.` : `${o.nome} pediu contato sobre ${ref} em ${quando}.`}\n\nNome: ${o.nome}\nTelefone: ${o.telefone}\nE-mail: ${o.email}${o.observacoes ? `\n\n${o.observacoes}` : ""}\n\n${linkImovel || linkPainel}`;
+  return { para: o.para, assunto: geral ? `Nova mensagem pelo site: ${o.nome}` : `Interesse em ${o.imovel!.codigo.toUpperCase()}: ${o.nome}`, html, texto, link: linkImovel || linkPainel };
 }
 
 /** Envia pelo SMTP configurado. Lança se o envio falhar: quem chama decide o que responder. */

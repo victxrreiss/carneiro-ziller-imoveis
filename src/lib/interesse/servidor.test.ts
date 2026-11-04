@@ -39,6 +39,14 @@ describe("interesse (lead)", () => {
     const [salvo] = await amb.db.select().from(interesses).where(eq(interesses.id, r.id));
     expect(salvo).toMatchObject({ imovelId: null, codigo: "", origem: "contato", url: "/contato?x=1" });
     expect(r.avisos.map((a) => a.para).sort()).toEqual(["admin@exemplo.test", "leads@imobiliaria.test"]);
+    const aviso = r.avisos[0];
+    expect(aviso.assunto).toBe("Nova mensagem pelo site: Beto");
+    expect(aviso.html).toContain("Nova mensagem pelo site");
+    expect(aviso.html).toContain("Beto enviou uma mensagem pelo site.");
+    expect(aviso.html).toContain("Um visitante enviou uma mensagem pela página de contato em");
+    expect(aviso.html).not.toContain("sobre .");
+    expect(aviso.html).not.toContain("sobre <strong");
+    expect(aviso.link).toMatch(/\/painel\/contatos$/);
   });
 
   test("sem imovelId só vale para origem contato", async () => {
