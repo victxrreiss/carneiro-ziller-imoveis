@@ -17,6 +17,7 @@
     "db:semente": "tsx --conditions=react-server scripts/semear.ts",
     "admin:criar": "tsx --conditions=react-server scripts/criar-admin.ts",
     "loft:importar": "tsx --conditions=react-server scripts/importar-loft.ts",
+    "cadastro:relatorio": "tsx --conditions=react-server scripts/relatorio-cadastro.ts",
     "fotos:limpar": "tsx --conditions=react-server scripts/fotos-limpar.ts",
     "e2e:preparar": "tsx --conditions=react-server scripts/e2e-preparar.ts",
     "vps:preparar": "tsx --conditions=react-server scripts/vps-preparar.ts",

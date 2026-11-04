@@ -32,7 +32,7 @@ test.describe("navegação entre as telas", () => {
   });
 
   test("grid → imóvel → voltar mantém filtros, página e rolagem", async ({ page }) => {
-    await page.goto("/imoveis?q=belo&pagina=2");
+    await page.goto("/imoveis?q=a&pagina=2");
     const card = page.locator(".card").nth(4);
     await card.scrollIntoViewIfNeeded();
     const rolagem = await page.evaluate(() => window.scrollY);
@@ -40,9 +40,9 @@ test.describe("navegação entre as telas", () => {
     await card.locator(".card-title a").click();
     await page.waitForURL(/\/imovel\/cz\d+\?de=/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(titulo);
-    await expect(page.locator(".im-filters")).toHaveText("Filtros: “belo”");
+    await expect(page.locator(".im-filters")).toHaveText("Filtros: “a”");
     await page.locator("a.im-back-link").click();
-    await page.waitForURL("**/imoveis?q=belo&pagina=2");
+    await page.waitForURL("**/imoveis?q=a&pagina=2");
     await expect(page.locator(".r-page")).toHaveText("PÁGINA 2 DE 2");
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(rolagem - 50);
   });
@@ -100,6 +100,39 @@ test.describe("filtros do grid", () => {
     await expect(gatilho).toContainText("5 ou mais");
   });
 
+  test("ordenar por Menor preço: URL e primeiro card (aluguel: Casa comercial, R$ 7.900)", async ({ page }) => {
+    await page.goto("/imoveis?finalidade=alugar");
+    await page.getByRole("button", { name: /ORDENAR POR/ }).click();
+    await page.getByRole("option", { name: "Menor preço" }).click();
+    await page.waitForURL("**/imoveis?finalidade=alugar&ordem=menor-preco");
+    await expect(page.locator(".card").first().locator(".card-title")).toHaveText("Casa comercial");
+  });
+
+  test("localização e ordem sobrevivem a abrir o imóvel e Voltar aos resultados", async ({ page }) => {
+    await page.goto("/imoveis");
+    await page.getByRole("button", { name: /LOCALIZAÇÃO/ }).click();
+    await page.getByRole("group", { name: "Nova Lima" }).getByRole("option", { name: "Toda a cidade" }).click();
+    await page.waitForURL("**/imoveis?local=Nova+Lima");
+    await page.getByRole("button", { name: /ORDENAR POR/ }).click();
+    await page.getByRole("option", { name: "Maior preço" }).click();
+    await page.waitForURL("**/imoveis?local=Nova+Lima&ordem=maior-preco");
+    await page.locator(".card-title a").first().click();
+    await page.waitForURL(/\/imovel\/cz\d+\?de=/);
+    await page.locator("a.im-back-link").click();
+    await page.waitForURL("**/imoveis?local=Nova+Lima&ordem=maior-preco");
+    await expect(page.getByRole("button", { name: "Remover filtro Nova Lima" })).toBeVisible();
+  });
+
+  test("atalhos por categoria filtram por tipo e Todos limpa", async ({ page }) => {
+    await page.goto("/imoveis");
+    const nav = page.getByRole("navigation", { name: "Categorias" });
+    await nav.getByRole("link", { name: /^Cobertura \(\d+\)$/ }).click();
+    await page.waitForURL("**/imoveis?tipo=Cobertura");
+    await expect(nav.getByRole("link", { name: /^Cobertura/ })).toHaveAttribute("aria-current", "true");
+    await nav.getByRole("link", { name: "Todos" }).click();
+    await page.waitForURL(/\/imoveis$/);
+  });
+
   test("paginação", async ({ page }) => {
     await page.goto("/imoveis");
     await page.getByRole("button", { name: "Próxima página" }).click();
@@ -112,6 +145,28 @@ test.describe("filtros do grid", () => {
     await page.locator(".notice").getByRole("button", { name: "LIMPAR FILTROS" }).click();
     await page.waitForURL(/\/imoveis$/);
     await expect(page.locator(".r-count")).toHaveText("34 imóveis encontrados");
+  });
+});
+
+test.describe("páginas institucionais", () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test("contato geral chega", async ({ page }) => {
+    await page.goto("/contato");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Fale com a Carneiro & Ziller");
+    await expect(page.locator(".nav").getByRole("link", { name: "Contato" })).toHaveAttribute("aria-current", "page");
+    await page.getByLabel(/^NOME/).fill("Teste E2E Contato");
+    await page.getByLabel(/^TELEFONE/).fill("31998765432");
+    await page.getByLabel(/^E-MAIL/).fill("e2e.contato@example.com");
+    await page.getByLabel(/^MENSAGEM/).fill("Mensagem de teste do e2e.");
+    await page.getByRole("button", { name: "ENVIAR MENSAGEM" }).click();
+    await expect(page.getByText("Mensagem enviada. Nossa equipe vai falar com você em breve.")).toBeVisible();
+  });
+
+  test("política de privacidade não marca item do menu", async ({ page }) => {
+    await page.goto("/politica-de-privacidade");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Política de privacidade");
+    await expect(page.locator('.nav [aria-current="page"]')).toHaveCount(0);
   });
 });
 
@@ -128,6 +183,26 @@ test.describe("mobile 390px", () => {
     await painel.getByRole("button", { name: "VER 9 IMÓVEIS" }).click();
     await page.waitForURL("**/imoveis?finalidade=lancamentos");
     await expect(page.getByRole("button", { name: /FILTROS/ })).toContainText("1");
+  });
+
+  test("localização aparece no painel e conta no rascunho", async ({ page }) => {
+    await page.goto("/imoveis");
+    await page.getByRole("button", { name: "FILTROS" }).click();
+    const painel = page.getByRole("dialog", { name: "Filtros" });
+    await painel.getByRole("button", { name: /LOCALIZAÇÃO/ }).click();
+    await painel.getByRole("group", { name: "Nova Lima" }).getByRole("option", { name: "Toda a cidade" }).click();
+    await painel.getByRole("button", { name: /^VER \d+ IMÓVEIS$/ }).click();
+    await page.waitForURL("**/imoveis?local=Nova+Lima");
+    await expect(page.getByRole("button", { name: /ORDENAR POR/ })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  });
+
+  test("imóvel tem link WHATSAPP com o código na mensagem", async ({ page }) => {
+    await page.goto("/imovel/cz1009");
+    const link = page.getByRole("link", { name: "WHATSAPP" }).first();
+    await expect(link).toHaveAttribute("href", /^https:\/\/wa\.me\/5531995395988\?text=.*CZ1009/);
+    await expect(link).toHaveAttribute("target", "_blank");
+    await expect(link).toHaveAccessibleName("WHATSAPP (abre em nova aba)");
   });
 
   test("barra fixa abre o formulário em tela cheia; Esc devolve o foco à barra", async ({ page }) => {
@@ -177,7 +252,16 @@ test.describe("galeria", () => {
 });
 
 test.describe("acessibilidade (axe, WCAG A/AA)", () => {
-  const paginas = ["/imoveis", "/imoveis?finalidade=alugar&tipo=Terreno", "/imovel/cz1009", "/imovel/cz1021", "/imovel/cz9999"];
+  const paginas = [
+    "/imoveis",
+    "/imoveis?finalidade=alugar&tipo=Terreno",
+    "/imovel/cz1009",
+    "/imovel/cz1021",
+    "/imovel/cz9999",
+    "/contato",
+    "/sobre",
+    "/politica-de-privacidade",
+  ];
   for (const width of [390, 1440]) {
     for (const url of paginas) {
       test(`${url} em ${width}px`, async ({ page }) => {

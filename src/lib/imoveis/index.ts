@@ -3,7 +3,7 @@
 // TAG_IMOVEIS ao salvar, publicar ou excluir, e o site passa a mostrar a mudança.
 import { cacheLife, cacheTag } from "next/cache";
 import * as catalogo from "./catalogo";
-import type { Filtros } from "./filtros";
+import type { FinalidadeFiltro, Filtros } from "./filtros";
 
 export type {
   Destaque,
@@ -47,6 +47,12 @@ export async function getLancamentos() {
   return catalogo.lancamentosHome();
 }
 
+export async function getTemLancamentos() {
+  "use cache";
+  marcar();
+  return catalogo.temLancamentos();
+}
+
 export async function getImoveisVenda() {
   "use cache";
   marcar();
@@ -71,6 +77,18 @@ export async function contarImoveis(filtros: Filtros) {
   return catalogo.contarImoveis(filtros);
 }
 
+export async function getOpcoesLocalizacao() {
+  "use cache";
+  marcar();
+  return catalogo.opcoesLocalizacao();
+}
+
+export async function getContagemPorTipo(finalidade: FinalidadeFiltro | undefined) {
+  "use cache";
+  marcar();
+  return catalogo.contarPorTipo(finalidade);
+}
+
 export async function obterImovel(id: string) {
   "use cache";
   marcar();
@@ -81,4 +99,10 @@ export async function listarIdsImoveis() {
   "use cache";
   marcar();
   return catalogo.listarIdsImoveis();
+}
+
+export async function getSitemapImoveis() {
+  "use cache";
+  marcar();
+  return catalogo.listarParaSitemap();
 }

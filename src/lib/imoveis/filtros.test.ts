@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { combinaFinalidade, contextoVolta, filtrosParaQuery, lerFiltros, rotulosFiltros, tituloGrid } from "./filtros";
+import { combinaFinalidade, contarFiltrosPainel, contextoVolta, filtrosParaQuery, lerFiltros, rotulosFiltros, semFiltro, tituloGrid, urlGrid } from "./filtros";
 
 describe("lerFiltros", () => {
   test("aceita só valores conhecidos", () => {
@@ -134,5 +134,38 @@ describe("suítes e características", () => {
     expect(combinaFinalidade("alugar", { ...venda, valorLocacao: 9000 })).toBe(true);
     expect(combinaFinalidade("alugar", { ...venda, valorLocacao: null })).toBe(false);
     expect(combinaFinalidade("comprar", { ...venda, valorLocacao: 9000 })).toBe(true);
+  });
+});
+
+describe("ordem e local", () => {
+  test("lê ordem e local; ordem inválida é descartada; local é aparado e limitado", () => {
+    expect(lerFiltros(new URLSearchParams("ordem=maior-preco&local=Vila da Serra, Nova Lima"))).toEqual({
+      ordem: "maior-preco",
+      local: "Vila da Serra, Nova Lima",
+      pagina: 1,
+    });
+    expect(lerFiltros(new URLSearchParams("ordem=xyz"))).toEqual({ pagina: 1 });
+    expect(lerFiltros(new URLSearchParams("local=%20%20"))).toEqual({ pagina: 1 });
+    expect(lerFiltros(new URLSearchParams(`local=${"a".repeat(200)}`)).local).toHaveLength(80);
+  });
+
+  test("query na ordem canônica: local depois de q, ordem antes de pagina", () => {
+    const f = { ordem: "maior-preco", local: "Nova Lima", q: "x", tipo: "Casa", pagina: 2 } as const;
+    expect(filtrosParaQuery(f)).toBe("q=x&local=Nova+Lima&tipo=Casa&ordem=maior-preco&pagina=2");
+    expect(urlGrid({ ordem: "menor-preco", pagina: 1 })).toBe("/imoveis?ordem=menor-preco");
+  });
+
+  test("local vira chip e semFiltro o remove; ordem não é chip nem conta no painel", () => {
+    const f = { local: "Nova Lima", ordem: "maior-area", pagina: 3 } as const;
+    expect(rotulosFiltros(f)).toEqual([{ chave: "local", rotulo: "Nova Lima" }]);
+    expect(contarFiltrosPainel(f)).toBe(1);
+    expect(contarFiltrosPainel({ ordem: "maior-preco", pagina: 1 })).toBe(0);
+    expect(semFiltro(f, "local")).toEqual({ local: undefined, ordem: "maior-area", pagina: 1 });
+  });
+
+  test("o voltar aos resultados mantém ordem e local", () => {
+    const v = contextoVolta("local=Nova+Lima&ordem=menor-preco", false);
+    expect(v.href).toBe("/imoveis?local=Nova+Lima&ordem=menor-preco");
+    expect(v.resumo).toBe("Nova Lima");
   });
 });

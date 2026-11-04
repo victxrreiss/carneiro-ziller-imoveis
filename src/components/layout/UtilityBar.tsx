@@ -1,4 +1,4 @@
-import { crecis, unidades } from "@/lib/site";
+import { empresa } from "@/lib/site";
 
 export function UtilityBar() {
   return (
@@ -6,13 +6,10 @@ export function UtilityBar() {
       <div className="mx-auto flex box-content max-w-310 flex-wrap justify-between gap-x-6 gap-y-1.5 px-6 py-[9px]">
         <div className="flex flex-wrap gap-x-6 gap-y-1.5">
           <span>
-            {unidades.carneiro.nome} · {unidades.carneiro.telefone}
-          </span>
-          <span>
-            {unidades.ziller.nome} · {unidades.ziller.telefone}
+            Carneiro &amp; Ziller · {empresa.telefone}
           </span>
         </div>
-        <div className="tracking-[0.08em] text-prata">{crecis}</div>
+        <div className="tracking-[0.08em] text-prata">{empresa.creci}</div>
       </div>
     </div>
   );

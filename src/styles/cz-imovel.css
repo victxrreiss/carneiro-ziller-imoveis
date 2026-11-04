@@ -56,6 +56,8 @@
 .cz .im-cta{position:relative;overflow:hidden;width:100%;min-height:52px;padding:0 26px;border:none;background:var(--azul-noite);color:#FFFFFF;font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.2em;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:10px;transition:background-color .2s ease}
 .cz .im-cta:hover{background:var(--azul-noite-hover)}
 .cz .im-cta:active{background:var(--azul-rodape)}
+.cz .im-cta-whats{margin-top:12px;background:transparent;color:var(--azul-noite);border:1px solid var(--azul-noite);text-decoration:none}
+.cz .im-cta-whats:hover{background:var(--azul-noite);color:#FFFFFF}
 .cz .im-cta:disabled{background:var(--azul-noite-hover);cursor:progress}
 /* Descrição */
 .cz .im-desc{margin-top:64px;display:flex;flex-direction:column;gap:16px;max-width:680px}
@@ -153,10 +155,11 @@
   .cz .im-card .im-cta{display:none}
   .cz .im-desc{margin-top:40px}
   .cz .im-bar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:30;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:#FFFFFF;border-top:1px solid var(--areia);box-shadow:0 -10px 30px rgba(15,29,36,.08)}
-  .cz .im-bar .im-price{padding-top:0;min-width:0}
+  .cz .im-bar .im-price{padding-top:0;flex:none}
   .cz .im-bar .im-price-val{font-size:18px}
   .cz .im-bar .im-price-val small{font-size:12px}
   .cz .im-bar .im-cta{width:auto;min-height:48px;padding:0 20px;flex:none}
+  .cz .im-bar .im-cta-whats{margin-top:0;padding:0 14px;letter-spacing:.12em}
   .cz .im-sk-grid .im-sk-thumbs{display:none}
   .cz .im-sk-grid .im-sk-stage{aspect-ratio:4/3;margin:0 -24px}
   .cz .im-sk-card{margin:0 -24px;padding:28px 24px}
@@ -169,6 +172,12 @@
 @media (max-width:600px){
   .cz .im-title{font-size:30px}
   .cz .im-empty h1{font-size:26px}
+}
+@media (max-width:640px){
+  /* Valor em uma linha; os dois botões lado a lado, com a mesma largura, na de baixo */
+  .cz .im-bar{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+  .cz .im-bar .im-price{grid-column:1 / -1;flex-direction:row;align-items:baseline;justify-content:space-between;gap:12px}
+  .cz .im-bar .im-cta{width:100%}
 }
 @media (prefers-reduced-motion:reduce){
   .cz .im-progress{animation:none;width:100%;opacity:.5}

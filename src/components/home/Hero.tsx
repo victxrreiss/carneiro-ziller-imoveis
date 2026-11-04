@@ -1,19 +1,21 @@
 import type { ReactNode } from "react";
 import { Header } from "@/components/layout/Header";
 import { HouseIcon, PersonIcon, PinIcon } from "@/components/ui/Icons";
+import { temLancamentosParaMenu } from "@/lib/imoveis/lancamentos";
 import { HeroComposition } from "./HeroComposition";
 import { SearchBox } from "./SearchBox";
 import { SectionLabel } from "./SectionLabel";
 
 const highlights: { icon: ReactNode; title: string; caption: string }[] = [
-  { icon: <PinIcon size={22} color="#78323D" />, title: "2 unidades", caption: "BH e Nova Lima" },
+  { icon: <PinIcon size={22} color="#78323D" />, title: "Alto padrão", caption: "BH e Nova Lima" },
   { icon: <HouseIcon size={22} color="#78323D" />, title: "Curadoria", caption: "Imóveis selecionados" },
   { icon: <PersonIcon size={22} color="#78323D" />, title: "Consultoria", caption: "Do início às chaves" },
 ];
 
 const dots = "absolute bg-size-[20px_20px]";
 
-export function Hero() {
+export async function Hero() {
+  const temLancamentos = await temLancamentosParaMenu();
   return (
     <section className="relative overflow-hidden bg-fundo-hero">
       <div
@@ -37,7 +39,7 @@ export function Hero() {
             Apartamentos, coberturas, casas em condomínio e lançamentos em Belo Horizonte e Nova Lima.
           </p>
 
-          <SearchBox />
+          <SearchBox temLancamentos={temLancamentos} />
 
           <div className="flex flex-wrap gap-x-10 gap-y-5 pt-2.5">
             {highlights.map((h) => (

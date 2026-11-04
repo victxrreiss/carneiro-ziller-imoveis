@@ -41,6 +41,7 @@ export const painel = {
   imoveis: "/painel/imoveis",
   novoImovel: "/painel/imoveis/novo",
   imovel: (id: string) => `/painel/imoveis/${encodeURIComponent(id)}`,
+  contatos: "/painel/contatos",
   usuarios: "/painel/usuarios",
   conta: "/painel/conta",
 } as const;
@@ -59,3 +60,8 @@ export const navItems: { key: NavKey; label: string; href: string }[] = [
   { key: "contato", label: "Contato", href: routes.contato },
   { key: "sobre", label: "Sobre nós", href: routes.sobre },
 ];
+
+/** O menu sem "Lançamentos" enquanto não houver lançamento publicado (a página ficaria vazia). */
+export function itensNavegacao(temLancamentos: boolean): typeof navItems {
+  return temLancamentos ? navItems : navItems.filter((item) => item.key !== "lancamentos");
+}

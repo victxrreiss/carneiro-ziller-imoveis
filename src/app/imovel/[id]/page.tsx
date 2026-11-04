@@ -3,9 +3,11 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ImovelAusente, ImovelCarregando, ImovelTela } from "@/components/imovel/ImovelTela";
 import { SiteChrome } from "@/components/layout/SiteChrome";
+import { urlDoSite } from "@/lib/config";
 import { listarIdsImoveis, obterImovel } from "@/lib/imoveis";
 import { contextoVolta } from "@/lib/imoveis/filtros";
 import { formatarArea, formatarReais } from "@/lib/imoveis/formato";
+import { jsonLdImovel, serializarJsonLd } from "@/lib/imoveis/seo";
 import { routes } from "@/lib/routes";
 
 // Com `cacheComponents`, `generateStaticParams` não pode devolver lista vazia (erro de
@@ -59,9 +61,15 @@ async function Conteudo({ params, searchParams }: PageProps<"/imovel/[id]">) {
   }
 
   const { imovel } = r;
+  const url = new URL(routes.imovel(imovel.id), urlDoSite()).toString();
   return (
     <SiteChrome current={imovel.lancamento ? "lancamentos" : "imoveis"} className="im-has-bar">
-      <ImovelTela imovel={imovel} volta={contextoVolta(de, imovel.lancamento)} />
+      <ImovelTela
+        imovel={imovel}
+        volta={contextoVolta(de, imovel.lancamento)}
+        url={url}
+      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializarJsonLd(jsonLdImovel(imovel, url)) }} />
     </SiteChrome>
   );
 }

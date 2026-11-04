@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { FeaturedProperty } from "@/components/home/FeaturedProperty";
 import { Hero } from "@/components/home/Hero";
 import { Institutional } from "@/components/home/Institutional";
@@ -6,6 +7,12 @@ import { Regions } from "@/components/home/Regions";
 import { Selected } from "@/components/home/Selected";
 import { Footer } from "@/components/layout/Footer";
 import { UtilityBar } from "@/components/layout/UtilityBar";
+import { ogPadrao } from "@/lib/site";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+  openGraph: { ...ogPadrao, url: "/" },
+};
 
 export default function Home() {
   return (

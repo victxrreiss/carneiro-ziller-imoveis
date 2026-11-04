@@ -379,3 +379,20 @@ test("interesse enviado pelo site é gravado e avisa o ADMIN por e-mail", async 
     )
     .toContain(visitante);
 });
+
+test("tela Contatos mostra o interesse enviado pelo site", async ({ page }) => {
+  const nome = `Contato E2E ${Date.now().toString(36)}`;
+  await page.goto("/imovel/cz1009");
+  await page.locator("#im-cta").click();
+  await page.locator("#im-nome").fill(nome);
+  await page.locator("#im-tel").fill("31999997777");
+  await page.locator("#im-email").fill(`contato-${Date.now().toString(36)}@e2e.test`);
+  await page.getByRole("button", { name: "ENVIAR" }).click();
+  await expect(page.getByText(/Recebemos seu interesse/)).toBeVisible();
+
+  await entrar(page, ADMIN);
+  await page.getByRole("navigation", { name: "Painel", exact: true }).getByRole("link", { name: "Contatos" }).click();
+  await page.waitForURL(/\/painel\/contatos$/);
+  await expect(page.getByRole("heading", { name: "Contatos", level: 1 })).toBeVisible();
+  await expect(page.getByRole("cell", { name: nome }).first()).toBeVisible();
+});

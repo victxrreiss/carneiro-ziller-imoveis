@@ -2,7 +2,8 @@
 // (lib/email); aqui ficam só os modelos das mensagens.
 import { urlDoSite } from "@/lib/config";
 import { remetente, type Mensagem as MensagemEnvio } from "@/lib/email";
-import { unidades } from "@/lib/site";
+import { painel } from "@/lib/routes";
+import { empresa } from "@/lib/site";
 
 const SERIF = "'DM Serif Display', Georgia, 'Times New Roman', serif";
 const SANS = "'Montserrat', Arial, Helvetica, sans-serif";
@@ -30,7 +31,7 @@ function layout(preCabecalho: string, titulo: string, corpo: string, rodape: str
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${titulo}</title>
 <style>@media (max-width:480px){.em-pad{padding-left:22px!important;padding-right:22px!important}h1{font-size:26px!important}}</style></head>
 <body style="margin:0;background:#E7E4DC">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#E7E4DC">${preCabecalho}</div>
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#E7E4DC">${esc(preCabecalho)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#E7E4DC;font-family:${SANS};color:#414042"><tr><td style="padding:40px 12px 48px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;margin:0 auto;border-collapse:collapse">
 <tr><td class="em-pad" style="background:#FBFAF7;border-top:3px solid #78323D;padding:28px 40px 24px;border-bottom:1px solid #E7E4DC">
@@ -47,7 +48,7 @@ ${corpo}
 </td></tr>
 <tr><td class="em-pad" style="background:#0A1419;border-top:4px solid #78323D;padding:28px 40px;font-size:12px;line-height:1.7;color:#C9C9C9">
 <div style="font-family:${SERIF};font-size:17px;color:#FFFFFF;margin-bottom:8px">Carneiro &amp; Ziller Imóveis</div>
-<div>${unidades.carneiro.nome} · ${unidades.carneiro.creci} · ${unidades.carneiro.telefone}<br>${unidades.ziller.nome} · ${unidades.ziller.creci} · ${unidades.ziller.telefone}</div>
+<div>${empresa.nome} · ${empresa.creci} · ${empresa.telefone}</div>
 <div style="margin-top:14px;color:#A8A8AA">${rodape}</div>
 </td></tr></table></td></tr></table></body></html>`;
 }
@@ -126,15 +127,21 @@ export function emailInteresse(o: {
   agora?: number;
 }): Mensagem {
   const quando = dataHora(o.agora ?? Date.now());
+  const geral = !o.imovel;
   const linkImovel = o.imovel ? `${urlBase()}/imovel/${o.imovel.id}` : "";
-  const linkPainel = o.imovel ? `${urlBase()}/painel/imoveis/${o.imovel.id}` : `${urlBase()}/painel`;
-  const ref = o.imovel ? `${o.imovel.codigo.toUpperCase()} · ${o.imovel.titulo}` : o.codigo.toUpperCase();
+  // Contato geral: lista de contatos do painel (`painel.contatos`).
+  const linkPainel = o.imovel ? `${urlBase()}/painel/imoveis/${o.imovel.id}` : `${urlBase()}${painel.contatos}`;
+  const ref = o.imovel ? `${o.imovel.codigo.toUpperCase()} · ${o.imovel.titulo}` : "";
   const zap = o.telefone.replace(/\D/g, "");
-  const titulo = "Novo interesse em um imóvel";
+  const titulo = geral ? "Nova mensagem pelo site" : "Novo interesse em um imóvel";
+  const resumo = geral ? `${o.nome} enviou uma mensagem pelo site.` : `${o.nome} pediu contato sobre ${ref}.`;
+  const paragrafo = geral
+    ? `Um visitante enviou uma mensagem pela página de contato em ${quando}.`
+    : `Um visitante do site pediu contato sobre <strong style="color:#0F1D24;font-weight:600">${esc(ref)}</strong> em ${quando}.`;
   const html = layout(
-    `${o.nome} pediu contato sobre ${ref}.`,
+    resumo,
     titulo,
-    p(`Um visitante do site pediu contato sobre <strong style="color:#0F1D24;font-weight:600">${esc(ref)}</strong> em ${quando}.`) +
+    p(paragrafo) +
       caixa(
         `<strong style="color:#0F1D24">${esc(o.nome)}</strong><br>` +
           `Telefone: <a href="https://wa.me/${zap}" style="color:#0F1D24">${esc(o.telefone)}</a><br>` +
@@ -143,10 +150,12 @@ export function emailInteresse(o: {
       ) +
       (linkImovel ? botao("VER O IMÓVEL", linkImovel) : "") +
       alternativo(linkPainel),
-    "Você recebeu este aviso por ser o corretor responsável pelo imóvel, o administrador do painel ou um endereço cadastrado para receber os interesses do site.",
+    geral
+      ? "Você recebeu este aviso por ser o administrador do painel ou um endereço cadastrado para receber os contatos do site."
+      : "Você recebeu este aviso por ser o corretor responsável pelo imóvel, o administrador do painel ou um endereço cadastrado para receber os interesses do site.",
   );
-  const texto = `${titulo}\n\n${o.nome} pediu contato sobre ${ref} em ${quando}.\n\nTelefone: ${o.telefone}\nE-mail: ${o.email}${o.observacoes ? `\n\n${o.observacoes}` : ""}\n\n${linkImovel || linkPainel}`;
-  return { para: o.para, assunto: `Interesse em ${o.imovel ? o.imovel.codigo.toUpperCase() : o.codigo.toUpperCase()}: ${o.nome}`, html, texto, link: linkImovel || linkPainel };
+  const texto = `${titulo}\n\n${geral ? `Um visitante enviou uma mensagem pela página de contato em ${quando}.` : `${o.nome} pediu contato sobre ${ref} em ${quando}.`}\n\nNome: ${o.nome}\nTelefone: ${o.telefone}\nE-mail: ${o.email}${o.observacoes ? `\n\n${o.observacoes}` : ""}\n\n${linkImovel || linkPainel}`;
+  return { para: o.para, assunto: geral ? `Nova mensagem pelo site: ${o.nome}` : `Interesse em ${o.imovel!.codigo.toUpperCase()}: ${o.nome}`, html, texto, link: linkImovel || linkPainel };
 }
 
 /** Envia pelo SMTP configurado. Lança se o envio falhar: quem chama decide o que responder. */

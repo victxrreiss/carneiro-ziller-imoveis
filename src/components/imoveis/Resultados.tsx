@@ -3,24 +3,30 @@
 import Link from "next/link";
 import { IcAlerta, IcBusca, IcSeta, IcVoltar } from "@/components/ui/IconesSite";
 import type { PaginaImoveis } from "@/lib/imoveis";
-import { filtrosParaQuery, urlGrid, type Filtros } from "@/lib/imoveis/filtros";
+import { filtrosParaQuery, ORDENS, urlGrid, type Filtros } from "@/lib/imoveis/filtros";
 import { routes } from "@/lib/routes";
 import { CardImovel } from "./CardImovel";
+import { Dropdown } from "./Dropdown";
 
 export type EstadoResultados = { tipo: "carregando" } | { tipo: "erro" } | { tipo: "ok"; resultado: PaginaImoveis };
 
 type Props = {
   estado: EstadoResultados;
   filtros: Filtros;
+  /** Tipos com imóveis na finalidade escolhida, para os atalhos por categoria. */
+  tipos: { tipo: string; total: number }[];
   onPagina: (pagina: number) => void;
+  /** Aplica novos filtros (mudar a ordem volta para a página 1). */
+  onAplicar: (filtros: Filtros) => void;
   onLimpar: () => void;
   onTentarDeNovo: () => void;
 };
 
-export function Resultados({ estado, filtros, onPagina, onLimpar, onTentarDeNovo }: Props) {
+export function Resultados({ estado, filtros, tipos, onPagina, onAplicar, onLimpar, onTentarDeNovo }: Props) {
   return (
     <section className="results" aria-label="Resultados" id="resultados">
       <div className="wrap">
+        {estado.tipo === "ok" && <AtalhosTipo filtros={filtros} tipos={tipos} />}
         {estado.tipo === "carregando" && <Carregando />}
         {estado.tipo === "erro" && (
           <div className="notice" role="alert">
@@ -67,7 +73,7 @@ export function Resultados({ estado, filtros, onPagina, onLimpar, onTentarDeNovo
           </>
         )}
         {estado.tipo === "ok" && estado.resultado.total > 0 && (
-          <Lista resultado={estado.resultado} filtros={filtros} onPagina={onPagina} />
+          <Lista resultado={estado.resultado} filtros={filtros} onPagina={onPagina} onAplicar={onAplicar} />
         )}
       </div>
     </section>
@@ -117,7 +123,42 @@ export function numerosPaginacao(pagina: number, paginas: number): (number | "ga
   return out;
 }
 
-function Lista({ resultado, filtros, onPagina }: { resultado: PaginaImoveis; filtros: Filtros; onPagina: (p: number) => void }) {
+/** Atalhos por categoria: links para o grid com o tipo escolhido (ou sem tipo, em "Todos"). */
+function AtalhosTipo({ filtros, tipos }: { filtros: Filtros; tipos: { tipo: string; total: number }[] }) {
+  if (tipos.length === 0) return null;
+  const link = (tipo: string | undefined, texto: string) => (
+    <li key={tipo ?? "todos"}>
+      <Link
+        className="cat"
+        href={urlGrid({ ...filtros, tipo, pagina: 1 })}
+        scroll={false}
+        aria-current={filtros.tipo === tipo ? "true" : undefined}
+      >
+        {texto}
+      </Link>
+    </li>
+  );
+  return (
+    <nav className="cats" aria-label="Categorias">
+      <ul>
+        {link(undefined, "Todos")}
+        {tipos.map((t) => link(t.tipo, `${t.tipo} (${t.total})`))}
+      </ul>
+    </nav>
+  );
+}
+
+function Lista({
+  resultado,
+  filtros,
+  onPagina,
+  onAplicar,
+}: {
+  resultado: PaginaImoveis;
+  filtros: Filtros;
+  onPagina: (p: number) => void;
+  onAplicar: (f: Filtros) => void;
+}) {
   const { itens, total, pagina, paginas } = resultado;
   const de = filtrosParaQuery({ ...filtros, pagina });
   const grid = urlGrid({ ...filtros, pagina });
@@ -127,6 +168,13 @@ function Lista({ resultado, filtros, onPagina }: { resultado: PaginaImoveis; fil
         <h2 className="r-count" aria-live="polite">
           <strong>{total}</strong> {total === 1 ? "imóvel encontrado" : "imóveis encontrados"}
         </h2>
+        <Dropdown
+          rotulo="ORDENAR POR"
+          vazio={ORDENS[0].rotulo}
+          opcoes={ORDENS.flatMap((o) => (o.valor ? [{ valor: o.valor, rotulo: o.rotulo }] : []))}
+          valor={filtros.ordem}
+          onChange={(valor) => onAplicar({ ...filtros, ordem: ORDENS.find((o) => o.valor === valor)?.valor, pagina: 1 })}
+        />
         <div className="r-page">{paginas > 1 ? `PÁGINA ${pagina} DE ${paginas}` : ""}</div>
       </div>
       <ul className="grid">

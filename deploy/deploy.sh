@@ -6,6 +6,7 @@
 #   deploy/deploy.sh exemplos              importa os 3 imóveis de exemplo (banco vazio)
 #   deploy/deploy.sh importar-loft --feed <url|arquivo> --ativos <csv> --pendentes <csv> \
 #                    --responsavel <email> [--simular] [--forcar]   importa os imóveis da Loft
+#   deploy/deploy.sh relatorio-cadastro    grava relatorio-cadastro-AAAA-MM-DD.csv (avisos e prováveis duplicados)
 #
 # Banco e S3 da VPS só escutam em 127.0.0.1; um túnel SSH os traz para as mesmas
 # portas aqui. Por ele rodam as migrations, o bucket e o `next build`, que lê o banco
@@ -102,5 +103,10 @@ case "${1:-implantar}" in
     esac
     exit "$status"
     ;;
-  *) echo "Comando desconhecido: $1 (use implantar, admin, exemplos ou importar-loft)"; exit 1 ;;
+  relatorio-cadastro)
+    carregar_env
+    abrir_tunel
+    npm run -s cadastro:relatorio
+    ;;
+  *) echo "Comando desconhecido: $1 (use implantar, admin, exemplos, importar-loft ou relatorio-cadastro)"; exit 1 ;;
 esac

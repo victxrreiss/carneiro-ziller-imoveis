@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { navItems, painel, routes, type NavKey } from "@/lib/routes";
-import { crecis, unidades } from "@/lib/site";
+import { temLancamentosParaMenu } from "@/lib/imoveis/lancamentos";
+import { itensNavegacao, painel, routes, type NavKey } from "@/lib/routes";
+import { empresa } from "@/lib/site";
 import { Footer } from "./Footer";
 import { Logo } from "./Logo";
 import { MenuDrawer } from "./MenuDrawer";
@@ -12,20 +13,17 @@ export function Topbar() {
       <div className="wrap">
         <div className="units">
           <span>
-            {unidades.carneiro.nome} · {unidades.carneiro.telefone}
-          </span>
-          <span>
-            {unidades.ziller.nome} · {unidades.ziller.telefone}
+            Carneiro &amp; Ziller · {empresa.telefone}
           </span>
         </div>
-        <div className="creci">{crecis}</div>
+        <div className="creci">{empresa.creci}</div>
       </div>
     </div>
   );
 }
 
-export function SiteHeader({ current }: { current: NavKey }) {
-  const items = navItems.map((item) => ({ ...item, current: item.key === current }));
+export async function SiteHeader({ current }: { current?: NavKey }) {
+  const items = itensNavegacao(await temLancamentosParaMenu()).map((item) => ({ ...item, current: current !== undefined && item.key === current }));
   return (
     <header className="site-header">
       <div className="wrap">
@@ -57,7 +55,7 @@ export function SiteChrome({
   className,
   children,
 }: {
-  current: NavKey;
+  current?: NavKey;
   className?: string;
   children: ReactNode;
 }) {

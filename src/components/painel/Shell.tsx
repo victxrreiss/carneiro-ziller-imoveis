@@ -9,7 +9,7 @@ import { Portal } from "@/components/ui/Portal";
 import { useDialog } from "@/components/ui/useDialog";
 import type { Papel } from "@/lib/dados/tipos";
 import { painel } from "@/lib/routes";
-import { IcConta, IcFechar, IcImoveis, IcMenu, IcSair, IcUsuarios } from "./Icones";
+import { IcConta, IcContatos, IcFechar, IcImoveis, IcMenu, IcSair, IcUsuarios } from "./Icones";
 import { Marca } from "./ui";
 
 export type UsuarioShell = { nome: string; papel: Papel };
@@ -33,6 +33,12 @@ function Itens({ usuario, onNavegar }: { usuario: UsuarioShell; onNavegar?: () =
         <Link href={painel.imoveis} aria-current={atual(painel.imoveis)} onClick={onNavegar}>
           <IcImoveis />
           Imóveis
+        </Link>
+      </li>
+      <li>
+        <Link href={painel.contatos} aria-current={atual(painel.contatos)} onClick={onNavegar}>
+          <IcContatos />
+          Contatos
         </Link>
       </li>
       {usuario.papel === "admin" && (
