@@ -144,6 +144,13 @@ describe("opcoesLocalizacao e validarLocal", () => {
     expect(nova?.bairros).toEqual([...(nova?.bairros ?? [])].sort((a, b) => a.localeCompare(b, "pt-BR")));
   });
 
+  test("bairro vazio não vira opção; a cidade continua", async () => {
+    await amb.db.update(imoveis).set({ bairro: "  " });
+    const o = await opcoesLocalizacao();
+    expect(o.length).toBeGreaterThan(0);
+    expect(o.every((c) => c.bairros.length === 0)).toBe(true);
+  });
+
   test("rascunho não aparece nas opções", async () => {
     await amb.db.update(imoveis).set({ situacao: "rascunho" });
     expect(await opcoesLocalizacao()).toEqual([]);

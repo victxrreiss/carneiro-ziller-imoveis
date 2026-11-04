@@ -159,7 +159,8 @@ export async function opcoesLocalizacao(db: Db = conexao()): Promise<{ cidade: s
   const porCidade = new Map<string, Set<string>>();
   for (const r of await publicados(db)) {
     if (!porCidade.has(r.cidade)) porCidade.set(r.cidade, new Set());
-    porCidade.get(r.cidade)?.add(r.bairro);
+    // Bairro vazio geraria uma opção sem rótulo; a cidade continua listada.
+    if (r.bairro.trim()) porCidade.get(r.cidade)?.add(r.bairro);
   }
   const alfa = (a: string, b: string) => a.localeCompare(b, "pt-BR");
   return [...porCidade]
