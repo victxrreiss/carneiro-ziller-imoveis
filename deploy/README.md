@@ -101,6 +101,10 @@ Como ler o relatório (impresso e salvo em `relatorio-loft-<data>.json` na raiz 
 
 Antes da virada: pode repetir a importação à vontade, trazendo o feed e as planilhas mais recentes. O que a equipe já ajustou no painel é preservado. Depois da virada, a equipe cadastra só pelo painel e a importação deixa de ser usada.
 
+## Relatório de cadastro
+
+Para a equipe revisar o cadastro vindo da Loft: `deploy/deploy.sh relatorio-cadastro` (só lê o banco, pelo túnel) grava `relatorio-cadastro-AAAA-MM-DD.csv` na raiz do repositório (fora do git) e imprime os totais. O CSV (`;`, abre direto no Excel) tem duas seções: imóveis publicados e rascunhos com avisos (sem área, sem finalidade, sem valor, descrição que cita rua e número) e prováveis duplicados (mesmo tipo e empreendimento, ou bairro e cidade, com área e valor a até 2%). Não traz endereço, número, complemento nem CEP. Localmente: `npm run cadastro:relatorio`.
+
 ## Ligar o e-mail
 
 Descomente e preencha o bloco SMTP do `.env` na VPS (Resend: `docs/backend-pendencias.md`, passo 3) e recrie o site:
