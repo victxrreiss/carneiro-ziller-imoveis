@@ -89,5 +89,5 @@ export function paraCsv(r: { problemas: LinhaProblema[]; duplicados: GrupoDuplic
     linha(["Códigos", "Motivo"]),
     ...r.duplicados.map((d) => linha([d.codigos.join(", "), d.motivo])),
   ];
-  return `﻿${linhas.join("\r\n")}\r\n`;
+  return `\uFEFF${linhas.join("\r\n")}\r\n`;
 }

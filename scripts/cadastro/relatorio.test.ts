@@ -97,7 +97,7 @@ describe("CSV", () => {
   test("tem BOM, separador ';', duas seções e nenhum endereço ou CEP", async () => {
     await novo({ area: null, endereco: "Rua Secreta Alfa", numero: "777", complemento: "apto 12", cep: "30000-000", descricao: "Rua Montes Claros, 395" });
     const csv = paraCsv(await montarRelatorio(amb.db));
-    expect(csv.startsWith("﻿")).toBe(true);
+    expect(csv.startsWith("\uFEFF")).toBe(true);
     expect(csv).toContain("Avisos do cadastro");
     expect(csv).toContain("Prováveis duplicados");
     expect(csv).toContain("Código;Título;Situação;Avisos");
