@@ -31,7 +31,7 @@ function layout(preCabecalho: string, titulo: string, corpo: string, rodape: str
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${titulo}</title>
 <style>@media (max-width:480px){.em-pad{padding-left:22px!important;padding-right:22px!important}h1{font-size:26px!important}}</style></head>
 <body style="margin:0;background:#E7E4DC">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#E7E4DC">${preCabecalho}</div>
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#E7E4DC">${esc(preCabecalho)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#E7E4DC;font-family:${SANS};color:#414042"><tr><td style="padding:40px 12px 48px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;margin:0 auto;border-collapse:collapse">
 <tr><td class="em-pad" style="background:#FBFAF7;border-top:3px solid #78323D;padding:28px 40px 24px;border-bottom:1px solid #E7E4DC">
