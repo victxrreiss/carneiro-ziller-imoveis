@@ -1,9 +1,17 @@
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, test } from "vitest";
 import { imoveis } from "@/lib/dados/esquema";
 import { criarAmbiente, type Ambiente } from "@/lib/dados/testes";
-import { buscarImoveis as buscar, contarImoveis as contar, listarIdsImoveis as listarIds, obterImovel as obter } from "./catalogo";
-import type { Filtros } from "./filtros";
+import {
+  buscarImoveis as buscar,
+  contarImoveis as contar,
+  contarPorTipo as contarTipo,
+  listarIdsImoveis as listarIds,
+  obterImovel as obter,
+  opcoesLocalizacao as opcoes,
+  validarLocal,
+} from "./catalogo";
+import type { FinalidadeFiltro, Filtros } from "./filtros";
 
 let amb: Ambiente;
 beforeAll(async () => {
@@ -15,23 +23,74 @@ beforeEach(async () => {
 
 const buscarImoveis = (f: Filtros) => buscar(f, amb.db);
 const contarImoveis = (f: Filtros) => contar(f, amb.db);
+const opcoesLocalizacao = () => opcoes(amb.db);
+const contarPorTipo = (f: FinalidadeFiltro | undefined) => contarTipo(f, amb.db);
 const listarIdsImoveis = () => listarIds(amb.db);
 const obterImovel = (id: string) => obter(id, amb.db);
 const mudar = (id: string, valores: Partial<typeof imoveis.$inferInsert>) => amb.db.update(imoveis).set(valores).where(eq(imoveis.id, id));
 
 describe("buscarImoveis", () => {
-  test("sem filtros: 34 publicados (o indisponível sai do grid), 15 por página", async () => {
+  test("sem filtros: 34 publicados (o indisponível sai do grid), 24 por página", async () => {
     const r = await buscarImoveis({ pagina: 1 });
     expect(r.total).toBe(34);
-    expect(r.paginas).toBe(3);
-    expect(r.itens).toHaveLength(15);
-    expect(r.itens[0].codigo).toBe("CZ1001");
+    expect(r.paginas).toBe(2);
+    expect(r.itens).toHaveLength(24);
     expect(r.itens.some((i) => i.codigo === "CZ1021")).toBe(false);
   });
 
+  test("25 publicados: 24 + 1", async () => {
+    await amb.db.update(imoveis).set({ situacao: "rascunho" }).where(inArray(imoveis.codigo, ["CZ1001", "CZ1002", "CZ1003", "CZ1004", "CZ1005", "CZ1006", "CZ1007", "CZ1008", "CZ1009"]));
+    const r = await buscarImoveis({ pagina: 1 });
+    expect(r.total).toBe(25);
+    expect(r.paginas).toBe(2);
+    expect((await buscarImoveis({ pagina: 2 })).itens).toHaveLength(1);
+  });
+
   test("última página e página fora do intervalo", async () => {
-    expect((await buscarImoveis({ pagina: 3 })).itens).toHaveLength(4);
-    expect((await buscarImoveis({ pagina: 9 })).pagina).toBe(3);
+    expect((await buscarImoveis({ pagina: 2 })).itens).toHaveLength(10);
+    expect((await buscarImoveis({ pagina: 9 })).pagina).toBe(2);
+  });
+
+  test("sem ordem: publicadoEm mais recente primeiro, empate pelo código, sem data por último", async () => {
+    await amb.db.update(imoveis).set({ publicadoEm: new Date("2026-01-01T00:00:00Z") });
+    await mudar("cz1030", { publicadoEm: new Date("2026-03-01T00:00:00Z") });
+    await mudar("cz1010", { publicadoEm: new Date("2026-02-01T00:00:00Z") });
+    await mudar("cz1005", { publicadoEm: null });
+    const r = await buscarImoveis({ pagina: 1 });
+    expect(r.itens.slice(0, 4).map((i) => i.codigo)).toEqual(["CZ1030", "CZ1010", "CZ1001", "CZ1002"]);
+    const ultima = await buscarImoveis({ pagina: 2 });
+    expect(ultima.itens.at(-1)?.codigo).toBe("CZ1005");
+  });
+
+  test("ordem por preço em Alugar usa o aluguel do imóvel de venda", async () => {
+    await mudar("cz1001", { finalidade: "venda", valor: 9_000_000, valorLocacao: 1 });
+    await mudar("cz1002", { finalidade: "venda", valor: 100, valorLocacao: 900_000 });
+    const menor = await buscarImoveis({ finalidade: "alugar", ordem: "menor-preco", pagina: 1 });
+    expect(menor.itens[0].codigo).toBe("CZ1001");
+    const maior = await buscarImoveis({ finalidade: "alugar", ordem: "maior-preco", pagina: 1 });
+    expect(maior.itens[0].codigo).toBe("CZ1002");
+    const efetivo = (i: (typeof menor.itens)[number]) => (i.finalidade === "venda" ? i.valorLocacao : i.valor) ?? 0;
+    const valores = menor.itens.map(efetivo);
+    expect(valores).toEqual([...valores].sort((a, b) => a - b));
+  });
+
+  test("ordem por preço e por área fora de Alugar usa o valor", async () => {
+    const menor = (await buscarImoveis({ ordem: "menor-preco", pagina: 1 })).itens.map((i) => i.valor);
+    expect(menor).toEqual([...menor].sort((a, b) => a - b));
+    const area = (await buscarImoveis({ ordem: "maior-area", pagina: 1 })).itens.map((i) => i.area);
+    expect(area).toEqual([...area].sort((a, b) => b - a));
+  });
+
+  test("local: cidade inteira ou bairro+cidade, sem acento nem caixa", async () => {
+    const cidade = await buscarImoveis({ local: "Nova Lima", pagina: 1 });
+    expect(cidade.total).toBeGreaterThan(0);
+    expect(cidade.itens.every((i) => i.cidade === "Nova Lima")).toBe(true);
+    const bairro = await buscarImoveis({ local: "vila da serra, nova lima", pagina: 1 });
+    expect(bairro.total).toBeGreaterThan(0);
+    expect(bairro.total).toBeLessThan(cidade.total);
+    expect(bairro.itens.every((i) => i.bairro === "Vila da Serra" && i.cidade === "Nova Lima")).toBe(true);
+    expect((await buscarImoveis({ local: "Vila da Serra, Belo Horizonte", pagina: 1 })).total).toBe(0);
+    expect((await buscarImoveis({ local: "Inexistente", pagina: 1 })).total).toBe(0);
   });
 
   test("busca sem acento e sem caixa, também por código", async () => {
@@ -69,6 +128,51 @@ describe("buscarImoveis", () => {
   test("as fotos vêm da URL pública do armazenamento", async () => {
     const r = await buscarImoveis({ pagina: 1 });
     expect(r.itens.every((i) => i.foto.src.startsWith("https://fotos.teste/fotos/"))).toBe(true);
+  });
+});
+
+describe("opcoesLocalizacao e validarLocal", () => {
+  test("cidades e bairros dos publicados, em ordem alfabética", async () => {
+    const o = await opcoesLocalizacao();
+    const cidades = o.map((c) => c.cidade);
+    expect(cidades).toEqual([...cidades].sort((a, b) => a.localeCompare(b, "pt-BR")));
+    const nova = o.find((c) => c.cidade === "Nova Lima");
+    expect(nova?.bairros).toContain("Vila da Serra");
+    expect(nova?.bairros).toEqual([...(nova?.bairros ?? [])].sort((a, b) => a.localeCompare(b, "pt-BR")));
+  });
+
+  test("rascunho não aparece nas opções", async () => {
+    await amb.db.update(imoveis).set({ situacao: "rascunho" });
+    expect(await opcoesLocalizacao()).toEqual([]);
+  });
+
+  test("validarLocal usa a grafia do catálogo, descarta o desconhecido e respeita a cidade", () => {
+    const o = [
+      { cidade: "Belo Horizonte", bairros: ["Centro"] },
+      { cidade: "Nova Lima", bairros: ["Centro", "Vila da Serra"] },
+    ];
+    expect(validarLocal({ local: "vila da serra, nova lima", pagina: 1 }, o).local).toBe("Vila da Serra, Nova Lima");
+    expect(validarLocal({ local: "NOVA LIMA", pagina: 1 }, o).local).toBe("Nova Lima");
+    expect(validarLocal({ local: "Inexistente", pagina: 2 }, o)).toEqual({ pagina: 2 });
+    expect(validarLocal({ local: "Vila da Serra, Belo Horizonte", pagina: 1 }, o)).toEqual({ pagina: 1 });
+    expect(validarLocal({ local: "centro, belo horizonte", pagina: 1 }, o).local).toBe("Centro, Belo Horizonte");
+    expect(validarLocal({ pagina: 1 }, o)).toEqual({ pagina: 1 });
+  });
+});
+
+describe("contarPorTipo", () => {
+  test("só tipos com total, na ordem de TIPOS, somando os publicados", async () => {
+    const t = await contarPorTipo(undefined);
+    expect(t.every((x) => x.total > 0)).toBe(true);
+    expect(t.reduce((n, x) => n + x.total, 0)).toBe(34);
+    expect(t.some((x) => x.tipo === "Terreno" && x.total === 0)).toBe(false);
+  });
+
+  test("conta só o que combina com a finalidade", async () => {
+    const alugar = await contarPorTipo("alugar");
+    expect(alugar.reduce((n, x) => n + x.total, 0)).toBe(await contarImoveis({ finalidade: "alugar", pagina: 1 }));
+    expect(alugar.some((x) => x.tipo === "Terreno")).toBe(false);
+    expect(alugar.length).toBeLessThan((await contarPorTipo(undefined)).length);
   });
 });
 

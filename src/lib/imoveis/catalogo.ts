@@ -7,13 +7,13 @@ import { conexao, type Db } from "@/lib/dados/conexao";
 import { carregarImovel, carregarImoveis } from "@/lib/dados/consultas";
 import { configuracaoSite, imoveis } from "@/lib/dados/esquema";
 import type { RegistroImovel } from "@/lib/dados/tipos";
-import { FAIXAS_AREA, combinaFinalidade, faixasPreco, type Faixa, type Filtros } from "./filtros";
+import { FAIXAS_AREA, TIPOS, combinaFinalidade, faixasPreco, type Faixa, type FinalidadeFiltro, type Filtros } from "./filtros";
 import { formatarArea, formatarPreco, formatarQuartos, formatarReais, rotuloEtiqueta } from "./formato";
 import { rotuloCaracteristica } from "./caracteristicas";
 import { regioes } from "./mock-data";
 import type { Destaque, Imovel, ImovelCard, ImovelResumo, PaginaImoveis, Regiao, ResultadoImovel } from "./types";
 
-export const POR_PAGINA = 15;
+export const POR_PAGINA = 24;
 /** Cards por seção automática da Home. */
 export const CARDS_HOME = 4;
 
@@ -94,15 +94,54 @@ function naFaixaDePreco(filtros: Filtros, faixa: Faixa | undefined, i: Imovel): 
   return valor !== null && valor >= faixa[2] && valor < faixa[3];
 }
 
+/** Mais recente primeiro; sem data de publicação por último; empate pelo código. */
+function maisRecentes(a: Completo, b: Completo): number {
+  if (a.publicadoEm !== b.publicadoEm) {
+    if (a.publicadoEm === null) return 1;
+    if (b.publicadoEm === null) return -1;
+    return b.publicadoEm.localeCompare(a.publicadoEm);
+  }
+  return a.codigo.localeCompare(b.codigo);
+}
+
+/** "<Cidade>" ou "<Bairro>, <Cidade>" (a vírgula separa pela última). Local desconhecido não casa com nada. */
+function noLocal(local: string, i: Pick<Imovel, "bairro" | "cidade">): boolean {
+  const virgula = local.lastIndexOf(",");
+  if (virgula === -1) return normalizar(i.cidade) === normalizar(local);
+  return normalizar(i.bairro) === normalizar(local.slice(0, virgula)) && normalizar(i.cidade) === normalizar(local.slice(virgula + 1));
+}
+
+/** Valor que a ordenação por preço usa: em "Alugar", o aluguel; em lançamentos, a venda. */
+function valorParaOrdem(filtros: Filtros, i: Imovel): number | null {
+  return filtros.finalidade === "alugar" && i.finalidade === "venda" ? i.valorLocacao : i.valor;
+}
+
+/** Ordena sem alterar a ordem de entrada (já a padrão) nos empates; sem valor vai por último. */
+function ordenar(lista: Imovel[], filtros: Filtros): Imovel[] {
+  if (!filtros.ordem) return lista;
+  const { ordem } = filtros;
+  if (ordem === "maior-area") return [...lista].sort((a, b) => b.area - a.area);
+  const sinal = ordem === "maior-preco" ? -1 : 1;
+  return [...lista].sort((a, b) => {
+    const va = valorParaOrdem(filtros, a);
+    const vb = valorParaOrdem(filtros, b);
+    if (va === null || vb === null) return va === vb ? 0 : va === null ? 1 : -1;
+    return sinal * (va - vb);
+  });
+}
+
 async function filtrar(filtros: Filtros, db: Db): Promise<Imovel[]> {
   const q = filtros.q ? normalizar(filtros.q) : "";
   const preco = faixasPreco(filtros.finalidade).find(([v]) => v === filtros.preco);
   const area = FAIXAS_AREA.find(([v]) => v === filtros.area);
-  return (await publicados(db))
+  const local = filtros.local;
+  const lista = (await publicados(db))
+    .sort(maisRecentes)
     .map(paraImovel)
     .filter(
       (i) =>
         combinaFinalidade(filtros.finalidade, i) &&
+        (!local || noLocal(local, i)) &&
         (!q || normalizar(`${i.titulo} ${i.bairro} ${i.cidade} ${i.codigo} ${i.empreendimento ?? ""}`).includes(q)) &&
         (!filtros.tipo || i.tipo === filtros.tipo) &&
         naFaixaDePreco(filtros, preco, i) &&
@@ -112,6 +151,39 @@ async function filtrar(filtros: Filtros, db: Db): Promise<Imovel[]> {
         (!filtros.suites || (i.suites ?? 0) >= Number(filtros.suites)) &&
         (filtros.carac ?? []).every((c) => i.caracteristicas.some((x) => x.chave === c)),
     );
+  return ordenar(lista, filtros);
+}
+
+/** Cidades e bairros dos publicados, em ordem alfabética (pt-BR). */
+export async function opcoesLocalizacao(db: Db = conexao()): Promise<{ cidade: string; bairros: string[] }[]> {
+  const porCidade = new Map<string, Set<string>>();
+  for (const r of await publicados(db)) {
+    if (!porCidade.has(r.cidade)) porCidade.set(r.cidade, new Set());
+    porCidade.get(r.cidade)?.add(r.bairro);
+  }
+  const alfa = (a: string, b: string) => a.localeCompare(b, "pt-BR");
+  return [...porCidade]
+    .sort(([a], [b]) => alfa(a, b))
+    .map(([cidade, bairros]) => ({ cidade, bairros: [...bairros].sort(alfa) }));
+}
+
+/** Remove `local` que não exista nas opções e reescreve o que existe para a grafia do catálogo. */
+export function validarLocal(filtros: Filtros, opcoes: { cidade: string; bairros: string[] }[]): Filtros {
+  const { local, ...resto } = filtros;
+  if (!local) return filtros;
+  const alvo = normalizar(local);
+  for (const { cidade, bairros } of opcoes) {
+    if (normalizar(cidade) === alvo) return { ...resto, local: cidade };
+    const bairro = bairros.find((b) => normalizar(`${b}, ${cidade}`) === alvo);
+    if (bairro) return { ...resto, local: `${bairro}, ${cidade}` };
+  }
+  return resto;
+}
+
+/** Imóveis por tipo para a finalidade, só os tipos com algum, na ordem de TIPOS. */
+export async function contarPorTipo(finalidade: FinalidadeFiltro | undefined, db: Db = conexao()): Promise<{ tipo: string; total: number }[]> {
+  const candidatos = (await publicados(db)).filter((r) => combinaFinalidade(finalidade, r));
+  return TIPOS.map((tipo) => ({ tipo, total: candidatos.filter((r) => r.tipo === tipo).length })).filter((t) => t.total > 0);
 }
 
 export async function buscarImoveis(filtros: Filtros, db: Db = conexao()): Promise<PaginaImoveis> {
