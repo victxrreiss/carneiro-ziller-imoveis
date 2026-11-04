@@ -323,4 +323,11 @@ describe("listarParaSitemap", () => {
     expect(lista.some((i) => i.id === "cz1001" || i.id === "cz1021")).toBe(false);
     expect(lista[0].alteradoEm).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
+
+  test("publicado incompleto (sem área) fica fora: a página o mostra como indisponível", async () => {
+    await mudar("cz1002", { area: null });
+    const lista = await listarSitemap(amb.db);
+    expect(lista.some((i) => i.id === "cz1002")).toBe(false);
+    expect(lista).toHaveLength(34 - 1);
+  });
 });
