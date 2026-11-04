@@ -152,6 +152,13 @@ test.describe("mobile 390px", () => {
     await expect(page.getByRole("button", { name: /FILTROS/ })).toContainText("1");
   });
 
+  test("imóvel tem link WHATSAPP com o código na mensagem", async ({ page }) => {
+    await page.goto("/imovel/cz1009");
+    const link = page.getByRole("link", { name: "WHATSAPP" }).first();
+    await expect(link).toHaveAttribute("href", /^https:\/\/wa\.me\/5531995395988\?text=.*CZ1009/);
+    await expect(link).toHaveAttribute("target", "_blank");
+  });
+
   test("barra fixa abre o formulário em tela cheia; Esc devolve o foco à barra", async ({ page }) => {
     await page.goto("/imovel/cz1009");
     const botao = page.locator("#im-cta-bar");

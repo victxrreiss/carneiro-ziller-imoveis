@@ -2,6 +2,8 @@ import Link from "next/link";
 import { IcCasa, IcPin } from "@/components/ui/IconesSite";
 import type { Imovel } from "@/lib/imoveis";
 import type { ContextoVolta } from "@/lib/imoveis/filtros";
+import { mensagemWhatsAppImovel } from "@/lib/imoveis/whatsapp";
+import { linkWhatsApp } from "@/lib/site";
 import { formatarAnual, formatarArea, formatarMensal, formatarReais, rotuloEtiqueta } from "@/lib/imoveis/formato";
 import { routes } from "@/lib/routes";
 import { AgendarProvider, BotaoAgendar } from "./Agendar";
@@ -25,7 +27,21 @@ function Preco({ imovel }: { imovel: Imovel }) {
 }
 
 /** Ficha, galeria, descrição e barra fixa (mobile). */
-export function ImovelTela({ imovel, volta }: { imovel: Imovel; volta: ContextoVolta }) {
+function BotaoWhatsApp({ imovel, url, id }: { imovel: Imovel; url: string; id: string }) {
+  return (
+    <a
+      id={id}
+      className="im-cta im-cta-whats"
+      href={linkWhatsApp(mensagemWhatsAppImovel(imovel, url))}
+      target="_blank"
+      rel="noopener"
+    >
+      WHATSAPP
+    </a>
+  );
+}
+
+export function ImovelTela({ imovel, volta, url }: { imovel: Imovel; volta: ContextoVolta; url: string }) {
   const specs = [
     { rotulo: "ÁREA", valor: formatarArea(imovel.area) },
     imovel.quartos ? { rotulo: "QUARTOS", valor: String(imovel.quartos) } : null,
@@ -132,12 +148,14 @@ export function ImovelTela({ imovel, volta }: { imovel: Imovel; volta: ContextoV
                 </dl>
               )}
               <BotaoAgendar id="im-cta" />
+              <BotaoWhatsApp imovel={imovel} url={url} id="im-whats" />
             </aside>
           </div>
         </section>
         <div className="im-bar">
           <Preco imovel={imovel} />
           <BotaoAgendar id="im-cta-bar" />
+          <BotaoWhatsApp imovel={imovel} url={url} id="im-whats-bar" />
         </div>
       </AgendarProvider>
     </main>

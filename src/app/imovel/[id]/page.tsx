@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ImovelAusente, ImovelCarregando, ImovelTela } from "@/components/imovel/ImovelTela";
 import { SiteChrome } from "@/components/layout/SiteChrome";
+import { urlDoSite } from "@/lib/config";
 import { listarIdsImoveis, obterImovel } from "@/lib/imoveis";
 import { contextoVolta } from "@/lib/imoveis/filtros";
 import { formatarArea, formatarReais } from "@/lib/imoveis/formato";
@@ -61,7 +62,11 @@ async function Conteudo({ params, searchParams }: PageProps<"/imovel/[id]">) {
   const { imovel } = r;
   return (
     <SiteChrome current={imovel.lancamento ? "lancamentos" : "imoveis"} className="im-has-bar">
-      <ImovelTela imovel={imovel} volta={contextoVolta(de, imovel.lancamento)} />
+      <ImovelTela
+        imovel={imovel}
+        volta={contextoVolta(de, imovel.lancamento)}
+        url={new URL(routes.imovel(imovel.id), urlDoSite()).toString()}
+      />
     </SiteChrome>
   );
 }
