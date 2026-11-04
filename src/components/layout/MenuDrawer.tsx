@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import { Portal } from "@/components/ui/Portal";
 import { useDialog } from "@/components/ui/useDialog";
 import { painel } from "@/lib/routes";
-import { crecis, unidades } from "@/lib/site";
+import { empresa } from "@/lib/site";
 
 export type MenuItem = { label: string; href: string; current: boolean };
 
@@ -66,11 +66,9 @@ export function MenuDrawer({ items, buttonClassName }: { items: MenuItem[]; butt
               SOU CORRETOR
             </Link>
             <div className="menu-contacts">
-              {unidades.carneiro.nome} · {unidades.carneiro.telefone}
+              Carneiro &amp; Ziller · {empresa.telefone}
               <br />
-              {unidades.ziller.nome} · {unidades.ziller.telefone}
-              <br />
-              <span style={{ color: "#6D6E71" }}>{crecis}</span>
+              <span style={{ color: "#6D6E71" }}>{empresa.creci}</span>
             </div>
           </div>
         </Portal>

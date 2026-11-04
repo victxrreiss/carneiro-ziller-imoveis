@@ -30,7 +30,7 @@ describe("MenuDrawer", () => {
     expect(dialog).toHaveAttribute("aria-modal", "true");
     expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Sobre nós" })).toHaveAttribute("href", "/sobre");
-    expect(dialog).toHaveTextContent("Unidade Carneiro · (31) 99539-5988");
+    expect(dialog).toHaveTextContent("Carneiro & Ziller · (31) 99539-5988");
     expect(screen.getByRole("link", { name: "SOU CORRETOR" })).toHaveAttribute("href", "/painel/entrar");
     expect(screen.getByRole("button", { name: "Fechar menu" })).toHaveFocus();
   });

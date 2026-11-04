@@ -6,7 +6,7 @@ import { SearchBox } from "./SearchBox";
 import { SectionLabel } from "./SectionLabel";
 
 const highlights: { icon: ReactNode; title: string; caption: string }[] = [
-  { icon: <PinIcon size={22} color="#78323D" />, title: "2 unidades", caption: "BH e Nova Lima" },
+  { icon: <PinIcon size={22} color="#78323D" />, title: "Alto padrão", caption: "BH e Nova Lima" },
   { icon: <HouseIcon size={22} color="#78323D" />, title: "Curadoria", caption: "Imóveis selecionados" },
   { icon: <PersonIcon size={22} color="#78323D" />, title: "Consultoria", caption: "Do início às chaves" },
 ];

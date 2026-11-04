@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { navItems, painel, routes, type NavKey } from "@/lib/routes";
-import { crecis, unidades } from "@/lib/site";
+import { empresa } from "@/lib/site";
 import { Footer } from "./Footer";
 import { Logo } from "./Logo";
 import { MenuDrawer } from "./MenuDrawer";
@@ -12,13 +12,10 @@ export function Topbar() {
       <div className="wrap">
         <div className="units">
           <span>
-            {unidades.carneiro.nome} · {unidades.carneiro.telefone}
-          </span>
-          <span>
-            {unidades.ziller.nome} · {unidades.ziller.telefone}
+            Carneiro &amp; Ziller · {empresa.telefone}
           </span>
         </div>
-        <div className="creci">{crecis}</div>
+        <div className="creci">{empresa.creci}</div>
       </div>
     </div>
   );

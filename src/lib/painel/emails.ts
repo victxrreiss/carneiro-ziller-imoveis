@@ -2,7 +2,7 @@
 // (lib/email); aqui ficam só os modelos das mensagens.
 import { urlDoSite } from "@/lib/config";
 import { remetente, type Mensagem as MensagemEnvio } from "@/lib/email";
-import { unidades } from "@/lib/site";
+import { empresa } from "@/lib/site";
 
 const SERIF = "'DM Serif Display', Georgia, 'Times New Roman', serif";
 const SANS = "'Montserrat', Arial, Helvetica, sans-serif";
@@ -47,7 +47,7 @@ ${corpo}
 </td></tr>
 <tr><td class="em-pad" style="background:#0A1419;border-top:4px solid #78323D;padding:28px 40px;font-size:12px;line-height:1.7;color:#C9C9C9">
 <div style="font-family:${SERIF};font-size:17px;color:#FFFFFF;margin-bottom:8px">Carneiro &amp; Ziller Imóveis</div>
-<div>${unidades.carneiro.nome} · ${unidades.carneiro.creci} · ${unidades.carneiro.telefone}<br>${unidades.ziller.nome} · ${unidades.ziller.creci} · ${unidades.ziller.telefone}</div>
+<div>${empresa.nome} · ${empresa.creci} · ${empresa.telefone}</div>
 <div style="margin-top:14px;color:#A8A8AA">${rodape}</div>
 </td></tr></table></td></tr></table></body></html>`;
 }
