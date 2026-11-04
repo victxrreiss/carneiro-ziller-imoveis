@@ -58,7 +58,7 @@
 .cz .filters{background:var(--fundo-hero);border-bottom:1px solid var(--areia)}
 .cz .filters .wrap{padding-top:22px;padding-bottom:26px}
 .cz .ff{display:flex;flex-direction:column;gap:18px}
-.cz .ff.has-hint .f-grid{margin-bottom:22px}
+.cz .ff.has-hint .f-grid{row-gap:34px}
 .cz .f-top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 32px}
 .cz .seg{display:flex;gap:28px;border-bottom:1px solid #D6D0C4}
 .cz .seg button{min-height:44px;padding:0 2px;border:none;background:transparent;font-size:12px;font-weight:600;letter-spacing:.22em;color:var(--cinza);cursor:pointer;margin-bottom:-1px;border-bottom:2px solid transparent;transition:color .2s ease}
@@ -73,7 +73,7 @@
 .cz .search button:hover{background:var(--azul-noite-hover)}
 .cz .f-panel-head,.cz .f-panel-foot,.cz .seg-m-wrap{display:none}
 .cz .f-panel-body{display:flex;flex-direction:column;gap:18px}
-.cz .f-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr)) auto;gap:12px;align-items:end}
+.cz .f-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:end}
 .cz .f-carac{grid-column:1 / -1;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .cz .f-carac .lbl{margin-right:4px}
 .cz .tog{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border:1px solid var(--areia);background:var(--branco);font-family:var(--sans);font-size:13px;color:var(--grafite);cursor:pointer;transition:border-color .2s ease}
@@ -208,7 +208,7 @@
   .cz .f-top .seg{display:none}
   .cz .search{max-width:none;flex-basis:100%}
   .cz .ff{gap:12px}
-  .cz .ff.has-hint .f-grid{margin-bottom:0}
+  .cz .ff.has-hint .f-grid{row-gap:12px}
   .cz .hint{position:static}
   .cz .f-mobile-bar{display:flex}
   .cz .btn-filters{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;min-height:48px;border:1px solid var(--azul-noite);background:var(--branco);color:var(--azul-noite);font-size:12px;font-weight:600;letter-spacing:.2em;cursor:pointer}

@@ -155,7 +155,7 @@
   .cz .im-card .im-cta{display:none}
   .cz .im-desc{margin-top:40px}
   .cz .im-bar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:30;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:#FFFFFF;border-top:1px solid var(--areia);box-shadow:0 -10px 30px rgba(15,29,36,.08)}
-  .cz .im-bar .im-price{padding-top:0;min-width:0}
+  .cz .im-bar .im-price{padding-top:0;flex:none}
   .cz .im-bar .im-price-val{font-size:18px}
   .cz .im-bar .im-price-val small{font-size:12px}
   .cz .im-bar .im-cta{width:auto;min-height:48px;padding:0 20px;flex:none}
@@ -172,6 +172,12 @@
 @media (max-width:600px){
   .cz .im-title{font-size:30px}
   .cz .im-empty h1{font-size:26px}
+}
+@media (max-width:640px){
+  /* Valor em uma linha; os dois botões lado a lado, com a mesma largura, na de baixo */
+  .cz .im-bar{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}
+  .cz .im-bar .im-price{grid-column:1 / -1;flex-direction:row;align-items:baseline;justify-content:space-between;gap:12px}
+  .cz .im-bar .im-cta{width:100%}
 }
 @media (prefers-reduced-motion:reduce){
   .cz .im-progress{animation:none;width:100%;opacity:.5}
