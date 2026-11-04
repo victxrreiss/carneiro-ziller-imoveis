@@ -7,6 +7,7 @@ import {
   contarImoveis as contar,
   contarPorTipo as contarTipo,
   listarIdsImoveis as listarIds,
+  listarParaSitemap as listarSitemap,
   obterImovel as obter,
   opcoesLocalizacao as opcoes,
   temLancamentos as temLanc,
@@ -311,5 +312,15 @@ describe("temLancamentos (menu)", () => {
     expect(await temLancamentos()).toBe(false);
     await mudar("cz1001", { situacao: "publicado" });
     expect(await temLancamentos()).toBe(true);
+  });
+});
+
+describe("listarParaSitemap", () => {
+  test("só publicados (sem rascunho nem indisponível), com alteradoEm ISO", async () => {
+    await mudar("cz1001", { situacao: "rascunho" });
+    const lista = await listarSitemap(amb.db);
+    expect(lista).toHaveLength(34 - 1);
+    expect(lista.some((i) => i.id === "cz1001" || i.id === "cz1021")).toBe(false);
+    expect(lista[0].alteradoEm).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 });

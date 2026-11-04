@@ -2,7 +2,7 @@
 // indisponíveis existem apenas para a página com o aviso. Sem cache: ./index.ts
 // as expõe com "use cache" para as páginas. O último parâmetro é o banco
 // (padrão: conexão do app; os testes passam um PGlite).
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { conexao, type Db } from "@/lib/dados/conexao";
 import { carregarImovel, carregarImoveis } from "@/lib/dados/consultas";
 import { configuracaoSite, imoveis } from "@/lib/dados/esquema";
@@ -213,6 +213,16 @@ export async function obterImovel(id: string, db: Db = conexao()): Promise<Resul
 export async function listarIdsImoveis(db: Db = conexao()): Promise<string[]> {
   const todos = await carregarImoveis(db);
   return todos.filter((r) => r.situacao !== "rascunho").map((r) => r.id);
+}
+
+/** Publicados com a data da última alteração, para o sitemap (consulta leve, sem fotos). */
+export async function listarParaSitemap(db: Db = conexao()): Promise<{ id: string; alteradoEm: string }[]> {
+  const linhas = await db
+    .select({ id: imoveis.id, alteradoEm: imoveis.alteradoEm })
+    .from(imoveis)
+    .where(eq(imoveis.situacao, "publicado"))
+    .orderBy(asc(imoveis.codigo));
+  return linhas.map((l) => ({ id: l.id, alteradoEm: l.alteradoEm.toISOString() }));
 }
 
 // ---------- Home ----------

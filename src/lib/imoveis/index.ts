@@ -100,3 +100,9 @@ export async function listarIdsImoveis() {
   marcar();
   return catalogo.listarIdsImoveis();
 }
+
+export async function getSitemapImoveis() {
+  "use cache";
+  marcar();
+  return catalogo.listarParaSitemap();
+}
