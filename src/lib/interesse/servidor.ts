@@ -1,4 +1,5 @@
-// Recebimento do interesse (lead) do formulário do imóvel: valida de novo no
+// Recebimento do interesse (lead) do formulário do imóvel ou do contato geral
+// (origem "contato", sem imóvel): valida de novo no
 // servidor, limita envios por IP, grava no banco e monta os avisos por e-mail
 // (corretor responsável, ADMIN e LEADS_EMAIL). O envio dos e-mails fica com
 // quem chama, depois da resposta: o lead já está salvo mesmo se o e-mail falhar.
@@ -21,6 +22,16 @@ export type ErroInteresse = "dados" | "imovel" | "limite";
 type Entrada = Record<string, unknown>;
 const texto = (v: unknown) => (typeof v === "string" ? v.trim() : "");
 
+/** Guarda só caminho + query (sem domínio). Valor que não é URL mas começa com "/" já é caminho. */
+function caminhoDaUrl(bruto: string): string {
+  try {
+    const u = new URL(bruto);
+    return u.pathname + u.search;
+  } catch {
+    return bruto.startsWith("/") ? bruto : "";
+  }
+}
+
 function validar(o: Entrada) {
   const d = {
     imovelId: texto(o.imovelId).toLowerCase(),
@@ -32,7 +43,7 @@ function validar(o: Entrada) {
     url: texto(o.url),
   };
   const ok =
-    /^[a-z0-9-]{1,40}$/.test(d.imovelId) &&
+    (d.imovelId ? /^[a-z0-9-]{1,40}$/.test(d.imovelId) : d.origem === "contato") &&
     d.nome.length >= 2 &&
     d.nome.length <= LIMITES.nome &&
     TELEFONE.test(d.telefone) &&
@@ -41,7 +52,7 @@ function validar(o: Entrada) {
     d.observacoes.length <= LIMITES.observacoes &&
     d.origem.length <= 40 &&
     d.url.length <= 500;
-  return ok ? d : null;
+  return ok ? { ...d, url: caminhoDaUrl(d.url) } : null;
 }
 
 /** Conta um envio na janela do IP; `false` se passou do limite. Atômico. */
@@ -74,18 +85,22 @@ export async function registrarInteresse(
   const d = validar(entrada);
   if (!d) return { ok: false, erro: "dados" };
 
-  const [imovel] = await db
-    .select({ id: imoveis.id, codigo: imoveis.codigo, titulo: imoveis.titulo, responsavelId: imoveis.responsavelId })
-    .from(imoveis)
-    .where(and(eq(imoveis.id, d.imovelId), eq(imoveis.situacao, "publicado")))
-    .limit(1);
-  if (!imovel) return { ok: false, erro: "imovel" };
+  // Contato geral não tem imóvel; com `imovelId` ele precisa estar publicado.
+  let imovel: { id: string; codigo: string; titulo: string; responsavelId: string } | null = null;
+  if (d.imovelId) {
+    [imovel = null] = await db
+      .select({ id: imoveis.id, codigo: imoveis.codigo, titulo: imoveis.titulo, responsavelId: imoveis.responsavelId })
+      .from(imoveis)
+      .where(and(eq(imoveis.id, d.imovelId), eq(imoveis.situacao, "publicado")))
+      .limit(1);
+    if (!imovel) return { ok: false, erro: "imovel" };
+  }
 
   if (!(await dentroDoLimite(db, ip || "desconhecido", agora))) return { ok: false, erro: "limite" };
 
   const [{ id }] = await db
     .insert(interesses)
-    .values({ imovelId: imovel.id, codigo: imovel.codigo, nome: d.nome, telefone: d.telefone, email: d.email, observacoes: d.observacoes, origem: d.origem, url: d.url, criadoEm: new Date(agora) })
+    .values({ imovelId: imovel?.id ?? null, codigo: imovel?.codigo ?? "", nome: d.nome, telefone: d.telefone, email: d.email, observacoes: d.observacoes, origem: d.origem, url: d.url, criadoEm: new Date(agora) })
     .returning({ id: interesses.id });
 
   const destinos = new Set(emailsDeLeads());
@@ -93,10 +108,10 @@ export async function registrarInteresse(
     .select({ id: usuarios.id, email: usuarios.email, papel: usuarios.papel })
     .from(usuarios)
     .where(eq(usuarios.situacao, "ativo"));
-  for (const u of equipe) if (u.id === imovel.responsavelId || u.papel === "admin") destinos.add(u.email);
+  for (const u of equipe) if (u.id === imovel?.responsavelId || u.papel === "admin") destinos.add(u.email);
 
   const avisos = [...destinos].map((para) =>
-    emailInteresse({ para, imovel, codigo: imovel.codigo, nome: d.nome, telefone: d.telefone, email: d.email, observacoes: d.observacoes, agora }),
+    emailInteresse({ para, imovel, codigo: imovel?.codigo ?? "", nome: d.nome, telefone: d.telefone, email: d.email, observacoes: d.observacoes, agora }),
   );
   return { ok: true, id, avisos };
 }
