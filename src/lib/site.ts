@@ -26,3 +26,17 @@ export const social: { instagram: string | null; linkedin: string | null } = {
   instagram: null,
   linkedin: null,
 };
+
+/** Descrição padrão do site (metadados e Open Graph). */
+export const descricaoSite =
+  "Imóveis de alto padrão em Belo Horizonte e Nova Lima. Apartamentos, coberturas, casas em condomínio e terrenos selecionados pela Carneiro & Ziller Imóveis.";
+
+/** Open Graph padrão: o layout o aplica; páginas que definem o próprio openGraph o espalham. */
+export const ogPadrao = {
+  type: "website" as const,
+  siteName: empresa.nome,
+  locale: "pt_BR",
+  title: empresa.nome,
+  description: descricaoSite,
+  images: [{ url: "/images/hero-predio.png", width: 1240, height: 1160, alt: "Fachada de edifício residencial moderno" }],
+};
