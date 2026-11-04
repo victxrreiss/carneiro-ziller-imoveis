@@ -13,3 +13,10 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
 });
+
+// O jsdom não tem ResizeObserver, que o Headless UI usa ao fechar um Listbox.
+globalThis.ResizeObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};

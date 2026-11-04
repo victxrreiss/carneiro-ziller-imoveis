@@ -20,7 +20,7 @@ import {
   type Filtros,
 } from "@/lib/imoveis/filtros";
 import { CARACTERISTICAS_FILTRO, rotuloCaracteristica } from "@/lib/imoveis/caracteristicas";
-import { Dropdown } from "./Dropdown";
+import { Dropdown, type Opcao } from "./Dropdown";
 
 type Props = {
   filtros: Filtros;
@@ -28,14 +28,22 @@ type Props = {
   /** Quantos imóveis a querystring de filtros traria (botão "VER N IMÓVEIS"). Server Action. */
   contar: (query: string) => Promise<number>;
   totalAtual: number;
+  /** Cidades e bairros com imóveis publicados (`getOpcoesLocalizacao`). */
+  localizacoes: { cidade: string; bairros: string[] }[];
 };
 
 const LIMPOS: Filtros = { pagina: 1 };
 const opcoesFaixa = (lista: readonly (readonly [string, string, number, number])[]) =>
   lista.map(([valor, rotulo]) => ({ valor, rotulo }));
+/** Por cidade: "Toda a cidade" (valor "<Cidade>") e depois cada bairro (valor "<Bairro>, <Cidade>"). */
+const opcoesLocalizacao = (lista: Props["localizacoes"]): Opcao[] =>
+  lista.flatMap(({ cidade, bairros }) => [
+    { valor: cidade, rotulo: "Toda a cidade", grupo: cidade, resumo: cidade },
+    ...bairros.map((b) => ({ valor: `${b}, ${cidade}`, rotulo: b, grupo: cidade, resumo: `${b}, ${cidade}` })),
+  ]);
 const opcoesMinimo = (lista: readonly string[]) => lista.map((v) => ({ valor: v, rotulo: `${v} ou mais` }));
 
-export function FiltrosImoveis({ filtros, onAplicar, contar, totalAtual }: Props) {
+export function FiltrosImoveis({ filtros, onAplicar, contar, totalAtual, localizacoes }: Props) {
   const [busca, setBusca] = useState(filtros.q ?? "");
   const [painelAberto, setPainelAberto] = useState(false);
   const [rascunho, setRascunho] = useState(filtros);
@@ -176,6 +184,14 @@ export function FiltrosImoveis({ filtros, onAplicar, contar, totalAtual }: Props
                   {segmentado("seg seg-m")}
                 </div>
                 <div className="f-grid">
+                  <Dropdown
+                    rotulo="LOCALIZAÇÃO"
+                    vazio="Todas as localizações"
+                    opcoes={opcoesLocalizacao(localizacoes)}
+                    valor={ativos.local}
+                    onChange={set("local")}
+                    largo
+                  />
                   <Dropdown
                     rotulo="TIPO DE IMÓVEL"
                     vazio="Todos os tipos"

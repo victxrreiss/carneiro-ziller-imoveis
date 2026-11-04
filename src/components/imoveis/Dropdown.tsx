@@ -4,7 +4,14 @@ import { Label, Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@h
 import { useId } from "react";
 import { IcCheck, IcChevron } from "@/components/ui/IconesSite";
 
-export type Opcao = { valor: string; rotulo: string };
+export type Opcao = {
+  valor: string;
+  rotulo: string;
+  /** Opções consecutivas com o mesmo grupo ficam sob um cabeçalho (role="group"). */
+  grupo?: string;
+  /** Texto no botão quando esta opção está escolhida (padrão: `rotulo`). */
+  resumo?: string;
+};
 
 type Props = {
   rotulo: string;
@@ -27,7 +34,18 @@ type Props = {
 export function Dropdown({ rotulo, vazio, opcoes, valor, onChange, largo, desabilitado, dica }: Props) {
   const dicaId = useId();
   const atual = opcoes.find((o) => o.valor === valor);
-  const todas: Opcao[] = [{ valor: "", rotulo: vazio }, ...opcoes];
+  const itens = (o: Opcao) => (
+    <ListboxOption key={o.valor} as="li" value={o.valor} className={o.valor ? "dd-opt" : "dd-opt is-placeholder"}>
+      <span>{o.rotulo}</span>
+      <IcCheck width={1.8} className="dd-check" />
+    </ListboxOption>
+  );
+  const grupos: { grupo?: string; opcoes: Opcao[] }[] = [];
+  for (const o of opcoes) {
+    const ultimo = grupos[grupos.length - 1];
+    if (ultimo && ultimo.grupo === o.grupo) ultimo.opcoes.push(o);
+    else grupos.push({ grupo: o.grupo, opcoes: [o] });
+  }
 
   return (
     <Listbox
@@ -55,16 +73,25 @@ export function Dropdown({ rotulo, vazio, opcoes, valor, onChange, largo, desabi
                 }
               }}
             >
-              <span className="dd-value">{atual?.rotulo ?? vazio}</span>
+              <span className="dd-value">{atual?.resumo ?? atual?.rotulo ?? vazio}</span>
               <IcChevron size={14} width={1.6} className="dd-chev" />
             </ListboxButton>
             <ListboxOptions as="ul" className="dd-list">
-              {todas.map((o) => (
-                <ListboxOption key={o.valor} as="li" value={o.valor} className={o.valor ? "dd-opt" : "dd-opt is-placeholder"}>
-                  <span>{o.rotulo}</span>
-                  <IcCheck width={1.8} className="dd-check" />
-                </ListboxOption>
-              ))}
+              {itens({ valor: "", rotulo: vazio })}
+              {grupos.map((g) =>
+                g.grupo ? (
+                  <li key={g.grupo} role="presentation" className="dd-group">
+                    <span className="dd-group-lbl" aria-hidden="true">
+                      {g.grupo}
+                    </span>
+                    <ul role="group" aria-label={g.grupo}>
+                      {g.opcoes.map(itens)}
+                    </ul>
+                  </li>
+                ) : (
+                  g.opcoes.map(itens)
+                ),
+              )}
             </ListboxOptions>
             {dica && (
               <span className="hint" id={dicaId}>

@@ -14,6 +14,8 @@ type Props = {
   /** null quando a busca falhou. */
   resultado: PaginaImoveis | null;
   contar: (query: string) => Promise<number>;
+  localizacoes: { cidade: string; bairros: string[] }[];
+  tipos: { tipo: string; total: number }[];
   /** Primeira carga, antes de o servidor ler a URL (fallback do Suspense). */
   esqueleto?: boolean;
 };
@@ -23,7 +25,7 @@ type Props = {
  * querystring e o servidor devolve os resultados. Enquanto isso, a tela já
  * mostra os filtros escolhidos e o skeleton.
  */
-export function ImoveisView({ filtros, resultado, contar, esqueleto = false }: Props) {
+export function ImoveisView({ filtros, resultado, contar, localizacoes, tipos, esqueleto = false }: Props) {
   const router = useRouter();
   const [carregando, iniciar] = useTransition();
   const [filtrosTela, setFiltrosTela] = useOptimistic(filtros);
@@ -66,10 +68,13 @@ export function ImoveisView({ filtros, resultado, contar, esqueleto = false }: P
         onAplicar={(f) => aplicar(f)}
         contar={contar}
         totalAtual={resultado?.total ?? 0}
+        localizacoes={localizacoes}
       />
       <Resultados
         estado={estado}
         filtros={filtros}
+        tipos={tipos}
+        onAplicar={(f) => aplicar(f)}
         onPagina={(pagina) => aplicar({ ...filtros, pagina }, { rolar: true })}
         onLimpar={() => aplicar({ pagina: 1 })}
         onTentarDeNovo={() => iniciar(() => router.refresh())}
