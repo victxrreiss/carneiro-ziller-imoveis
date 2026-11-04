@@ -2,6 +2,7 @@
 // (lib/email); aqui ficam só os modelos das mensagens.
 import { urlDoSite } from "@/lib/config";
 import { remetente, type Mensagem as MensagemEnvio } from "@/lib/email";
+import { painel } from "@/lib/routes";
 import { empresa } from "@/lib/site";
 
 const SERIF = "'DM Serif Display', Georgia, 'Times New Roman', serif";
@@ -128,8 +129,8 @@ export function emailInteresse(o: {
   const quando = dataHora(o.agora ?? Date.now());
   const geral = !o.imovel;
   const linkImovel = o.imovel ? `${urlBase()}/imovel/${o.imovel.id}` : "";
-  // Contato geral: lista de contatos do painel (rota `painel.contatos`, criada na Task 3).
-  const linkPainel = o.imovel ? `${urlBase()}/painel/imoveis/${o.imovel.id}` : `${urlBase()}/painel/contatos`;
+  // Contato geral: lista de contatos do painel (`painel.contatos`).
+  const linkPainel = o.imovel ? `${urlBase()}/painel/imoveis/${o.imovel.id}` : `${urlBase()}${painel.contatos}`;
   const ref = o.imovel ? `${o.imovel.codigo.toUpperCase()} · ${o.imovel.titulo}` : "";
   const zap = o.telefone.replace(/\D/g, "");
   const titulo = geral ? "Nova mensagem pelo site" : "Novo interesse em um imóvel";

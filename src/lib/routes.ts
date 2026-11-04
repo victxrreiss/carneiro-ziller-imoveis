@@ -41,6 +41,7 @@ export const painel = {
   imoveis: "/painel/imoveis",
   novoImovel: "/painel/imoveis/novo",
   imovel: (id: string) => `/painel/imoveis/${encodeURIComponent(id)}`,
+  contatos: "/painel/contatos",
   usuarios: "/painel/usuarios",
   conta: "/painel/conta",
 } as const;

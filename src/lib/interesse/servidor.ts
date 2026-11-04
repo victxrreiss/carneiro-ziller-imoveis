@@ -22,13 +22,18 @@ export type ErroInteresse = "dados" | "imovel" | "limite";
 type Entrada = Record<string, unknown>;
 const texto = (v: unknown) => (typeof v === "string" ? v.trim() : "");
 
-/** Guarda só caminho + query (sem domínio). Valor que não é URL mas começa com "/" já é caminho. */
+/**
+ * Guarda só caminho + query (sem domínio). Aceita URL absoluta http(s) ou caminho
+ * iniciado por "/" (nunca "//" nem "/\\", que o navegador leria como outro site);
+ * qualquer outra coisa vira "".
+ */
 function caminhoDaUrl(bruto: string): string {
+  if (/^\/(?![/\\])[^\x00-\x1f]*$/.test(bruto)) return bruto;
   try {
     const u = new URL(bruto);
-    return u.pathname + u.search;
+    return u.protocol === "http:" || u.protocol === "https:" ? u.pathname + u.search : "";
   } catch {
-    return bruto.startsWith("/") ? bruto : "";
+    return "";
   }
 }
 

@@ -66,6 +66,9 @@ describe("interesse (lead)", () => {
     expect(await urlGravada("https://site.test/imovel/cz1009?de=x#topo")).toBe("/imovel/cz1009?de=x");
     expect(await urlGravada("/imovel/cz1009?a=1")).toBe("/imovel/cz1009?a=1");
     expect(await urlGravada("lixo")).toBe("");
+    expect(await urlGravada("//evil.test/x")).toBe("");
+    expect(await urlGravada("/\\evil.test")).toBe("");
+    expect(await urlGravada("javascript:alert(1)")).toBe("");
   });
 
   test("corretor desativado não recebe aviso", async () => {

@@ -17,6 +17,8 @@ export type LinhaContato = {
   email: string;
   observacoes: string;
   origem: string;
+  /** Código do imóvel na hora do envio; vazio no contato geral. Fica mesmo se o imóvel for excluído. */
+  codigo: string;
   /** Caminho + query da página de onde veio o contato. */
   pagina: string;
   imovel: { id: string; codigo: string; titulo: string } | null;
@@ -47,6 +49,7 @@ export async function listarContatos(
       email: interesses.email,
       observacoes: interesses.observacoes,
       origem: interesses.origem,
+      codigo: interesses.codigo,
       pagina: interesses.url,
       imovelId: imoveis.id,
       imovelCodigo: imoveis.codigo,

@@ -17,6 +17,12 @@ export const IcImoveis = (p: P) => (
     <path d="M3.5 10.5L12 4l8.5 6.5V20h-5.5v-6h-6v6H3.5z" />
   </Svg>
 );
+export const IcContatos = (p: P) => (
+  <Svg size={20} {...p}>
+    <path d="M4 5.5h16v11H9.5L5 20.5v-4H4z" />
+    <path d="M8 10h8M8 13h5" />
+  </Svg>
+);
 export const IcUsuarios = (p: P) => (
   <Svg size={20} {...p}>
     <circle cx="9" cy="8" r="3.5" />
