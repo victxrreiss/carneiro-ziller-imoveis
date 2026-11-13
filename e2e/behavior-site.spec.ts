@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 /**
  * O grid já carregado. Enquanto a página chega (streaming), o esqueleto e o conteúdo real
@@ -7,6 +7,20 @@ import { expect, test, type Page } from "@playwright/test";
  * os testes olham só o grid visível e pronto.
  */
 const grade = (page: Page) => page.locator("main:visible").filter({ hasNot: page.locator('[aria-busy="true"]') });
+
+/** A tela do imóvel já carregada (mesma razão do `grade`). */
+const pronta = grade;
+
+/**
+ * Clica em `botao` até `alvo` aparecer. Antes da hidratação o clique ainda não tem efeito; por
+ * isso a tentativa se repete, em vez de contar com o tempo.
+ */
+async function abrir(botao: Locator, alvo: Locator) {
+  await expect(async () => {
+    if (!(await alvo.isVisible())) await botao.click();
+    await expect(alvo).toBeVisible({ timeout: 2_000 });
+  }).toPass();
+}
 
 /**
  * Escolhe a opção de um select do grid e espera a URL. Antes da hidratação a escolha ainda não
@@ -253,15 +267,48 @@ test.describe("mobile 390px", () => {
     await expect(link).toHaveAccessibleName("WHATSAPP (abre em nova aba)");
   });
 
-  test("barra fixa abre o formulário em tela cheia; Esc devolve o foco à barra", async ({ page }) => {
+  test("barra fixa do celular: preço e WhatsApp", async ({ page }) => {
     await page.goto("/imovel/cz1009");
-    const botao = page.locator("#im-cta-bar");
-    await expect(botao).toBeVisible();
-    await botao.click();
+    const barra = pronta(page).locator(".im-bar");
+    await expect(barra).toBeVisible();
+    await expect(barra.locator("strong")).toHaveText(/^R\$ [\d.]+$/);
+    await expect(barra.getByRole("link", { name: "WHATSAPP" })).toHaveAttribute("href", /wa\.me\/5531995395988\?text=.*CZ1009/);
+  });
+
+  test("AGENDAR VISITA abre o formulário em tela cheia; Esc devolve o foco ao botão", async ({ page }) => {
+    await page.goto("/imovel/cz1009");
+    const botao = pronta(page).locator("#im-cta");
     const painel = page.getByRole("dialog", { name: "Agendar visita" });
+    await abrir(botao, painel);
     expect((await painel.boundingBox())!.width).toBe(390);
     await page.keyboard.press("Escape");
+    await expect(painel).toHaveCount(0);
     await expect(botao).toBeFocused();
+  });
+
+  test("galeria no celular: uma foto com o botão; deslizar troca a foto na tela cheia", async ({ page }) => {
+    await page.goto("/imovel/cz1015");
+    const mosaico = pronta(page).getByRole("region", { name: "Fotos do imóvel" });
+    await expect(mosaico.locator(".im-mos-item:visible")).toHaveCount(1);
+    const luz = page.getByRole("dialog", { name: "Fotos do imóvel" });
+    await abrir(mosaico.getByRole("button", { name: "Ver as 8 fotos" }), luz);
+    const contador = luz.locator(".im-luz-cont");
+    await expect(contador).toHaveText("1 / 8");
+    const palco = luz.locator(".im-luz-palco");
+    const arrastar = (de: number, ate: number) =>
+      palco.evaluate(
+        (el, [x0, x1]) => {
+          const evento = (tipo: string, x: number) =>
+            new PointerEvent(tipo, { bubbles: true, pointerType: "touch", clientX: x, clientY: 400 });
+          el.dispatchEvent(evento("pointerdown", x0));
+          el.dispatchEvent(evento("pointerup", x1));
+        },
+        [de, ate],
+      );
+    await arrastar(300, 80);
+    await expect(contador).toHaveText("2 / 8");
+    await arrastar(80, 300);
+    await expect(contador).toHaveText("1 / 8");
   });
 
   for (const url of ["/imoveis", "/imovel/cz1015"]) {
@@ -276,26 +323,78 @@ test.describe("mobile 390px", () => {
 test.describe("galeria", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test("setas do teclado, Home/End e miniaturas", async ({ page }) => {
+  test("mosaico, tela cheia pelo teclado e foco de volta ao botão", async ({ page }) => {
     await page.goto("/imovel/cz1015");
-    const palco = page.locator(".im-stage");
-    await palco.focus();
+    const mosaico = pronta(page).getByRole("region", { name: "Fotos do imóvel" });
+    await expect(mosaico.locator(".im-mos-item:visible")).toHaveCount(3);
+    const todas = mosaico.getByRole("button", { name: "Ver as 8 fotos" });
+    const luz = page.getByRole("dialog", { name: "Fotos do imóvel" });
+    const contador = luz.locator(".im-luz-cont");
+
+    await abrir(todas, luz);
+    await expect(contador).toHaveText("1 / 8");
+    await expect(luz.getByRole("button", { name: "Fechar fotos" })).toBeFocused();
+    // Cada tecla espera o estado anterior aparecer: nada aqui depende de tempo.
     await page.keyboard.press("ArrowRight");
-    await expect(palco).toHaveAttribute("aria-label", /foto 2 de 8/);
+    await expect(contador).toHaveText("2 / 8");
     await page.keyboard.press("ArrowLeft");
+    await expect(contador).toHaveText("1 / 8");
     await page.keyboard.press("ArrowLeft");
-    await expect(palco).toHaveAttribute("aria-label", /foto 8 de 8/);
-    await page.keyboard.press("Home");
-    await expect(palco).toHaveAttribute("aria-label", /foto 1 de 8/);
-    await page.getByRole("button", { name: "Ver foto 5 de 8" }).click();
-    await expect(page.getByRole("button", { name: "Ver foto 5 de 8" })).toHaveAttribute("aria-current", "true");
-    await expect(page.locator(".im-stage .im-count")).toHaveText("5 / 8");
+    await expect(contador).toHaveText("8 / 8");
+    await luz.getByRole("button", { name: "Próxima foto" }).click();
+    await expect(contador).toHaveText("1 / 8");
+    await expect(luz.locator(".im-luz-foto .cz-marca-dagua")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(luz).toHaveCount(0);
+    await expect(todas).toBeFocused();
+
+    await mosaico.getByRole("button", { name: /^Abrir foto 3 de 8/ }).click();
+    await expect(contador).toHaveText("3 / 8");
+    const r = await new AxeBuilder({ page }).include(".im-luz").withTags(["wcag2a", "wcag2aa"]).analyze();
+    expect(r.violations.map((v) => v.id)).toEqual([]);
   });
 
-  test("uma foto: sem setas nem miniaturas", async ({ page }) => {
+  test("uma foto: ocupa o mosaico todo, sem botão de ver todas nem setas", async ({ page }) => {
     await page.goto("/imovel/cz1026");
-    await expect(page.locator(".im-arrow")).toHaveCount(0);
-    await expect(page.locator(".im-thumbs")).toHaveCount(0);
+    const mosaico = pronta(page).getByRole("region", { name: "Fotos do imóvel" });
+    await expect(mosaico.locator(".im-mos-item")).toHaveCount(1);
+    await expect(mosaico.getByRole("button", { name: /Ver as/ })).toHaveCount(0);
+    const largura = await mosaico.locator(".im-mos-item").evaluate((el) => el.getBoundingClientRect().width);
+    expect(largura).toBeGreaterThan(1400);
+    const luz = page.getByRole("dialog", { name: "Fotos do imóvel" });
+    await abrir(mosaico.getByRole("button", { name: /^Ampliar a foto/ }), luz);
+    await expect(luz.getByRole("button", { name: "Próxima foto" })).toHaveCount(0);
+  });
+});
+
+test.describe("compartilhar e semelhantes", () => {
+  test.use({ viewport: { width: 1440, height: 900 }, permissions: ["clipboard-read", "clipboard-write"] });
+
+  test("sem compartilhamento nativo: WhatsApp e Copiar link com a URL canônica", async ({ page }) => {
+    // O Chromium de mesa não tem navigator.share; garante o mesmo em qualquer máquina.
+    await page.addInitScript(() => Object.defineProperty(navigator, "share", { value: undefined, configurable: true }));
+    await page.goto("/imovel/cz1009?de=finalidade%3Dcomprar");
+    const botao = pronta(page).getByRole("button", { name: "Compartilhar", exact: true });
+    const copiar = page.getByRole("button", { name: "Copiar link" });
+    await abrir(botao, copiar);
+    await expect(page.getByRole("group", { name: "Compartilhar este imóvel" }).getByRole("link", { name: /^WhatsApp/ })).toHaveAttribute("href", /^https:\/\/wa\.me\/\?text=.*%2Fimovel%2Fcz1009$/);
+    await copiar.click();
+    await expect(page.getByRole("status").filter({ hasText: "Link copiado" })).toBeVisible();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(/\/imovel\/cz1009$/);
+  });
+
+  test("imóveis semelhantes: até 3, sem o próprio imóvel; também no indisponível", async ({ page }) => {
+    for (const id of ["cz1009", "cz1021"]) {
+      await page.goto(`/imovel/${id}`);
+      const secao = pronta(page).getByRole("region", { name: "Imóveis semelhantes" });
+      const links = secao.locator(".cz-card-titulo a");
+      await expect(links.first()).toBeVisible();
+      expect(await links.count()).toBeLessThanOrEqual(3);
+      for (const href of await links.evaluateAll((as) => as.map((a) => a.getAttribute("href")))) {
+        expect(href).toMatch(/^\/imovel\/cz\d+$/);
+        expect(href).not.toBe(`/imovel/${id}`);
+      }
+    }
   });
 });
 
@@ -325,7 +424,7 @@ test.describe("acessibilidade (axe, WCAG A/AA)", () => {
   test("formulário aberto", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/imovel/cz1009");
-    await page.locator("#im-cta").click();
+    await abrir(page.locator("#im-cta"), page.getByRole("dialog", { name: "Agendar visita" }));
     await page.getByRole("button", { name: "ENVIAR" }).click();
     const r = await new AxeBuilder({ page }).include(".im-panel").withTags(["wcag2a", "wcag2aa"]).analyze();
     expect(r.violations.map((v) => v.id)).toEqual([]);

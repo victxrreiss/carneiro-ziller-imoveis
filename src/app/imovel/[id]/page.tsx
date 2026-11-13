@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { ImovelAusente, ImovelCarregando, ImovelTela } from "@/components/imovel/ImovelTela";
 import { SiteChrome } from "@/components/layout/SiteChrome";
 import { urlDoSite } from "@/lib/config";
-import { listarIdsImoveis, obterImovel } from "@/lib/imoveis";
+import { getSemelhantes, listarIdsImoveis, obterImovel } from "@/lib/imoveis";
 import { contextoVolta } from "@/lib/imoveis/filtros";
 import { formatarArea, formatarReais } from "@/lib/imoveis/formato";
 import { jsonLdImovel, serializarJsonLd } from "@/lib/imoveis/seo";
@@ -51,11 +51,12 @@ async function Conteudo({ params, searchParams }: PageProps<"/imovel/[id]">) {
   const r = await obterImovel(id);
 
   if (r.situacao === "inexistente") notFound();
+  const semelhantes = await getSemelhantes(id);
 
   if (r.situacao === "indisponivel") {
     return (
       <SiteChrome current="imoveis">
-        <ImovelAusente tipo="indisponivel" codigo={r.codigo} volta={contextoVolta(de, false)} veioDoGrid={de !== undefined} />
+        <ImovelAusente tipo="indisponivel" codigo={r.codigo} volta={contextoVolta(de, false)} veioDoGrid={de !== undefined} semelhantes={semelhantes} />
       </SiteChrome>
     );
   }
@@ -68,6 +69,7 @@ async function Conteudo({ params, searchParams }: PageProps<"/imovel/[id]">) {
         imovel={imovel}
         volta={contextoVolta(de, imovel.lancamento)}
         url={url}
+        semelhantes={semelhantes}
       />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializarJsonLd(jsonLdImovel(imovel, url)) }} />
     </SiteChrome>
