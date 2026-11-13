@@ -229,6 +229,46 @@ test.describe("páginas institucionais", () => {
   });
 });
 
+test.describe("páginas institucionais e 404", () => {
+  for (const [url, titulo] of [
+    ["/contato", "Fale com a Carneiro & Ziller"],
+    ["/sobre", "Sobre a Carneiro & Ziller"],
+    ["/politica-de-privacidade", "Política de privacidade"],
+  ]) {
+    test(`${url} tem a faixa de título da busca e o cabeçalho sólido`, async ({ page }) => {
+      await page.goto(url);
+      await expect(page.locator(".pg-cab").getByRole("heading", { level: 1 })).toHaveText(titulo);
+      expect(await page.locator("header").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(15, 29, 36)");
+    });
+  }
+
+  for (const width of [390, 1440]) {
+    test(`404 em ${width}px: título, saídas e nada cortado`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      const resposta = await page.goto("/pagina-que-nao-existe");
+      expect(resposta!.status()).toBe(404);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText("Página não encontrada");
+      await expect(page.getByRole("main").getByRole("link", { name: "VOLTAR PARA A HOME" })).toHaveAttribute("href", "/");
+      await expect(page.getByRole("main").getByRole("link", { name: /Ver todos os imóveis/ })).toHaveAttribute("href", "/imoveis");
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+      const r = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze();
+      expect(r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
+    });
+  }
+});
+
+test("Buscar antes da hidratação mantém a região que já estava na URL", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/imoveis?regiao=belvedere-vila-da-serra");
+  const form = grade(page).getByRole("search", { name: "Filtrar imóveis" });
+  await expect(form).toBeVisible();
+  // O envio nativo do formulário (GET), sem passar pelo React: é o que o Buscar faz antes da hidratação.
+  await form.evaluate((f: HTMLFormElement) => HTMLFormElement.prototype.submit.call(f));
+  await page.waitForURL(/[?&]regiao=belvedere-vila-da-serra/);
+  await expect(grade(page).locator(".res-chips")).toContainText("Belvedere e Vila da Serra");
+  await expect(grade(page).getByLabel("Bairro")).toHaveValue("regiao:belvedere-vila-da-serra");
+});
+
 test.describe("mobile 390px", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 

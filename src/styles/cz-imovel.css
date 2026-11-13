@@ -1,14 +1,14 @@
 /* Tela Imóvel (prefixo im-). A galeria, a ficha, o card de valor, os semelhantes e a barra do
  * celular seguem mockups/imovel.html da Prioridade 2; o painel do formulário de interesse vem do
  * handoff original (carneiro-ziller-site-handoff/imovel/Imovel.html). */
-.cz .im-back{background:var(--fundo)}
-.cz .im-back .wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 24px;padding-top:22px;padding-bottom:18px}
-.cz .im-back-left{display:flex;flex-wrap:wrap;align-items:center;gap:2px 18px;min-width:0}
-.cz .im-back-link{display:inline-flex;align-items:center;gap:10px;min-height:44px;font-size:12px;font-weight:600;letter-spacing:.2em;color:var(--azul-noite)}
-.cz .im-back-link svg{transition:transform .2s ease}
+/* "Voltar aos resultados": uma linha discreta acima da galeria, com o código do imóvel à direita. */
+.cz .im-back .wrap{display:flex;align-items:center;justify-content:space-between;gap:4px 24px;padding-top:8px;padding-bottom:8px;font-size:12px;font-weight:400;line-height:1.65;letter-spacing:.14em;text-transform:uppercase;color:var(--texto-2)}
+.cz .im-back-left{display:flex;flex-wrap:wrap;align-items:center;gap:0 20px;min-width:0}
+.cz .im-back-link{display:inline-flex;align-items:center;gap:10px;min-height:44px;font-weight:500;color:var(--noite)}
+.cz .im-back-link svg{flex:none;transition:transform .2s ease}
 .cz .im-back-link:hover svg{transform:translateX(-3px)}
-.cz .im-back-link:active{color:var(--azul-noite-hover)}
-.cz .im-filters{font-size:12px;color:var(--cinza)}
+.cz .im-filters{font-size:13px;font-weight:300;letter-spacing:.02em;text-transform:none}
+.cz .im-back-cod{flex:none;white-space:nowrap}
 /* Galeria em mosaico: 1 foto grande + 2; com 2 fotos divide a largura, com 1 (ou nenhuma) ocupa tudo */
 .cz .im-mos{position:relative;display:grid;grid-template-columns:1.6fr 1fr;grid-template-rows:1fr 1fr;gap:6px;height:min(72vh,720px);padding:0 6px}
 .cz .im-mos-1{grid-template-columns:1fr;grid-template-rows:1fr}
@@ -27,7 +27,7 @@
 .cz .im-mos-todas:focus-visible{outline:2px solid #FFFFFF;outline-offset:3px}
 /* Tela cheia */
 .cz .im-luz{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(10,20,25,.96);color:#FFFFFF}
-.cz .im-luz-palco{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:100%;touch-action:none;-webkit-user-select:none;user-select:none}
+.cz .im-luz-palco{position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:100%;touch-action:pan-y pinch-zoom;-webkit-user-select:none;user-select:none}
 /* A moldura tem a proporção da foto (--im-prop = largura / altura) e cabe em 92vw × 84vh. */
 .cz .im-luz-foto{position:relative;margin:0;aspect-ratio:var(--im-prop);width:min(92vw,1400px,calc(min(84vh,900px) * var(--im-prop)));container-type:inline-size}
 .cz .im-luz-foto img{width:100%;height:100%;object-fit:contain;-webkit-user-drag:none}
@@ -109,9 +109,6 @@
 /* Skeleton */
 .cz .im-sk-line{height:12px}
 .cz span.im-mos-item{cursor:default}
-/* Não encontrado / indisponível */
-.cz .im-empty .wrap{padding-top:8px;padding-bottom:104px}
-.cz .im-empty h1{margin:0;font-family:var(--serif);font-weight:400;font-size:32px;line-height:1.15;color:var(--azul-noite)}
 /* Formulário de interesse — painel lateral (desktop) / tela cheia (mobile) */
 .cz .im-scrim{position:fixed;inset:0;background:rgba(15,29,36,.5);z-index:40}
 .cz .im-panel{position:fixed;top:0;right:0;bottom:0;width:min(520px,100%);background:var(--fundo-hero);z-index:50;display:flex;flex-direction:column;box-shadow:-20px 0 40px rgba(15,29,36,.2)}
@@ -166,8 +163,8 @@
 }
 @media (max-width:900px){
   .cz.im-has-bar{padding-bottom:calc(71px + env(safe-area-inset-bottom))}
-  .cz .im-back .wrap{padding-top:8px;padding-bottom:8px}
-  .cz .im-back .crumbs,.cz .im-filters{display:none}
+  .cz .im-back .wrap{padding-top:2px;padding-bottom:2px;font-size:11px}
+  .cz .im-filters{display:none}
   .cz .im-mos,.cz .im-mos:has(.im-mos-vazio){display:block;height:auto;padding:0}
   .cz .im-mos-item{aspect-ratio:4/3;width:100%}
   .cz .im-mos-item + .im-mos-item{display:none}
@@ -203,9 +200,6 @@
   .cz .im-panel-head .im-form-title{font-size:24px}
   .cz .im-panel-body{padding:24px 20px 28px}
   .cz .im-panel-foot{padding:14px 20px calc(14px + env(safe-area-inset-bottom))}
-}
-@media (max-width:600px){
-  .cz .im-empty h1{font-size:26px}
 }
 @media (max-width:560px){
   /* Só o ícone: o rótulo "Compartilhar" continua valendo para leitor de tela. */

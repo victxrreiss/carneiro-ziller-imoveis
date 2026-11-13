@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { combinaFinalidade, contarFiltrosPainel, contextoVolta, filtrosParaQuery, lerFiltros, rotulosFiltros, semFiltro, temFiltroAvancado, tituloGrid, urlGrid } from "./filtros";
+import { combinaFinalidade, contextoVolta, filtrosParaQuery, lerFiltros, pluralTipo, rotulosFiltros, semFiltro, temFiltroAvancado, tituloGrid, TIPOS, urlGrid } from "./filtros";
 
 describe("lerFiltros", () => {
   test("aceita só valores conhecidos", () => {
@@ -155,11 +155,9 @@ describe("ordem e local", () => {
     expect(urlGrid({ ordem: "menor-preco", pagina: 1 })).toBe("/imoveis?ordem=menor-preco");
   });
 
-  test("local vira chip e semFiltro o remove; ordem não é chip nem conta no painel", () => {
+  test("local vira chip e semFiltro o remove; ordem não é chip", () => {
     const f = { local: "Nova Lima", ordem: "maior-area", pagina: 3 } as const;
     expect(rotulosFiltros(f)).toEqual([{ chave: "local", rotulo: "Nova Lima" }]);
-    expect(contarFiltrosPainel(f)).toBe(1);
-    expect(contarFiltrosPainel({ ordem: "maior-preco", pagina: 1 })).toBe(0);
     expect(semFiltro(f, "local")).toEqual({ local: undefined, ordem: "maior-area", pagina: 1 });
   });
 
@@ -216,5 +214,14 @@ describe("filtros avançados", () => {
     }
     expect(temFiltroAvancado({ pagina: 3 })).toBe(false);
     expect(temFiltroAvancado({ finalidade: "comprar", tipo: "Casa", local: "Nova Lima", regiao: "lourdes-savassi", quartos: "2", carac: [], pagina: 1 })).toBe(false);
+  });
+});
+
+describe("pluralTipo", () => {
+  test("todo tipo da busca tem plural; tipo desconhecido não", () => {
+    for (const t of TIPOS) expect(pluralTipo(t)).toBeTruthy();
+    expect(pluralTipo("Cobertura")).toBe("Coberturas");
+    expect(pluralTipo("Casa em condomínio")).toBe("Casas em condomínio");
+    expect(pluralTipo("Galpão")).toBeUndefined();
   });
 });

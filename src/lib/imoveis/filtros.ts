@@ -79,6 +79,24 @@ export const TIPOS = [
   "Casa comercial",
 ] as const;
 
+const PLURAL_TIPO: Record<(typeof TIPOS)[number], string> = {
+  Apartamento: "Apartamentos",
+  Cobertura: "Coberturas",
+  Studio: "Studios",
+  Loft: "Lofts",
+  "Casa em condomínio": "Casas em condomínio",
+  Casa: "Casas",
+  Terreno: "Terrenos",
+  "Sala / Laje corporativa": "Salas / Lajes corporativas",
+  "Prédio comercial": "Prédios comerciais",
+  "Casa comercial": "Casas comerciais",
+};
+
+/** Plural do tipo para títulos e links ("Coberturas"); `undefined` para um tipo fora de `TIPOS`. */
+export function pluralTipo(tipo: string): string | undefined {
+  return Object.hasOwn(PLURAL_TIPO, tipo) ? PLURAL_TIPO[tipo as (typeof TIPOS)[number]] : undefined;
+}
+
 export const FAIXAS_PRECO_VENDA: readonly Faixa[] = [
   ["ate-1.5m", "Até R$ 1,5 milhão", 0, 1_500_000],
   ["1.5m-3m", "R$ 1,5 a 3 milhões", 1_500_000, 3_000_000],
@@ -208,10 +226,6 @@ export function comFinalidade(filtros: Filtros, finalidade: FinalidadeFiltro | u
  */
 export function temFiltroAvancado(filtros: Filtros): boolean {
   return Boolean(filtros.preco || filtros.area || filtros.vagas || filtros.suites || filtros.q || filtros.carac?.length || filtros.ordem);
-}
-
-export function contarFiltrosPainel(filtros: Filtros): number {
-  return rotulosFiltros(filtros).filter((r) => r.chave !== "q").length;
 }
 
 export type RotuloFiltro = {

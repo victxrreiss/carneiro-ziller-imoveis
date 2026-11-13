@@ -51,6 +51,16 @@ describe("Compartilhar", () => {
     expect(screen.queryByRole("button", { name: "Copiar link" })).toBeNull();
   });
 
+  test("erro do compartilhamento nativo que não seja cancelamento abre WhatsApp e Copiar link", async () => {
+    const share = vi.fn().mockRejectedValue(new DOMException("bloqueado", "NotAllowedError"));
+    definir("share", share);
+    render(<Compartilhar titulo={TITULO} url={URL_IMOVEL} />);
+    fireEvent.click(botao());
+    expect(await screen.findByRole("button", { name: "Copiar link" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /WhatsApp/ })).toBeInTheDocument();
+    expect(botao()).toHaveAttribute("aria-expanded", "true");
+  });
+
   test("Esc fecha a alternativa e devolve o foco ao botão", () => {
     render(<Compartilhar titulo={TITULO} url={URL_IMOVEL} />);
     fireEvent.click(botao());

@@ -10,14 +10,14 @@ export const metadata: Metadata = {
 
 export default function ContatoPage() {
   return (
-    <PaginaInstitucional current="contato" titulo="Fale com a Carneiro & Ziller">
+    <PaginaInstitucional current="contato" rotulo="Contato" titulo="Fale com a Carneiro & Ziller">
       <div className="inst-contato">
         <div className="inst-texto">
           <p className="inst-lead">
             Atendimento personalizado para comprar, vender ou alugar imóveis de alto padrão em Belo Horizonte e Nova Lima.
           </p>
           <a
-            className="btn"
+            className="btn btn-whats"
             href={linkWhatsApp("Olá! Vim pelo site da Carneiro & Ziller.")}
             target="_blank"
             rel="noopener"

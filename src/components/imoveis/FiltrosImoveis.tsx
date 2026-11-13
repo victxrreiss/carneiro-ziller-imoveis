@@ -105,8 +105,9 @@ function lerLocal(local: string | undefined, localizacoes: Localizacoes): { cida
 function regioesDoSelect(localizacoes: Localizacoes, cidade: string, atual: string | undefined) {
   return REGIOES.filter((r) => {
     if (r.slug === atual) return true;
-    const cidades = localizacoes.flatMap((l) => l.bairros.filter((bairro) => naRegiao(r, { bairro, cidade: l.cidade })).map(() => l.cidade));
-    return cidades.length > 1 && (!cidade || cidades.includes(cidade));
+    // Uma entrada por bairro da região com imóvel publicado, guardando a cidade dele.
+    const cidadesDosBairros = localizacoes.flatMap((l) => l.bairros.filter((bairro) => naRegiao(r, { bairro, cidade: l.cidade })).map(() => l.cidade));
+    return cidadesDosBairros.length > 1 && (!cidade || cidadesDosBairros.includes(cidade));
   });
 }
 
@@ -117,8 +118,8 @@ function regioesDoSelect(localizacoes: Localizacoes, cidade: string, atual: stri
  *
  * Antes da hidratação já é HTML que funciona: as abas são links, o painel é um <details> e o
  * form é um GET para /imoveis com os mesmos nomes de parâmetro (cidade e bairro enviam `local`
- * os dois, e `lerFiltros` fica com o último preenchido). O grupo "Regiões" e as características
- * só mudam com JavaScript.
+ * os dois, e `lerFiltros` fica com o último preenchido; a região da URL vai num campo oculto).
+ * Escolher outra região ou característica só funciona com JavaScript.
  */
 export function FiltrosImoveis({ filtros, onAplicar, localizacoes, tipos, temLancamentos, avancados = false }: Props) {
   const [busca, setBusca] = useState(filtros.q ?? "");
@@ -186,6 +187,8 @@ export function FiltrosImoveis({ filtros, onAplicar, localizacoes, tipos, temLan
             })}
           </nav>
           {filtros.finalidade && <input type="hidden" name="finalidade" value={filtros.finalidade} />}
+          {/* Antes da hidratação, o select de Bairro enviaria `local=regiao:<slug>`, que `lerFiltros` descarta. */}
+          {filtros.regiao && <input type="hidden" name="regiao" value={filtros.regiao} />}
 
           <div className="busca-bar">
             <Campo rotulo="Tipo de imóvel" name="tipo" valor={filtros.tipo ?? ""} onChange={(v) => mudar({ tipo: v || undefined })}>

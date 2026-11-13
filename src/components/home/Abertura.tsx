@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState, type ReactNode } from "react";
 import { abertura } from "@/lib/site";
-import { moldura, Rotulo } from "./partes";
+import { ANCORA_CONTEUDO, moldura, Rotulo } from "./partes";
 
 type Config = typeof abertura;
 
@@ -105,7 +105,7 @@ export function Abertura({ config = abertura, children }: { config?: Config; chi
       </div>
 
       <a
-        href="#tipos"
+        href={`#${ANCORA_CONTEUDO}`}
         aria-label="Rolar para baixo"
         className="absolute right-(--cz-respiro) bottom-7 z-3 hidden h-12 w-7 justify-center rounded-[14px] border border-white/40 pt-2 focus-visible:outline-champanhe min-[900px]:flex"
       >

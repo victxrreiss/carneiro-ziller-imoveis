@@ -4,6 +4,9 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 /** Largura e respiro lateral da página (os mesmos do cabeçalho e do rodapé). */
+/** Âncora do conteúdo logo abaixo da abertura ("Rolar para baixo"). Fica na página, não numa seção que pode sumir. */
+export const ANCORA_CONTEUDO = "conteudo";
+
 export const moldura = "mx-auto w-full max-w-(--cz-largura) px-(--cz-respiro)";
 
 const rotuloBase =
@@ -42,15 +45,18 @@ type PropsCategoria = {
   sizes: string;
   /** Card-âncora (ocupa duas colunas): nome maior e mais respiro. */
   grande?: boolean;
+  /** Colunas que o card ocupa na grade ("celular/desktop"), quando a grade varia com a contagem. */
+  vao?: string;
   className?: string;
 };
 
 /** Card de categoria (tipo ou região): foto, véu azul-noite embaixo e o texto por cima. */
-export function CardCategoria({ href, img, legenda, nome, sizes, grande, className = "" }: PropsCategoria) {
+export function CardCategoria({ href, img, legenda, nome, sizes, grande, vao, className = "" }: PropsCategoria) {
   return (
     <Link
       href={href}
       data-grande={grande ? "true" : undefined}
+      data-vao={vao}
       className={`group relative block overflow-hidden bg-noite text-white hover:text-white focus-visible:outline-offset-[-4px] focus-visible:outline-champanhe ${className}`}
     >
       <Image

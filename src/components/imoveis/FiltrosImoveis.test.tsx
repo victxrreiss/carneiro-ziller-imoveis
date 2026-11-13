@@ -98,6 +98,22 @@ describe("FiltrosImoveis > filtros principais", () => {
   });
 });
 
+describe("FiltrosImoveis > antes da hidratação", () => {
+  const ocultoRegiao = () => document.querySelector<HTMLInputElement>('form input[type="hidden"][name="regiao"]');
+
+  test("com região escolhida, o Buscar envia `regiao` num campo oculto", () => {
+    const { unmount } = montar({ regiao: "belvedere-vila-da-serra", pagina: 1 });
+    expect(ocultoRegiao()).toHaveValue("belvedere-vila-da-serra");
+    // É o que um GET nativo do formulário enviaria: a região chega em `regiao`, que `lerFiltros` entende.
+    const enviado = new FormData(document.querySelector("form")!);
+    expect(enviado.get("regiao")).toBe("belvedere-vila-da-serra");
+    unmount();
+
+    montar({ local: "Nova Lima", pagina: 1 });
+    expect(ocultoRegiao()).toBeNull();
+  });
+});
+
 describe("FiltrosImoveis > filtros avançados", () => {
   test("preço, área, vagas, suítes, texto, características e ordenação ficam em Filtros avançados", async () => {
     const { onAplicar, avancados } = montar({ finalidade: "comprar", pagina: 2 });

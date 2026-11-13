@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import type { Foto } from "@/lib/imoveis";
 import { GaleriaMosaico } from "./GaleriaMosaico";
 
@@ -13,14 +13,19 @@ const mosaico = () => screen.getByRole("region", { name: "Fotos do imóvel" });
 const telaCheia = () => screen.getByRole("dialog", { name: "Fotos do imóvel" });
 const contador = () => telaCheia().querySelector(".im-luz-cont");
 
+const palco = () => telaCheia().querySelector<HTMLElement>(".im-luz-palco")!;
+/** MouseEvent com o tipo de pointer (o jsdom não leva clientX no PointerEvent em todas as versões) e o `pointerId` do dedo. */
+function evento(tipo: string, x: number, dedo = 1) {
+  const e = new MouseEvent(tipo, { bubbles: true, clientX: x, clientY: 200 });
+  Object.defineProperty(e, "pointerId", { value: dedo });
+  return e;
+}
+
 /** Arrasta o dedo na foto da tela cheia, de `de` até `ate` (px na horizontal). */
 function deslizar(de: number, ate: number) {
-  const palco = telaCheia().querySelector(".im-luz-palco")!;
-  // MouseEvent com o tipo de pointer: o jsdom não leva clientX no PointerEvent em todas as versões.
-  const evento = (tipo: string, x: number) => new MouseEvent(tipo, { bubbles: true, clientX: x, clientY: 200 });
   act(() => {
-    fireEvent(palco, evento("pointerdown", de));
-    fireEvent(palco, evento("pointerup", ate));
+    fireEvent(palco(), evento("pointerdown", de));
+    fireEvent(palco(), evento("pointerup", ate));
   });
 }
 
@@ -85,6 +90,42 @@ describe("GaleriaMosaico", () => {
     // Um toque curto não troca de foto.
     deslizar(200, 215);
     expect(contador()).toHaveTextContent("1 / 8");
+  });
+
+  test("um segundo dedo cancela o gesto (é zoom, não deslizar); o gesto seguinte volta a valer", async () => {
+    montar(8);
+    await userEvent.click(screen.getByRole("button", { name: "Ver as 8 fotos" }));
+    act(() => {
+      fireEvent(palco(), evento("pointerdown", 300, 1));
+      fireEvent(palco(), evento("pointerdown", 320, 2));
+      fireEvent(palco(), evento("pointerup", 100, 1));
+      fireEvent(palco(), evento("pointerup", 90, 2));
+    });
+    expect(contador()).toHaveTextContent("1 / 8");
+    deslizar(300, 120);
+    expect(contador()).toHaveTextContent("2 / 8");
+  });
+
+  test("soltar outro dedo que não começou o gesto não troca de foto", async () => {
+    montar(8);
+    await userEvent.click(screen.getByRole("button", { name: "Ver as 8 fotos" }));
+    act(() => {
+      fireEvent(palco(), evento("pointerdown", 300, 1));
+      fireEvent(palco(), evento("pointerup", 100, 7));
+    });
+    expect(contador()).toHaveTextContent("1 / 8");
+    // O dedo que começou termina o gesto normalmente.
+    act(() => void fireEvent(palco(), evento("pointerup", 100, 1)));
+    expect(contador()).toHaveTextContent("2 / 8");
+  });
+
+  test("o gesto captura o ponteiro: arrastar com o mouse e soltar fora da foto ainda conta", async () => {
+    montar(8);
+    await userEvent.click(screen.getByRole("button", { name: "Ver as 8 fotos" }));
+    const capturar = vi.fn();
+    palco().setPointerCapture = capturar;
+    act(() => void fireEvent(palco(), evento("pointerdown", 300, 4)));
+    expect(capturar).toHaveBeenCalledWith(4);
   });
 
   test("toda foto da galeria e da tela cheia tem MarcaDagua", async () => {

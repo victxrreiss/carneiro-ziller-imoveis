@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function SobrePage() {
   return (
-    <PaginaInstitucional current="sobre" titulo="Sobre a Carneiro & Ziller">
+    <PaginaInstitucional current="sobre" rotulo="Sobre nós" titulo="Sobre a Carneiro & Ziller">
       <div className="inst-leitura">
         <p>
           A Carneiro &amp; Ziller Imóveis nasceu da união de duas imobiliárias com atuação em Belo Horizonte e Nova Lima.

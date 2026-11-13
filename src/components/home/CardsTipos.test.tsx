@@ -45,6 +45,25 @@ describe("CardsTipos", () => {
     expect(screen.getByRole("link", { name: /Terrenos/ })).toHaveAttribute("href", "/imoveis?tipo=Terreno");
   });
 
+  test("número ímpar de cards: no celular (2 colunas) o último ocupa a linha inteira", async () => {
+    const cards = () => screen.getAllByRole("link").filter((a) => a.getAttribute("href")?.includes("tipo="));
+    const largos = () => cards().map((a) => a.className.split(" ").includes("col-span-2"));
+
+    contagem.mockResolvedValue(["Apartamento", "Casa", "Terreno"].map((tipo) => ({ tipo, total: 1 })));
+    const tres = render(await CardsTipos());
+    expect(largos()).toEqual([false, false, true]);
+    tres.unmount();
+
+    contagem.mockResolvedValue([{ tipo: "Casa", total: 1 }]);
+    const um = render(await CardsTipos());
+    expect(largos()).toEqual([true]);
+    um.unmount();
+
+    contagem.mockResolvedValue(["Apartamento", "Cobertura", "Casa", "Terreno"].map((tipo) => ({ tipo, total: 1 })));
+    render(await CardsTipos());
+    expect(largos()).toEqual([false, false, false, false]);
+  });
+
   test("sem nenhum tipo com imóvel, a seção some", async () => {
     contagem.mockResolvedValue([{ tipo: "Loft", total: 2 }]);
     expect(await CardsTipos()).toBeNull();

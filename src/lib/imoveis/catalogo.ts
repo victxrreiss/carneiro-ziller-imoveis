@@ -189,10 +189,6 @@ export async function buscarImoveis(filtros: Filtros, db: Db = conexao()): Promi
   };
 }
 
-export async function contarImoveis(filtros: Filtros, db: Db = conexao()): Promise<number> {
-  return (await filtrar(filtros, db)).length;
-}
-
 export async function obterImovel(id: string, db: Db = conexao()): Promise<ResultadoImovel> {
   const r = await carregarImovel(db, id);
   if (!r || r.situacao === "rascunho") return { situacao: "inexistente" };

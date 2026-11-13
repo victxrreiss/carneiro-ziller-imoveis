@@ -33,4 +33,18 @@ describe("Semelhantes", () => {
     // Fora do grid: o link do card não leva `?de=`.
     expect(within(secao).getByRole("link", { name: "Cobertura semelhante 1" })).toHaveAttribute("href", "/imovel/cz201");
   });
+
+  test("o link do fim leva à busca do mesmo tipo, com o plural do tipo no texto", () => {
+    const { unmount } = render(<Semelhantes itens={[1, 2].map(card)} />);
+    expect(screen.getByRole("link", { name: "Ver mais coberturas" })).toHaveAttribute("href", "/imoveis?tipo=Cobertura");
+    unmount();
+
+    render(<Semelhantes itens={[{ ...card(1), tipo: "Casa em condomínio" }]} />);
+    expect(screen.getByRole("link", { name: "Ver mais casas em condomínio" })).toHaveAttribute("href", "/imoveis?tipo=Casa+em+condom%C3%ADnio");
+  });
+
+  test("tipo sem plural conhecido: texto genérico, ainda filtrando pelo tipo", () => {
+    render(<Semelhantes itens={[{ ...card(1), tipo: "Galpão" }]} />);
+    expect(screen.getByRole("link", { name: "Ver imóveis do mesmo tipo" })).toHaveAttribute("href", "/imoveis?tipo=Galp%C3%A3o");
+  });
 });

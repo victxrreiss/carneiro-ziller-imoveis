@@ -4,7 +4,6 @@ import { imoveis } from "@/lib/dados/esquema";
 import { criarAmbiente, type Ambiente } from "@/lib/dados/testes";
 import {
   buscarImoveis as buscar,
-  contarImoveis as contar,
   contarPorTipo as contarTipo,
   listarIdsImoveis as listarIds,
   listarParaSitemap as listarSitemap,
@@ -26,7 +25,7 @@ beforeEach(async () => {
 });
 
 const buscarImoveis = (f: Filtros) => buscar(f, amb.db);
-const contarImoveis = (f: Filtros) => contar(f, amb.db);
+const contarImoveis = async (f: Filtros) => (await buscar(f, amb.db)).total;
 const opcoesLocalizacao = () => opcoes(amb.db);
 const contarPorTipo = (f: FinalidadeFiltro | undefined) => contarTipo(f, amb.db);
 const temLancamentos = () => temLanc(amb.db);

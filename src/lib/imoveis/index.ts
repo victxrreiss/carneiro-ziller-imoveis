@@ -58,12 +58,6 @@ export async function buscarImoveis(filtros: Filtros) {
   return catalogo.buscarImoveis(filtros);
 }
 
-export async function contarImoveis(filtros: Filtros) {
-  "use cache";
-  marcar();
-  return catalogo.contarImoveis(filtros);
-}
-
 export async function getOpcoesLocalizacao() {
   "use cache";
   marcar();

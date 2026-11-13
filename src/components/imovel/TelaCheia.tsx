@@ -29,7 +29,7 @@ type Props = {
 export function TelaCheia({ fotos, indice, onMudar, onFechar, retornoRef }: Props) {
   const painelRef = useRef<HTMLDivElement>(null);
   const fecharRef = useRef<HTMLButtonElement>(null);
-  const inicioRef = useRef<{ x: number; y: number } | null>(null);
+  const inicioRef = useRef<{ dedo: number; x: number; y: number } | null>(null);
   const aberto = indice !== null;
   const n = fotos.length;
   const varias = n > 1;
@@ -59,13 +59,22 @@ export function TelaCheia({ fotos, indice, onMudar, onFechar, retornoRef }: Prop
 
   if (indice === null) return null;
 
-  function onPointerDown(e: PointerEvent) {
-    inicioRef.current = { x: e.clientX, y: e.clientY };
+  // Só um ponteiro desliza. Um segundo dedo é zoom (pinça): o gesto é cancelado e os dois são ignorados.
+  function onPointerDown(e: PointerEvent<HTMLDivElement>) {
+    if (inicioRef.current) {
+      inicioRef.current = null;
+      return;
+    }
+    inicioRef.current = { dedo: e.pointerId, x: e.clientX, y: e.clientY };
+    // Com o mouse, soltar fora da foto ainda termina o gesto aqui. (Sem suporte, segue sem captura.)
+    try {
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    } catch {}
   }
   function onPointerUp(e: PointerEvent) {
     const inicio = inicioRef.current;
+    if (!inicio || inicio.dedo !== e.pointerId) return;
     inicioRef.current = null;
-    if (!inicio) return;
     const dx = e.clientX - inicio.x;
     const dy = e.clientY - inicio.y;
     if (Math.abs(dx) < DESLIZE_MINIMO || Math.abs(dx) <= Math.abs(dy)) return;

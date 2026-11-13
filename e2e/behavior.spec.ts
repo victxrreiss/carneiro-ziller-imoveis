@@ -159,6 +159,19 @@ test.describe("comportamento da Home", () => {
   });
 });
 
+test("Rolar para baixo leva ao conteúdo abaixo da abertura", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  const rolar = page.getByRole("link", { name: "Rolar para baixo" });
+  const ancora = (await rolar.getAttribute("href"))!;
+  expect(ancora).toMatch(/^#/);
+  // A âncora é da página, não de uma seção que some quando não há imóveis daquele tipo.
+  const alvo = page.locator(ancora);
+  await expect(alvo).toHaveCount(1);
+  expect(await alvo.evaluate((el) => el.tagName)).not.toBe("SECTION");
+  expect(Math.round((await alvo.boundingBox())!.y)).toBe(Math.round((await page.getByRole("region", { name: "Apresentação" }).boundingBox())!.height));
+});
+
 test.describe("Home sem JavaScript", () => {
   test.use({ javaScriptEnabled: false, viewport: { width: 1440, height: 900 } });
 

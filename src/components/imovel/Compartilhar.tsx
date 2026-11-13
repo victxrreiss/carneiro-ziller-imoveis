@@ -16,7 +16,7 @@ const IcCompartilhar = () => (
 
 /**
  * Compartilhar o imóvel: usa o compartilhamento nativo do aparelho (`navigator.share`) quando
- * existe; sem ele, abre as alternativas WhatsApp e "Copiar link".
+ * existe; sem ele, ou se ele falhar, abre as alternativas WhatsApp e "Copiar link".
  */
 export function Compartilhar({ titulo, url }: Props) {
   const [aberto, setAberto] = useState(false);
@@ -37,10 +37,15 @@ export function Compartilhar({ titulo, url }: Props) {
     if (typeof navigator.share === "function") {
       try {
         await navigator.share({ title: titulo, url });
-      } catch {
+        return;
+      } catch (erro) {
         // A pessoa fechou a folha de compartilhamento: nada a fazer.
+        if ((erro as { name?: unknown } | null)?.name === "AbortError") return;
+        // Qualquer outro erro (bloqueio do navegador, dado recusado): oferece as alternativas.
+        setCopiado(null);
+        setAberto(true);
+        return;
       }
-      return;
     }
     setCopiado(null);
     setAberto((a) => !a);

@@ -3,6 +3,7 @@ import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { abertura } from "@/lib/site";
 import { Abertura } from "./Abertura";
+import { ANCORA_CONTEUDO } from "./partes";
 
 function movimentoReduzido(reduzido: boolean) {
   vi.stubGlobal("matchMedia", (query: string) => ({ matches: reduzido, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
@@ -27,6 +28,12 @@ describe("Abertura", () => {
     expect(texto(doc.querySelector('[data-abertura-frase][data-ativa="true"]'))).toBe("Morar bem começa pela escolha do endereço.");
     expect(doc.querySelector("h1")).not.toBeNull();
     expect(doc.querySelector("video")).toBeNull();
+  });
+
+  test("Rolar para baixo aponta para a âncora do conteúdo, que existe mesmo sem cards de tipo", () => {
+    movimentoReduzido(true);
+    const { getByRole } = render(<Abertura>busca</Abertura>);
+    expect(getByRole("link", { name: "Rolar para baixo" })).toHaveAttribute("href", `#${ANCORA_CONTEUDO}`);
   });
 
   test("as frases são as 4 da direção visual e as imagens são 3", () => {

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { IcCasa } from "@/components/ui/IconesSite";
 import type { Imovel, ImovelCard } from "@/lib/imoveis";
 import type { ContextoVolta } from "@/lib/imoveis/filtros";
 import { mensagemWhatsAppImovel } from "@/lib/imoveis/whatsapp";
@@ -11,10 +10,6 @@ import { BarraVolta, LinkVolta } from "./BarraVolta";
 import { Compartilhar } from "./Compartilhar";
 import { GaleriaMosaico } from "./GaleriaMosaico";
 import { Semelhantes } from "./Semelhantes";
-
-export function secaoDoImovel(lancamento: boolean) {
-  return lancamento ? { rotulo: "Lançamentos", href: routes.lancamentos } : { rotulo: "Imóveis", href: routes.imoveis };
-}
 
 function BotaoWhatsApp({ imovel, url, id }: { imovel: Imovel; url: string; id: string }) {
   return (
@@ -79,7 +74,7 @@ export function ImovelTela({ imovel, volta, url, semelhantes }: Props) {
 
   return (
     <main>
-      <BarraVolta volta={volta} secao={secaoDoImovel(imovel.lancamento)} codigo={`CÓD. ${imovel.codigo}`} />
+      <BarraVolta volta={volta} codigo={`CÓD. ${imovel.codigo}`} />
       <AgendarProvider imovel={imovel}>
         <GaleriaMosaico fotos={imovel.fotos} padrao={imovel.foto} />
         <section className="im-ficha" aria-labelledby="im-titulo">
@@ -184,53 +179,50 @@ export function ImovelAusente(props: Ausencia) {
 
   return (
     <main>
-      <BarraVolta volta={volta} secao={secaoDoImovel(false)} />
-      <section className="im-empty">
+      <BarraVolta volta={volta} />
+      <section className="pg-aviso">
         <div className="wrap">
-          <div className="notice">
-            <div className="notice-icon">
-              <IcCasa size={28} width={1.3} />
-            </div>
-            {props.tipo === "indisponivel" ? (
-              <>
-                <h1>Este imóvel não está mais disponível</h1>
-                <p>
-                  O imóvel CÓD. {props.codigo} foi vendido, alugado ou retirado do portfólio.
-                  {comFiltros && " Seus filtros foram mantidos para você continuar a busca."}
-                </p>
-                <div className="notice-actions">
-                  <LinkVolta href={volta.href} className="btn">
-                    {volta.rotulo}
-                  </LinkVolta>
-                  {comFiltros ? (
-                    <Link className="link-arrow" href={routes.imoveis}>
-                      Ver todos os imóveis →
-                    </Link>
-                  ) : (
-                    <Link className="link-arrow" href={routes.contato}>
-                      Falar com um consultor →
-                    </Link>
-                  )}
-                </div>
-              </>
-            ) : (
-              <>
-                <h1>Imóvel não encontrado</h1>
-                <p>
-                  O endereço pode estar incorreto ou o anúncio foi removido. Confira o portfólio completo ou fale com um
-                  consultor.
-                </p>
-                <div className="notice-actions">
-                  <Link href={routes.imoveis} className="btn">
-                    VER TODOS OS IMÓVEIS
+          {props.tipo === "indisponivel" ? (
+            <>
+              <p className="pg-eyebrow">Imóvel indisponível</p>
+              <h1 className="pg-titulo">Este imóvel não está mais disponível</h1>
+              <p className="pg-aviso-texto">
+                O imóvel CÓD. {props.codigo} foi vendido, alugado ou retirado do portfólio.
+                {comFiltros && " Seus filtros foram mantidos para você continuar a busca."}
+              </p>
+              <div className="notice-actions">
+                <LinkVolta href={volta.href} className="btn">
+                  {volta.rotulo}
+                </LinkVolta>
+                {comFiltros ? (
+                  <Link className="link-arrow" href={routes.imoveis}>
+                    Ver todos os imóveis →
                   </Link>
+                ) : (
                   <Link className="link-arrow" href={routes.contato}>
                     Falar com um consultor →
                   </Link>
-                </div>
-              </>
-            )}
-          </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="pg-eyebrow">Erro 404</p>
+              <h1 className="pg-titulo">Imóvel não encontrado</h1>
+              <p className="pg-aviso-texto">
+                O endereço pode estar incorreto ou o anúncio foi removido. Confira o portfólio completo ou fale com um
+                consultor.
+              </p>
+              <div className="notice-actions">
+                <Link href={routes.imoveis} className="btn">
+                  VER TODOS OS IMÓVEIS
+                </Link>
+                <Link className="link-arrow" href={routes.contato}>
+                  Falar com um consultor →
+                </Link>
+              </div>
+            </>
+          )}
         </div>
       </section>
       {props.tipo === "indisponivel" && <Semelhantes itens={props.semelhantes} />}
