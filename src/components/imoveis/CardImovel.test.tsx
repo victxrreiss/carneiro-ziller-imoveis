@@ -33,6 +33,16 @@ describe("CardImovel", () => {
     expect(card.querySelector(".cz-card-foto .cz-marca-dagua")).toHaveAttribute("aria-hidden", "true");
   });
 
+  test("card de imóvel tem marca d'água aria-hidden e o preço", () => {
+    const { container } = render(<CardImovel imovel={base} />);
+    const marca = container.querySelector(".cz-card-foto .cz-marca-dagua")!;
+    expect(marca).toHaveAttribute("aria-hidden", "true");
+    // A foto é decorativa (o título é o link); nem ela nem a marca entram no nome acessível do card.
+    expect(container.querySelector(".cz-card-foto img")).toHaveAttribute("alt", "");
+    expect(screen.getByRole("link")).toHaveAccessibleName("Cobertura no Belvedere");
+    expect(container.querySelector(".cz-card-preco")).toHaveTextContent(/^R\$ 9\.800\.000$/);
+  });
+
   test("sem quartos nem vagas, só a área; uma vaga no singular", () => {
     const { container, rerender } = render(<CardImovel imovel={{ ...base, quartos: null, vagas: null }} />);
     const dados = () => [...container.querySelectorAll(".cz-card-dados span")].map((s) => s.textContent);

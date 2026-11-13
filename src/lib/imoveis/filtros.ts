@@ -47,11 +47,11 @@ export type ChaveFiltro = Exclude<keyof Filtros, "pagina" | "ordem">;
 /** [valor na URL, rótulo, mínimo inclusivo, máximo exclusivo] */
 export type Faixa = readonly [string, string, number, number];
 
-export const FINALIDADES: readonly { valor: FinalidadeFiltro | undefined; rotulo: string }[] = [
-  { valor: undefined, rotulo: "TODOS" },
-  { valor: "comprar", rotulo: "COMPRAR" },
-  { valor: "alugar", rotulo: "ALUGAR" },
-  { valor: "lancamentos", rotulo: "LANÇAMENTOS" },
+/** Abas de finalidade do grid, na ordem em que aparecem. Sem finalidade na URL, nenhuma fica marcada. */
+export const FINALIDADES: readonly { valor: FinalidadeFiltro; rotulo: string }[] = [
+  { valor: "comprar", rotulo: "Comprar" },
+  { valor: "alugar", rotulo: "Alugar" },
+  { valor: "lancamentos", rotulo: "Lançamentos" },
 ];
 
 /**
@@ -65,12 +65,6 @@ export function combinaFinalidade(filtro: FinalidadeFiltro | undefined, i: Pick<
   // Imóvel à venda com valor de locação também pode ser alugado.
   return i.finalidade === "locacao" || (i.finalidade === "venda" && i.valorLocacao !== null);
 }
-
-const rotuloChipFinalidade: Record<FinalidadeFiltro, string> = {
-  comprar: "Comprar",
-  alugar: "Alugar",
-  lancamentos: "Lançamentos",
-};
 
 export const TIPOS = [
   "Apartamento",
@@ -207,6 +201,15 @@ export function comFinalidade(filtros: Filtros, finalidade: FinalidadeFiltro | u
   return { ...filtros, finalidade, preco: precoValido ? filtros.preco : undefined, pagina: 1 };
 }
 
+/**
+ * Algum filtro que fica recolhido em "Filtros avançados" (preço, área, vagas, suítes, texto,
+ * características) ou uma ordenação fora do padrão: o painel abre sozinho para a pessoa ver o
+ * que está valendo.
+ */
+export function temFiltroAvancado(filtros: Filtros): boolean {
+  return Boolean(filtros.preco || filtros.area || filtros.vagas || filtros.suites || filtros.q || filtros.carac?.length || filtros.ordem);
+}
+
 export function contarFiltrosPainel(filtros: Filtros): number {
   return rotulosFiltros(filtros).filter((r) => r.chave !== "q").length;
 }
@@ -221,7 +224,7 @@ export type RotuloFiltro = {
 export function rotulosFiltros(filtros: Filtros): RotuloFiltro[] {
   const r: RotuloFiltro[] = [];
   const faixa = (lista: readonly Faixa[], v?: string) => lista.find(([valor]) => valor === v)?.[1];
-  if (filtros.finalidade) r.push({ chave: "finalidade", rotulo: rotuloChipFinalidade[filtros.finalidade] });
+  if (filtros.finalidade) r.push({ chave: "finalidade", rotulo: FINALIDADES.find((f) => f.valor === filtros.finalidade)!.rotulo });
   if (filtros.q) r.push({ chave: "q", rotulo: `“${filtros.q}”` });
   if (filtros.local) r.push({ chave: "local", rotulo: filtros.local });
   const regiao = filtros.regiao ? regiaoPorSlug(filtros.regiao) : undefined;

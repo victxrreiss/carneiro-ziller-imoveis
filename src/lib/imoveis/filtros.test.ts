@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { combinaFinalidade, contarFiltrosPainel, contextoVolta, filtrosParaQuery, lerFiltros, rotulosFiltros, semFiltro, tituloGrid, urlGrid } from "./filtros";
+import { combinaFinalidade, contarFiltrosPainel, contextoVolta, filtrosParaQuery, lerFiltros, rotulosFiltros, semFiltro, temFiltroAvancado, tituloGrid, urlGrid } from "./filtros";
 
 describe("lerFiltros", () => {
   test("aceita só valores conhecidos", () => {
@@ -206,5 +206,15 @@ describe("lerFiltros: `local` repetido (busca da Home sem JavaScript)", () => {
 
   test("com região válida, `local` continua sem valer", () => {
     expect(lerFiltros(new URLSearchParams("regiao=lourdes-savassi&local=Nova+Lima&local=")).local).toBeUndefined();
+  });
+});
+
+describe("filtros avançados", () => {
+  test("preço, área, vagas, suítes, texto, características e ordem são avançados; os principais não", () => {
+    for (const f of [{ preco: "3m-6m" }, { area: "100-200" }, { vagas: "1" }, { suites: "2" }, { q: "cz" }, { carac: ["piscina"] }, { ordem: "menor-preco" as const }]) {
+      expect(temFiltroAvancado({ ...f, pagina: 1 }), JSON.stringify(f)).toBe(true);
+    }
+    expect(temFiltroAvancado({ pagina: 3 })).toBe(false);
+    expect(temFiltroAvancado({ finalidade: "comprar", tipo: "Casa", local: "Nova Lima", regiao: "lourdes-savassi", quartos: "2", carac: [], pagina: 1 })).toBe(false);
   });
 });

@@ -103,6 +103,10 @@ test.describe("comportamento da Home", () => {
     await page.goto("/");
     await page.getByRole("link", { name: "Filtros avançados" }).click();
     await page.waitForURL("**/imoveis?avancados=1");
+    // O conteúdo real, e não o esqueleto que aparece enquanto a página chega.
+    const grade = page.locator("main:visible").filter({ hasNot: page.locator('[aria-busy="true"]') });
+    await expect(grade.locator("details.avancados")).toHaveAttribute("open");
+    await expect(grade.getByLabel("Ordenar por")).toBeVisible();
   });
 
   test("cards de tipo e de região abrem a busca filtrada", async ({ page }) => {
