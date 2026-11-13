@@ -10,13 +10,13 @@ const pilares = [
 ];
 
 function Seal() {
-  const serif = { fontFamily: "var(--font-dm-serif), serif", fontSize: 150 };
+  const serif = { fontFamily: "var(--font-display)", fontSize: 150 };
   return (
     <svg viewBox="0 0 380 380" width="240" height="240" role="img" aria-label="Selo Carneiro & Ziller Imóveis">
       <defs>
         <path id="ring-inst" d="M 30 190 A 160 160 0 1 1 30 190.01" />
       </defs>
-      <text style={{ fontFamily: "var(--font-montserrat), sans-serif", fontSize: 18 }} textLength={985} lengthAdjust="spacing">
+      <text style={{ fontFamily: "var(--font-sans)", fontSize: 18 }} textLength={985} lengthAdjust="spacing">
         <textPath href="#ring-inst">
           <tspan fill="#FFFFFF" fontWeight={600}>CARNEIRO</tspan>
           <tspan fill="#E7E4DC"> • </tspan>

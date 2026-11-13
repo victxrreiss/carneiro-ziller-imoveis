@@ -11,9 +11,7 @@
 .cz .pn-side{flex:none;width:232px;background:var(--fundo-hero);border-right:1px solid var(--areia);display:flex;flex-direction:column}
 .cz .pn-brand{display:flex;flex-direction:column;gap:14px;padding:24px 20px 20px;border-bottom:1px solid var(--areia)}
 .cz .pn-brand .logo{gap:10px}
-.cz .pn-brand .logo img{width:30px;height:30px;flex:none}
-.cz .pn-brand .logo-name{font-size:15px}
-.cz .pn-brand .logo-tag{font-size:6px}
+.cz .pn-brand .cz-logo{width:180px}
 .cz .pn-brand-tag{font-size:10px;font-weight:600;letter-spacing:.32em;color:var(--cinza)}
 .cz .pn-nav{list-style:none;margin:0;padding:16px 12px;display:flex;flex-direction:column;gap:2px}
 .cz .pn-nav a,.cz .pn-nav button{width:100%;display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border:none;background:transparent;font-family:var(--sans);font-size:14px;font-weight:500;color:var(--grafite);cursor:pointer;text-align:left;transition:background-color .15s ease,color .15s ease}
@@ -307,9 +305,7 @@
 /* ---------- Telas de acesso ---------- */
 .cz .pn-auth{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px;padding:56px 16px 40px;background:var(--fundo)}
 .cz .pn-auth-brand{display:flex;flex-direction:column;align-items:center;gap:16px}
-.cz .pn-auth-brand .logo img{width:44px;height:44px}
-.cz .pn-auth-brand .logo-name{font-size:26px}
-.cz .pn-auth-brand .logo-tag{font-size:9px}
+.cz .pn-auth-brand .cz-logo{width:281px}
 .cz .pn-auth-card{width:100%;max-width:448px;background:#FFFFFF;border-top:3px solid var(--vinho);box-shadow:0 30px 60px rgba(65,64,66,.12);padding:40px;display:flex;flex-direction:column;gap:22px}
 .cz .pn-auth-card form{display:flex;flex-direction:column;gap:20px;margin:0}
 .cz .pn-auth-title{margin:0;font-family:var(--serif);font-weight:400;font-size:32px;line-height:1.1;color:var(--azul-noite);outline:none}
@@ -352,9 +348,7 @@
 @media (max-width:900px){
   .cz .pn-side{display:none}
   .cz .pn-top{display:flex;position:sticky;top:0;z-index:20;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px 10px 16px;background:var(--fundo-hero);border-bottom:1px solid var(--areia)}
-  .cz .pn-top .logo img{width:30px;height:30px}
-  .cz .pn-top .logo-name{font-size:17px}
-  .cz .pn-top .logo-tag{font-size:6px}
+  .cz .pn-top .cz-logo{width:200px}
   .cz .pn-top-r{display:flex;align-items:center;gap:8px}
   .cz .pn-content{padding:20px 16px 48px}
   .cz .pn-title{font-size:28px}
@@ -411,7 +405,7 @@
 /* Menu "Mais ações" das tabelas: flutuante (portal do Headless UI), fora da caixa com rolagem horizontal.
    Fica fora do escopo .cz, então usa os valores dos tokens diretamente. */
 .pn-menu-flutuante{z-index:60;min-width:220px;margin:0;padding:6px 0;list-style:none;background:#FFFFFF;border:1px solid #E7E4DC;box-shadow:0 18px 40px rgba(15,29,36,.14);outline:none;--anchor-gap:4px}
-.pn-menu-flutuante a,.pn-menu-flutuante button{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:0 16px;border:none;background:transparent;font-family:var(--font-montserrat),"Montserrat",sans-serif;font-size:14px;color:#414042;text-align:left;cursor:pointer;white-space:nowrap;text-decoration:none}
+.pn-menu-flutuante a,.pn-menu-flutuante button{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:0 16px;border:none;background:transparent;font-family:var(--font-sans);font-size:14px;color:#414042;text-align:left;cursor:pointer;white-space:nowrap;text-decoration:none}
 .pn-menu-flutuante [data-focus],.pn-menu-flutuante a:hover,.pn-menu-flutuante button:hover{background:#F6F4F0;color:#0F1D24}
 .pn-menu-flutuante .is-danger,.pn-menu-flutuante .is-danger[data-focus],.pn-menu-flutuante .is-danger:hover{color:#78323D}
 

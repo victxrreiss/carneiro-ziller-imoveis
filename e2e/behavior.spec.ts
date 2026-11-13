@@ -11,7 +11,7 @@ test.describe("comportamento da Home", () => {
     });
   }
 
-  test("abaixo de 900px o menu vira gaveta", async ({ page }) => {
+  test("abaixo de 900px o menu vira botão e abre em tela cheia", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
     const header = page.locator("header");
@@ -19,8 +19,10 @@ test.describe("comportamento da Home", () => {
     await expect(header.getByRole("link", { name: "Sobre nós" })).toBeHidden();
 
     await header.getByRole("button", { name: "Abrir menu" }).click();
-    const gaveta = page.getByRole("dialog", { name: "Menu" });
-    await expect(gaveta.getByRole("link", { name: "Sobre nós" })).toBeVisible();
+    const menu = page.getByRole("dialog", { name: "Menu" });
+    await expect(menu.getByRole("link", { name: "Sobre nós" })).toBeVisible();
+    await expect(menu.getByRole("link", { name: "Falar no WhatsApp" })).toBeVisible();
+    await expect(menu).toContainText("CRECI 7904");
   });
 
   test("em 900px ou mais o menu é horizontal", async ({ page }) => {

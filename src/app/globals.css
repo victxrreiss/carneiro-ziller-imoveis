@@ -1,22 +1,64 @@
 @import "tailwindcss";
 
-@theme {
-  --color-azul-noite: #0F1D24;
-  --color-azul-noite-hover: #1E3440;
-  --color-azul-rodape: #0A1419;
-  --color-vinho: #78323D;
-  --color-grafite: #414042;
+/* Tokens da identidade (DIRECAO.md da Prioridade 2). Ficam no :root para valerem nos três
+ * sistemas de estilo: Tailwind (Home), .cz (grid, imóvel, institucionais) e painel. */
+:root {
+  --noite: #0F1D24;
+  --noite-2: #16262E;
+  --rodape: #0A1419;
+  --vinho: #78323D;
+  --champanhe: #C4A77A;
+  --bronze: #86693A;
+  --grafite: #2F2E30;
+  --texto: #414042;
+  --texto-2: #6B6A6D;
+  --prata: #C9C9C9;
+  --areia: #E7E4DC;
+  --areia-2: #DDD6CA;
+  --fundo: #F6F4F0;
+  --marfim: #FBFAF7;
+
+  /* Moldura das páginas: 1280px com respiro lateral fluido. */
+  --cz-largura: 1280px;
+  --cz-respiro: clamp(16px, 4vw, 56px);
+}
+
+/* `inline`: os utilitários (bg-noite, text-champanhe…) usam direto as variáveis acima. */
+@theme inline {
+  --color-noite: var(--noite);
+  --color-noite-2: var(--noite-2);
+  --color-rodape: var(--rodape);
+  --color-vinho: var(--vinho);
+  --color-champanhe: var(--champanhe);
+  --color-bronze: var(--bronze);
+  --color-grafite: var(--grafite);
+  --color-texto: var(--texto);
+  --color-texto-2: var(--texto-2);
+  --color-prata: var(--prata);
+  --color-areia: var(--areia);
+  --color-areia-2: var(--areia-2);
+  --color-fundo: var(--fundo);
+  --color-marfim: var(--marfim);
+
+  /* Legado da Home antiga: saem quando as seções forem refeitas (Tasks 4 e 5 da Prioridade 2). */
+  --color-azul-noite: var(--noite);
+  --color-azul-noite-hover: var(--noite-2);
+  --color-azul-rodape: var(--rodape);
   --color-texto-secundario: #555456;
   --color-cinza: #6D6E71;
-  --color-prata: #C9C9C9;
-  --color-areia: #E7E4DC;
-  --color-areia-quadro: #DDD6CA;
-  --color-fundo: #F6F4F0;
-  --color-fundo-hero: #FBFAF7;
+  --color-areia-quadro: var(--areia-2);
+  --color-fundo-hero: var(--marfim);
+  --font-serif: var(--font-display);
+}
 
-  --font-serif: var(--font-dm-serif), serif;
-  --font-sans: var(--font-montserrat), sans-serif;
+/* `static`: --font-display e --font-sans saem sempre no :root, porque .cz e o painel também os usam.
+ * --font-cormorant e --font-jost vêm do next/font (app/fonts.ts), no <html>. */
+@theme static {
+  --font-display: var(--font-cormorant), "Times New Roman", serif;
+  --font-sans: var(--font-jost), "Helvetica Neue", Arial, sans-serif;
+}
 
+@theme {
   /* A referência não fixa line-height nos tamanhos; vale o "normal" da fonte. */
   --text-xs--line-height: normal;
   --text-sm--line-height: normal;
@@ -29,25 +71,28 @@
   /* O preflight usa line-height 1.5; a referência usa o "normal" do navegador. */
   body {
     margin: 0;
-    background: var(--color-fundo);
-    color: var(--color-grafite);
+    background: var(--fundo);
+    color: var(--texto);
     font-family: var(--font-sans);
     line-height: normal;
+    -webkit-font-smoothing: antialiased;
+    /* A Jost só tem 300/400/500: pesos maiores usam o 500 real, sem negrito sintético. */
+    font-synthesis-weight: none;
   }
 
   a {
-    color: var(--color-azul-noite);
+    color: var(--noite);
     text-decoration: none;
   }
 
   a:hover {
-    color: var(--color-vinho);
+    color: var(--vinho);
   }
 
   a:focus-visible,
   button:focus-visible,
   input:focus-visible {
-    outline: 2px solid var(--color-azul-noite);
+    outline: 2px solid var(--noite);
     outline-offset: 3px;
   }
 }

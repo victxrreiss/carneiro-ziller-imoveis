@@ -21,6 +21,11 @@ export function linkWhatsApp(mensagem?: string): string {
   return mensagem ? `${base}?text=${encodeURIComponent(mensagem)}` : base;
 }
 
+/** Link `tel:` do telefone da empresa, com o código do país. */
+export function linkTelefone(): string {
+  return `tel:+55${empresa.telefone.replace(/\D/g, "")}`;
+}
+
 // Redes sociais: `null` até o cliente informar a URL; o ícone só aparece com URL real.
 export const social: { instagram: string | null; linkedin: string | null } = {
   instagram: null,

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { dmSerif, montserrat } from "./fonts";
+import { cormorant, jost } from "./fonts";
 import { Rastreamento } from "@/components/layout/Rastreamento";
 import { descricaoSite, ogPadrao, rastreamentoAtivo } from "@/lib/site";
 import "./globals.css";
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="pt-BR" className={`${dmSerif.variable} ${montserrat.variable}`}>
+    <html lang="pt-BR" className={`${cormorant.variable} ${jost.variable}`}>
       <body>
         {/* Tag Manager e Pixel: só no domínio de produção (ver `rastreamento` em lib/site.ts). */}
         {rastreamentoAtivo(process.env.SITE_URL) && <Rastreamento />}

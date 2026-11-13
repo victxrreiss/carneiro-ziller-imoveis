@@ -2,28 +2,11 @@
 
 // Peças pequenas reutilizadas nas telas do painel.
 import { Label, Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/react";
-import Image from "next/image";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Portal } from "@/components/ui/Portal";
 import { useDialog } from "@/components/ui/useDialog";
 import { IcCheck, IcErro, IcFechar, IcOlho, IcOlhoFechado } from "./Icones";
 import { IcChevron } from "@/components/ui/IconesSite";
-
-/** Logomarca no padrão do site (classes .logo de cz-site.css). */
-export function Marca() {
-  return (
-    <>
-      <Image src="/logo/simbolo-carneiro-azul.svg" alt="" width={40} height={40} />
-      <span className="logo-col" aria-hidden="true">
-        <span className="logo-name">
-          CARNEIRO <span className="amp">&amp;</span> <span className="zbar">Z</span>ILLER
-        </span>
-        <span className="logo-rule" />
-        <span className="logo-tag">IMÓVEIS</span>
-      </span>
-    </>
-  );
-}
 
 /** Mensagem de erro abaixo do campo (ícone + texto, não só cor). */
 export function ErroCampo({ id, children }: { id: string; children: ReactNode }) {

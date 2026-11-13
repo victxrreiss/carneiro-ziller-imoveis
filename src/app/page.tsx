@@ -5,7 +5,6 @@ import { Launches } from "@/components/home/Launches";
 import { Regions } from "@/components/home/Regions";
 import { Selected } from "@/components/home/Selected";
 import { Footer } from "@/components/layout/Footer";
-import { UtilityBar } from "@/components/layout/UtilityBar";
 import { ogPadrao } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -16,7 +15,6 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <>
-      <UtilityBar />
       <main>
         <Hero />
         <Regions />
@@ -24,10 +22,7 @@ export default function Home() {
         <Institutional />
         <Selected />
       </main>
-      {/* Rodapé do grid/Imóvel, adotado no site todo (decisão do usuário). */}
-      <div className="cz">
-        <Footer />
-      </div>
+      <Footer />
     </>
   );
 }

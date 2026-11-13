@@ -39,4 +39,29 @@ describe("Header", () => {
     render(await Header({ current: "home" }));
     expect(screen.getByRole("link", { name: "SOU CORRETOR" })).toHaveAttribute("href", "/painel/entrar");
   });
+
+  test("a logo leva à Home e tem o nome da empresa como nome acessível", async () => {
+    render(await Header({ current: "home" }));
+    expect(screen.getByRole("link", { name: "Carneiro & Ziller Imóveis" })).toHaveAttribute("href", "/");
+  });
+
+  test("sem current, nenhum item do menu fica marcado", async () => {
+    const { container } = render(await Header({}));
+    expect(container.querySelectorAll('[aria-current="page"]')).toHaveLength(0);
+  });
+
+  test("por padrão é sólido; sobre-imagem deixa o fundo transparente", async () => {
+    const { container, unmount } = render(await Header({ current: "imoveis" }));
+    expect(container.querySelector("header")).toHaveClass("cz-topo", "cz-topo-solido");
+    unmount();
+    const outro = render(await Header({ current: "home", variante: "sobre-imagem" }));
+    expect(outro.container.querySelector("header")).toHaveClass("cz-topo", "cz-topo-sobre-imagem");
+    expect(outro.container.querySelector("header")).not.toHaveClass("cz-topo-solido");
+  });
+
+  test("não tem barra de utilidades: telefone e CRECI ficam fora do cabeçalho", async () => {
+    const { container } = render(await Header({ current: "home" }));
+    expect(container).not.toHaveTextContent("99539-5988");
+    expect(container).not.toHaveTextContent("CRECI");
+  });
 });

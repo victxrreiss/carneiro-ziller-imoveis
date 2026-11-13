@@ -10,7 +10,7 @@ import { useDialog } from "@/components/ui/useDialog";
 import type { Papel } from "@/lib/dados/tipos";
 import { painel } from "@/lib/routes";
 import { IcConta, IcContatos, IcFechar, IcImoveis, IcMenu, IcPaginaInicial, IcSair, IcUsuarios } from "./Icones";
-import { Marca } from "./ui";
+import { Logo } from "@/components/layout/Logo";
 
 export type UsuarioShell = { nome: string; papel: Papel };
 
@@ -137,7 +137,7 @@ export function Shell({ usuario, children }: { usuario: UsuarioShell; children: 
         <aside className="pn-side" aria-label="Menu do painel">
           <div className="pn-brand">
             <Link href={painel.imoveis} className="logo" aria-label="Carneiro & Ziller — painel, início">
-              <Marca />
+              <Logo />
             </Link>
             <span className="pn-brand-tag">PAINEL</span>
           </div>
@@ -151,7 +151,7 @@ export function Shell({ usuario, children }: { usuario: UsuarioShell; children: 
         <div className="pn-main">
           <header className="pn-top">
             <Link href={painel.imoveis} className="logo" aria-label="Carneiro & Ziller — painel, início">
-              <Marca />
+              <Logo />
             </Link>
             <div className="pn-top-r">
               <MenuMobile usuario={usuario} />

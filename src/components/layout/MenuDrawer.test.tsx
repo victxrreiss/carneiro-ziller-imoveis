@@ -11,7 +11,7 @@ const items = [
 function renderMenu() {
   return render(
     <main>
-      <MenuDrawer items={items} buttonClassName="menu-btn" />
+      <MenuDrawer items={items} />
     </main>,
   );
 }
@@ -23,14 +23,16 @@ describe("MenuDrawer", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  test("abre a gaveta com os links, o atual marcado e os contatos", async () => {
+  test("abre o menu em tela cheia com os links, o atual marcado e os contatos", async () => {
     renderMenu();
     await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
     const dialog = screen.getByRole("dialog", { name: "Menu" });
     expect(dialog).toHaveAttribute("aria-modal", "true");
     expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Sobre nós" })).toHaveAttribute("href", "/sobre");
-    expect(dialog).toHaveTextContent("Carneiro & Ziller · (31) 99539-5988");
+    expect(screen.getByRole("link", { name: "Falar no WhatsApp" })).toHaveAttribute("href", "https://wa.me/5531995395988");
+    expect(screen.getByRole("link", { name: "(31) 99539-5988" })).toHaveAttribute("href", "tel:+5531995395988");
+    expect(dialog).toHaveTextContent("CRECI 7904");
     expect(screen.getByRole("link", { name: "SOU CORRETOR" })).toHaveAttribute("href", "/painel/entrar");
     expect(screen.getByRole("button", { name: "Fechar menu" })).toHaveFocus();
   });
@@ -60,15 +62,19 @@ describe("MenuDrawer", () => {
     await userEvent.tab();
     expect(screen.getByRole("link", { name: "Sobre nós" })).toHaveFocus();
     await userEvent.tab();
+    expect(screen.getByRole("link", { name: "Falar no WhatsApp" })).toHaveFocus();
+    await userEvent.tab();
     expect(screen.getByRole("link", { name: "SOU CORRETOR" })).toHaveFocus();
+    await userEvent.tab();
+    expect(screen.getByRole("link", { name: "(31) 99539-5988" })).toHaveFocus();
     await userEvent.tab();
     expect(screen.getByRole("button", { name: "Fechar menu" })).toHaveFocus();
   });
 
-  test("clicar no fundo ou em um link fecha", async () => {
+  test("o botão de fechar e os links fecham o menu", async () => {
     renderMenu();
     await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
-    await userEvent.click(screen.getByTestId("menu-scrim"));
+    await userEvent.click(screen.getByRole("button", { name: "Fechar menu" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Abrir menu" }));
     await userEvent.click(screen.getByRole("link", { name: "Sobre nós" }));

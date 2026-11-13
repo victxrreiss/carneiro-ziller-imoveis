@@ -27,6 +27,7 @@ export async function Hero() {
         className={`${dots} top-30 right-0 h-35 w-30 bg-[radial-gradient(#6D6E71_1.2px,transparent_1.3px)] opacity-45`}
       />
 
+      {/* Sólido enquanto a abertura é clara; a Home nova usa variante="sobre-imagem". */}
       <Header current="home" />
 
       <div className="relative z-2 mx-auto flex box-content max-w-310 flex-wrap items-center gap-12 px-6 pt-8 pb-24">

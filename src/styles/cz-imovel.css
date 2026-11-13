@@ -147,11 +147,11 @@
   .cz .im-gal{order:1}
   .cz .im-card{order:2}
   .cz .im-desc{order:3}
-  .cz .im-gal{margin:0 -24px}
+  .cz .im-gal{margin:0 calc(-1 * var(--cz-respiro))}
   .cz .im-desk{display:none}
   .cz .im-touch{display:block}
   .cz .im-nophoto{aspect-ratio:4/3}
-  .cz .im-card{position:static;margin:0 -24px;padding:28px 24px 32px;border-top:none;box-shadow:none}
+  .cz .im-card{position:static;margin:0 calc(-1 * var(--cz-respiro));padding:28px var(--cz-respiro) 32px;border-top:none;box-shadow:none}
   .cz .im-card .im-cta{display:none}
   .cz .im-desc{margin-top:40px}
   .cz .im-bar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:30;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:#FFFFFF;border-top:1px solid var(--areia);box-shadow:0 -10px 30px rgba(15,29,36,.08)}
@@ -161,8 +161,8 @@
   .cz .im-bar .im-cta{width:auto;min-height:48px;padding:0 20px;flex:none}
   .cz .im-bar .im-cta-whats{margin-top:0;padding:0 14px;letter-spacing:.12em}
   .cz .im-sk-grid .im-sk-thumbs{display:none}
-  .cz .im-sk-grid .im-sk-stage{aspect-ratio:4/3;margin:0 -24px}
-  .cz .im-sk-card{margin:0 -24px;padding:28px 24px}
+  .cz .im-sk-grid .im-sk-stage{aspect-ratio:4/3;margin:0 calc(-1 * var(--cz-respiro))}
+  .cz .im-sk-card{margin:0 calc(-1 * var(--cz-respiro));padding:28px var(--cz-respiro)}
   .cz .im-panel{width:100%;box-shadow:none}
   .cz .im-panel-head{padding:10px 12px 10px 20px}
   .cz .im-panel-head .im-form-title{font-size:24px}

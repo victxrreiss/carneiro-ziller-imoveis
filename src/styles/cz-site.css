@@ -1,40 +1,17 @@
-/* Estilos das telas Imóveis e Imóvel e do layout compartilhado (barra superior,
- * header, menu em gaveta, rodapé). Valores copiados do handoff
- * carneiro-ziller-site-handoff/imoveis/Imoveis.html; só os seletores de
- * demonstração (.is-hover/.is-focus/.is-active) foram removidos.
- * Escopo: tudo sob .cz, para não colidir com os utilitários do Tailwind da Home. */
-/* Tela Imóveis — Carneiro & Ziller (tokens idênticos à Home) */
-.cz{--azul-noite:#0F1D24;--azul-noite-hover:#1E3440;--azul-rodape:#0A1419;--vinho:#78323D;--grafite:#414042;--texto-secundario:#555456;--cinza:#6D6E71;--prata:#C9C9C9;--areia:#E7E4DC;--fundo:#F6F4F0;--fundo-hero:#FBFAF7;--branco:#FFFFFF;--serif:var(--font-dm-serif),serif;--sans:var(--font-montserrat),sans-serif;font-family:var(--sans);color:var(--grafite);background:var(--fundo);-webkit-font-smoothing:antialiased}
+/* Estilos das telas Imóveis, Imóvel e institucionais (escopo .cz, herdado do handoff
+ * carneiro-ziller-site-handoff/imoveis/Imoveis.html) e, no fim do arquivo, a identidade
+ * compartilhada pelo site todo: logo, cabeçalho, menu do celular, rodapé e marca d'água.
+ * Os tokens da identidade (--noite, --champanhe, --font-display…) vêm do :root em
+ * app/globals.css; aqui ficam só os nomes antigos, que o corpo dessas telas ainda usa. */
+.cz{--azul-noite:var(--noite);--azul-noite-hover:var(--noite-2);--azul-rodape:var(--rodape);--texto-secundario:#555456;--cinza:#6D6E71;--fundo-hero:var(--marfim);--branco:#FFFFFF;--serif:var(--font-display);--sans:var(--font-sans);font-family:var(--sans);color:var(--texto);background:var(--fundo);-webkit-font-smoothing:antialiased}
 .cz *{box-sizing:border-box}
 .cz a{color:var(--azul-noite);text-decoration:none}
 .cz a:hover{color:var(--vinho)}
 .cz a:focus-visible,.cz button:focus-visible,.cz select:focus-visible{outline:2px solid var(--azul-noite);outline-offset:3px}
 .cz button{font-family:var(--sans)}
-.cz .wrap{max-width:1240px;margin:0 auto;padding:0 24px}
+.cz .wrap{max-width:var(--cz-largura);margin:0 auto;padding:0 var(--cz-respiro)}
 .cz .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.cz .topbar{background:var(--azul-noite);color:var(--areia);font-size:12px}
-.cz .topbar .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 24px;padding-top:9px;padding-bottom:9px}
-.cz .units{display:flex;flex-wrap:wrap;gap:6px 24px}
-.cz .creci{letter-spacing:.08em;color:var(--prata)}
-.cz .site-header{background:var(--fundo-hero);border-bottom:1px solid var(--areia)}
-.cz .site-header .wrap{display:flex;align-items:center;justify-content:space-between;gap:18px 32px;padding-top:26px;padding-bottom:26px}
 .cz .logo{display:flex;align-items:center;gap:14px}
-.cz .logo img{width:40px;height:40px;display:block}
-.cz .logo-col{display:flex;flex-direction:column;gap:6px}
-.cz .logo-name{font-family:var(--serif);font-size:23px;line-height:1;color:var(--grafite);white-space:nowrap}
-.cz .logo-name .amp{color:var(--vinho)}
-.cz .zbar{position:relative;display:inline-block}
-.cz .zbar::after{content:"";position:absolute;left:12%;right:30%;top:50%;height:1px;background:currentColor}
-.cz .logo-rule{height:1px;background:var(--azul-noite)}
-.cz .logo-tag{font-size:8px;letter-spacing:.9em;padding-left:.9em;color:var(--cinza);text-align:center}
-.cz .nav{display:flex;gap:8px 34px;font-size:14px;font-weight:500}
-.cz .nav a{color:var(--grafite);padding:12px 0 6px;border-bottom:2px solid transparent;transition:color .2s ease}
-.cz .nav a:hover{color:var(--vinho)}
-.cz .nav a[aria-current="page"]{color:var(--azul-noite);border-bottom-color:var(--vinho)}
-/* SOU CORRETOR: mesmo botão do AGENDAR VISITA da Home. */
-.cz .btn-corretor{background:var(--azul-noite);color:var(--branco);padding:16px 26px;font-size:12px;font-weight:600;letter-spacing:.2em;text-align:center;transition:background .2s ease}
-.cz .btn-corretor:hover{background:var(--azul-noite-hover);color:var(--branco)}
-.cz .menu-drawer .btn-corretor{margin:8px 20px 20px}
 .cz .menu-btn{display:none;width:44px;height:44px;border:1px solid var(--areia);background:var(--branco);cursor:pointer;align-items:center;justify-content:center}
 .cz .scrim{position:fixed;inset:0;background:rgba(15,29,36,.5);z-index:40}
 .cz .menu-drawer{position:fixed;top:0;right:0;bottom:0;width:min(86vw,360px);background:var(--fundo-hero);z-index:50;display:flex;flex-direction:column;box-shadow:-20px 0 40px rgba(15,29,36,.2)}
@@ -42,10 +19,6 @@
 .cz .drawer-title{font-size:11px;font-weight:600;letter-spacing:.28em;color:var(--cinza)}
 .cz .icon-btn{width:44px;height:44px;border:1px solid var(--areia);background:var(--branco);cursor:pointer;display:flex;align-items:center;justify-content:center}
 .cz .icon-btn:hover{border-color:var(--azul-noite)}
-.cz .menu-list{list-style:none;margin:0;padding:12px 20px;display:flex;flex-direction:column}
-.cz .menu-list a{display:flex;align-items:center;min-height:56px;font-family:var(--serif);font-size:24px;color:var(--azul-noite);border-bottom:1px solid var(--areia)}
-.cz .menu-list a[aria-current="page"]{box-shadow:inset 3px 0 0 var(--vinho);padding-left:14px}
-.cz .menu-contacts{margin-top:auto;padding:20px;border-top:1px solid var(--areia);font-size:13px;line-height:1.8;color:var(--texto-secundario)}
 .cz .page-head{background:var(--fundo-hero);border-bottom:1px solid var(--areia)}
 .cz .page-head .wrap{padding-top:48px;padding-bottom:40px;display:flex;flex-direction:column;gap:14px}
 .cz .crumbs{font-size:12px;color:var(--cinza)}
@@ -182,28 +155,12 @@
 .cz .pg[aria-disabled="true"]{opacity:.4;cursor:not-allowed;border-color:var(--areia)}
 .cz .pg-text{font-size:11px;font-weight:600;letter-spacing:.2em;padding:0 16px}
 .cz .pg-gap{min-width:24px;text-align:center;color:var(--cinza)}
-.cz .footer{background:var(--azul-rodape);border-top:4px solid var(--vinho);color:var(--prata)}
-.cz .footer .wrap{padding-top:80px;padding-bottom:48px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:48px}
-.cz .f-col{display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.6}
-.cz .f-col a{color:var(--prata)}
-.cz .f-col a:hover{color:#fff}
-.cz .f-h{font-size:11px;font-weight:600;letter-spacing:.28em;color:#fff;margin-bottom:6px}
-.cz .footer .logo-name{color:#fff;font-size:22px}
-.cz .footer .logo-rule{background:var(--prata)}
-.cz .footer .logo-tag{color:var(--areia)}
-.cz .social{display:flex;gap:10px}
-.cz .social a{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid #2A3D47}
-.cz .f-bottom{border-top:1px solid #1E3440}
-.cz .f-bottom .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;padding-top:22px;padding-bottom:22px;font-size:12px;color:#A8A8AA}
 @media (max-width:1080px){
   .cz .f-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
   .cz .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media (max-width:900px){
-  .cz .nav{display:none}
-  .cz .site-header .btn-corretor{display:none}
   .cz .menu-btn{display:flex}
-  .cz .site-header .wrap{padding-top:18px;padding-bottom:18px}
   .cz .page-head .wrap{padding-top:32px;padding-bottom:28px}
   .cz .f-top .seg{display:none}
   .cz .search{max-width:none;flex-basis:100%}
@@ -259,4 +216,83 @@
 }
 @media (prefers-reduced-motion:reduce){
   .cz *{transition:none!important;animation:none!important}
+}
+
+/* ==========================================================================
+ * Identidade compartilhada (Prioridade 2): logo, cabeçalho, menu do celular,
+ * rodapé e marca d'água. Fora do escopo .cz, porque a Home (Tailwind) também usa;
+ * os seletores partem do elemento raiz de cada peça para vencer `.cz a`.
+ * ========================================================================== */
+.cz-logo{display:block;width:267px;max-width:100%;height:auto}
+header.cz-topo *,div.cz-menu *,footer.cz-rodape *{box-sizing:border-box}
+
+/* Botões do cabeçalho e do menu */
+.cz-btn-linha,.cz-btn-champanhe{display:inline-flex;align-items:center;justify-content:center;min-height:50px;padding:0 28px;border:1px solid transparent;font-family:var(--font-sans);font-size:12px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;text-align:center;white-space:nowrap;cursor:pointer;transition:background-color .25s ease,color .25s ease,border-color .25s ease}
+header.cz-topo a.cz-btn-linha,div.cz-menu a.cz-btn-linha{border-color:rgba(255,255,255,.55);background:transparent;color:#FFFFFF}
+header.cz-topo a.cz-btn-linha:hover,div.cz-menu a.cz-btn-linha:hover{background:#FFFFFF;color:var(--noite)}
+div.cz-menu a.cz-btn-champanhe{background:var(--champanhe);border-color:var(--champanhe);color:var(--noite)}
+div.cz-menu a.cz-btn-champanhe:hover{background:#D5BE97;border-color:#D5BE97;color:var(--noite)}
+
+/* Cabeçalho */
+header.cz-topo{position:relative;z-index:20;color:#FFFFFF;font-family:var(--font-sans)}
+header.cz-topo-solido{background:var(--noite)}
+header.cz-topo-sobre-imagem{position:absolute;top:0;left:0;right:0;background:transparent}
+.cz-topo-in{display:flex;align-items:center;justify-content:space-between;gap:24px;max-width:var(--cz-largura);margin:0 auto;padding:26px var(--cz-respiro)}
+header.cz-topo .cz-topo-logo{display:block;flex:0 1 auto;min-width:0}
+header.cz-topo .nav{display:flex;gap:36px;font-size:13px;font-weight:400;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap}
+header.cz-topo .nav a{padding:6px 0;border-bottom:1px solid transparent;color:inherit;transition:border-color .2s ease}
+header.cz-topo .nav a:hover,header.cz-topo .nav a[aria-current="page"]{color:#FFFFFF;border-bottom-color:var(--champanhe)}
+header.cz-topo .cz-topo-acoes{display:flex;align-items:center;gap:16px;flex:none}
+header.cz-topo .cz-hamb{display:none;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:44px;height:44px;padding:0;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer}
+header.cz-topo .cz-hamb span{display:block;width:20px;height:1px;background:currentColor}
+header.cz-topo a:focus-visible,header.cz-topo button:focus-visible,div.cz-menu a:focus-visible,div.cz-menu button:focus-visible,footer.cz-rodape a:focus-visible{outline:2px solid var(--champanhe);outline-offset:3px}
+
+/* Menu do celular, em tela cheia */
+div.cz-menu{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;padding:90px var(--cz-respiro) 40px;overflow-y:auto;background:var(--noite);color:#FFFFFF;font-family:var(--font-sans)}
+div.cz-menu .cz-menu-fechar{position:absolute;top:18px;right:var(--cz-respiro);display:flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:1px solid rgba(255,255,255,.5);background:transparent;color:#FFFFFF;cursor:pointer}
+div.cz-menu .cz-menu-fechar:hover{border-color:#FFFFFF}
+div.cz-menu .cz-menu-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+div.cz-menu .cz-menu-lista a{display:block;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.12);font-family:var(--font-display);font-size:38px;font-weight:300;line-height:1.65;color:#FFFFFF}
+div.cz-menu .cz-menu-lista a:hover,div.cz-menu .cz-menu-lista a[aria-current="page"]{color:#FFFFFF;border-bottom-color:var(--champanhe)}
+div.cz-menu .cz-menu-acoes{display:flex;flex-direction:column;gap:12px;margin-top:26px}
+div.cz-menu .cz-menu-contatos{margin:auto 0 0;padding-top:32px;font-size:13px;font-weight:300;line-height:1.65;color:rgba(255,255,255,.7)}
+div.cz-menu .cz-menu-contatos a{color:inherit}
+div.cz-menu .cz-menu-contatos a:hover{color:#FFFFFF}
+
+/* Rodapé */
+footer.cz-rodape{background:var(--rodape);color:rgba(255,255,255,.72);font-family:var(--font-sans);font-size:14px;font-weight:300;line-height:1.65}
+.cz-rodape-in{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;max-width:var(--cz-largura);margin:0 auto;padding:72px var(--cz-respiro) 56px}
+footer.cz-rodape .cz-rodape-logo{display:inline-block}
+footer.cz-rodape .cz-rodape-marca p{margin:22px 0 0;max-width:30ch;line-height:1.7}
+footer.cz-rodape .cz-rodape-col{display:flex;flex-direction:column;align-items:flex-start;gap:10px;min-width:0}
+footer.cz-rodape .cz-rodape-col h2{margin:0 0 8px;font-family:var(--font-sans);font-size:11px;font-weight:500;line-height:1.65;letter-spacing:.3em;text-transform:uppercase;color:var(--champanhe)}
+footer.cz-rodape a{color:inherit;overflow-wrap:anywhere}
+footer.cz-rodape a:hover{color:#FFFFFF}
+footer.cz-rodape .cz-rodape-social{display:flex;gap:10px;margin-top:22px}
+footer.cz-rodape .cz-rodape-social a{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid rgba(255,255,255,.2)}
+.cz-rodape-base{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;max-width:var(--cz-largura);margin:0 auto;padding:22px var(--cz-respiro);border-top:1px solid rgba(255,255,255,.1);font-size:12px;color:rgba(255,255,255,.5)}
+
+/* Marca d'água sobre as fotos: o pai precisa de position:relative. */
+.cz-marca-dagua{position:absolute;left:0;right:0;bottom:7%;z-index:2;display:flex;flex-direction:column;align-items:center;gap:.35em;color:#FFFFFF;opacity:.72;pointer-events:none;font-size:clamp(7px,1.2cqw,14px);filter:drop-shadow(0 1px 2px rgba(0,0,0,.45)) drop-shadow(0 0 12px rgba(0,0,0,.25))}
+.cz-marca-dagua svg{display:block;width:2.6em;height:2.6em}
+.cz-marca-dagua span{font-family:var(--font-display);font-size:1em;font-weight:500;line-height:1;letter-spacing:.3em;padding-left:.3em;white-space:nowrap}
+
+/* Entre 900 e 1180px o menu horizontal aperta para caber ao lado da logo e do botão. */
+@media (max-width:1180px){
+  header.cz-topo .cz-logo{width:200px}
+  header.cz-topo .nav{gap:20px;font-size:12px;letter-spacing:.12em}
+  header.cz-topo a.cz-topo-corretor{min-height:44px;padding:0 16px;font-size:11px;letter-spacing:.18em}
+}
+@media (max-width:899.98px){
+  header.cz-topo .nav,header.cz-topo a.cz-topo-corretor{display:none}
+  header.cz-topo .cz-hamb{display:flex}
+  header.cz-topo .cz-logo{width:267px}
+  .cz-topo-in{padding-top:18px;padding-bottom:18px}
+  .cz-rodape-in{grid-template-columns:1fr;gap:36px;padding-top:56px}
+}
+@media (max-width:560px){
+  header.cz-topo .cz-logo,footer.cz-rodape .cz-logo{width:225px}
+}
+@media (prefers-reduced-motion:reduce){
+  header.cz-topo *,div.cz-menu *,footer.cz-rodape *{transition:none!important}
 }

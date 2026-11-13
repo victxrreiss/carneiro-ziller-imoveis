@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { empresa, linkWhatsApp, ogPadrao } from "./site";
+import { empresa, linkTelefone, linkWhatsApp, ogPadrao } from "./site";
 
 function arquivosFonte(dir: string): string[] {
   return readdirSync(dir).flatMap((nome) => {
@@ -20,6 +20,10 @@ describe("site", () => {
   it("monta o link do WhatsApp com e sem mensagem", () => {
     expect(linkWhatsApp()).toBe("https://wa.me/5531995395988");
     expect(linkWhatsApp("Olá! CZ1241")).toBe("https://wa.me/5531995395988?text=Ol%C3%A1!%20CZ1241");
+  });
+
+  it("monta o link de telefone com o código do país", () => {
+    expect(linkTelefone()).toBe("tel:+5531995395988");
   });
 
   it("tem um só endereço", () => {
