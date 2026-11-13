@@ -40,3 +40,23 @@ export const ogPadrao = {
   description: descricaoSite,
   images: [{ url: "/images/hero-predio.png", width: 1240, height: 1160, alt: "Fachada de edifício residencial moderno" }],
 };
+
+/**
+ * Rastreamento enviado pelo gestor de tráfego do cliente: Google Tag Manager (o Analytics é
+ * configurado dentro dele) e Meta Pixel. Só roda no domínio de produção, para testes e
+ * ambientes locais não poluírem as métricas.
+ */
+export const rastreamento = {
+  gtm: "GTM-TM8VNT4Q",
+  metaPixel: "1482398396141820",
+  dominio: "carneiroziller.com.br",
+} as const;
+
+export function rastreamentoAtivo(siteUrl: string | undefined): boolean {
+  if (!siteUrl) return false;
+  try {
+    return new URL(siteUrl).hostname === rastreamento.dominio;
+  } catch {
+    return false;
+  }
+}

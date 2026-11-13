@@ -19,8 +19,15 @@ export default function PrivacidadePage() {
         <h2>Quais dados coletamos</h2>
         <p>
           Nos formulários, coletamos nome, telefone, e-mail, a mensagem e o imóvel de interesse. Para limitar abusos,
-          guardamos também um código derivado do endereço IP (não guardamos o IP). O site não usa cookies de
-          publicidade.
+          guardamos também um código derivado do endereço IP (não guardamos o IP).
+        </p>
+        <h2>Cookies e medição de audiência</h2>
+        <p>
+          Usamos o Google Tag Manager e o Google Analytics para saber quantas pessoas visitam o site e quais páginas
+          acessam, e o Meta Pixel para medir e direcionar nossos anúncios no Facebook e no Instagram. Essas ferramentas
+          gravam cookies no seu navegador e recebem dados de navegação, como as páginas visitadas, o tipo de aparelho e
+          um identificador do navegador. O Google e a Meta tratam esses dados de acordo com as próprias políticas de
+          privacidade. Você pode bloquear ou apagar os cookies nas configurações do seu navegador.
         </p>
         <h2>Para que usamos</h2>
         <p>
@@ -48,7 +55,7 @@ export default function PrivacidadePage() {
           <br />
           Telefone: {empresa.telefone}
         </p>
-        <p className="inst-data">Atualizada em 4 de novembro de 2026.</p>
+        <p className="inst-data">Atualizada em 13 de novembro de 2026.</p>
       </div>
     </PaginaInstitucional>
   );
