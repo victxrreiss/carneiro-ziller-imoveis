@@ -8,14 +8,12 @@ import { carregarImovel, carregarImoveis } from "@/lib/dados/consultas";
 import { destaquesHome as tabDestaques, imoveis } from "@/lib/dados/esquema";
 import type { RegistroImovel } from "@/lib/dados/tipos";
 import { FAIXAS_AREA, TIPOS, combinaFinalidade, faixasPreco, type Faixa, type FinalidadeFiltro, type Filtros } from "./filtros";
-import { formatarArea, normalizar, formatarPreco, formatarQuartos, rotuloEtiqueta } from "./formato";
+import { normalizar } from "./formato";
 import { rotuloCaracteristica } from "./caracteristicas";
 import { REGIOES, naRegiao, regiaoPorSlug, type Regiao } from "./regioes";
 import type { Imovel, ImovelCard, ImovelResumo, PaginaImoveis, ResultadoImovel } from "./types";
 
 export const POR_PAGINA = 24;
-/** Cards por seção automática da Home. */
-export const CARDS_HOME = 4;
 /** Quantos destaques a página inicial mostra; os demais esperam na lista do painel. */
 export const MAX_DESTAQUES_HOME = 6;
 
@@ -215,34 +213,6 @@ export async function listarParaSitemap(db: Db = conexao()): Promise<{ id: strin
 
 // ---------- Home ----------
 
-function card(i: Imovel): ImovelCard {
-  return {
-    id: i.id,
-    badge: rotuloEtiqueta(i),
-    title: i.titulo,
-    location: `${i.bairro}, ${i.cidade}`,
-    price: formatarPreco(i.valor, i.finalidade),
-    area: formatarArea(i.area),
-    beds: i.quartos ? formatarQuartos(i.quartos) : undefined,
-    img: i.foto.src,
-    alt: i.foto.alt || i.titulo,
-  };
-}
-
-/** Mais recentes pela data da primeira publicação. */
-async function recentes(filtro: (r: Completo) => boolean, db: Db): Promise<ImovelCard[]> {
-  return (await publicados(db))
-    .filter(filtro)
-    .sort((a, b) => (b.publicadoEm ?? "").localeCompare(a.publicadoEm ?? ""))
-    .slice(0, CARDS_HOME)
-    .map((r) => card(paraImovel(r)));
-}
-
-/** Seção Lançamentos: automática. */
-export function lancamentosHome(db: Db = conexao()): Promise<ImovelCard[]> {
-  return recentes((r) => r.lancamento, db);
-}
-
 /** Há ao menos um lançamento publicado? Decide se o menu mostra "Lançamentos". */
 export async function temLancamentos(db: Db = conexao()): Promise<boolean> {
   return (await publicados(db)).some((r) => r.lancamento);
@@ -255,7 +225,7 @@ export async function destaquesHome(db: Db = conexao()): Promise<ImovelCard[]> {
   return ordem
     .flatMap((o) => porId.get(o.id) ?? [])
     .slice(0, MAX_DESTAQUES_HOME)
-    .map((r) => card(paraImovel(r)));
+    .map((r) => resumo(paraImovel(r)));
 }
 
 /** Regiões com ao menos um imóvel publicado, na ordem da lista, com o total. */
@@ -290,5 +260,5 @@ export async function semelhantes(id: string, db: Db = conexao()): Promise<Imove
   const primeiros = candidatos.filter((r) => mesmaCidade(r) && naFaixa(r)).sort(porProximidade);
   const escolhidos = new Set(primeiros);
   const demais = candidatos.filter((r) => !escolhidos.has(r)).sort(porProximidade);
-  return [...primeiros, ...demais].slice(0, MAX_SEMELHANTES).map((r) => card(paraImovel(r)));
+  return [...primeiros, ...demais].slice(0, MAX_SEMELHANTES).map((r) => resumo(paraImovel(r)));
 }

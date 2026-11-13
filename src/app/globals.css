@@ -39,16 +39,6 @@
   --color-areia-2: var(--areia-2);
   --color-fundo: var(--fundo);
   --color-marfim: var(--marfim);
-
-  /* Legado da Home antiga: saem quando as seções forem refeitas (Tasks 4 e 5 da Prioridade 2). */
-  --color-azul-noite: var(--noite);
-  --color-azul-noite-hover: var(--noite-2);
-  --color-azul-rodape: var(--rodape);
-  --color-texto-secundario: #555456;
-  --color-cinza: #6D6E71;
-  --color-areia-quadro: var(--areia-2);
-  --color-fundo-hero: var(--marfim);
-  --font-serif: var(--font-display);
 }
 
 /* `static`: --font-display e --font-sans saem sempre no :root, porque .cz e o painel também os usam.
@@ -59,6 +49,30 @@
 }
 
 @theme {
+  /* Abertura da Home: zoom lento da imagem ativa e o indicador de rolagem. */
+  --animate-kenburns: kenburns 14s ease-in-out forwards;
+  --animate-desce: desce 2s infinite;
+
+  @keyframes kenburns {
+    from {
+      transform: scale(1.08) translate(0, 0);
+    }
+    to {
+      transform: scale(1.18) translate(-1.5%, -1%);
+    }
+  }
+
+  @keyframes desce {
+    0% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(14px);
+      opacity: 0;
+    }
+  }
+
   /* A referência não fixa line-height nos tamanhos; vale o "normal" da fonte. */
   --text-xs--line-height: normal;
   --text-sm--line-height: normal;

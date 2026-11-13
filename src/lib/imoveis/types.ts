@@ -63,18 +63,10 @@ export type PaginaImoveis = {
   paginas: number;
 };
 
-export type RotuloFinalidade = "LANÇAMENTO" | "VENDA" | "LOCAÇÃO";
-
-export type ImovelCard = {
-  id: string;
-  badge: RotuloFinalidade;
-  title: string;
-  location: string;
-  price: string;
-  area: string;
-  beds?: string;
-  img: string;
-  alt: string;
-};
+/**
+ * Card de imóvel fora do grid (destaques da Home, semelhantes): os mesmos dados do grid,
+ * para o `CardImovel` servir aos três lugares.
+ */
+export type ImovelCard = ImovelResumo;
 
 export type { Regiao } from "./regioes";

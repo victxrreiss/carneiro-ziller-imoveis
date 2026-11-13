@@ -4,10 +4,13 @@ import { expect, test } from "@playwright/test";
 test.describe("navegação entre as telas", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test("Home → card de lançamento → imóvel", async ({ page }) => {
+  test("Home → busca por Lançamentos → card → imóvel", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: "Ver imóvel: Edifício One View" }).click();
-    await page.waitForURL("**/imovel/cz1001");
+    await page.getByRole("tab", { name: "Lançamentos" }).click();
+    await page.getByRole("button", { name: "Buscar" }).click();
+    await page.waitForURL("**/imoveis?finalidade=lancamentos");
+    await page.getByRole("link", { name: "Edifício One View" }).click();
+    await page.waitForURL(/\/imovel\/cz1001\?de=/);
     await expect(page.getByRole("heading", { level: 1, name: "Edifício One View" })).toBeVisible();
     await expect(page.locator(".nav").getByRole("link", { name: "Lançamentos" })).toHaveAttribute("aria-current", "page");
     await expect(page.locator("a.im-back-link")).toHaveText("VOLTAR AOS LANÇAMENTOS");
@@ -15,14 +18,14 @@ test.describe("navegação entre as telas", () => {
 
   test("o card do imóvel em destaque da Home abre o anúncio", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: "Ver imóvel: Apartamento no Belvedere" }).click();
+    await page.locator('section[aria-labelledby="destaques-titulo"]').getByRole("link", { name: "Apartamento no Belvedere" }).click();
     await page.waitForURL("**/imovel/cz1009");
     await expect(page.getByRole("heading", { level: 1, name: "Apartamento no Belvedere" })).toBeVisible();
   });
 
   test("busca da Home chega ao grid filtrado", async ({ page }) => {
     await page.goto("/");
-    await page.getByLabel("Buscar imóvel").fill("nova lima");
+    await page.getByLabel("Cidade").selectOption("Nova Lima");
     await page.getByRole("button", { name: "Buscar" }).click();
     await page.waitForURL(/\/imoveis\?/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Imóveis à venda");
@@ -31,11 +34,11 @@ test.describe("navegação entre as telas", () => {
 
   test("grid → imóvel → voltar mantém filtros, página e rolagem", async ({ page }) => {
     await page.goto("/imoveis?q=a&pagina=2");
-    const card = page.locator(".card").nth(4);
+    const card = page.locator(".cz-card").nth(4);
     await card.scrollIntoViewIfNeeded();
     const rolagem = await page.evaluate(() => window.scrollY);
-    const titulo = (await card.locator(".card-title").textContent())!;
-    await card.locator(".card-title a").click();
+    const titulo = (await card.locator(".cz-card-titulo").textContent())!;
+    await card.locator(".cz-card-titulo a").click();
     await page.waitForURL(/\/imovel\/cz\d+\?de=/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(titulo);
     await expect(page.locator(".im-filters")).toHaveText("Filtros: “a”");
@@ -103,7 +106,7 @@ test.describe("filtros do grid", () => {
     await page.getByRole("button", { name: /ORDENAR POR/ }).click();
     await page.getByRole("option", { name: "Menor preço" }).click();
     await page.waitForURL("**/imoveis?finalidade=alugar&ordem=menor-preco");
-    await expect(page.locator(".card").first().locator(".card-title")).toHaveText("Casa comercial");
+    await expect(page.locator(".cz-card").first().locator(".cz-card-titulo")).toHaveText("Casa comercial");
   });
 
   test("localização e ordem sobrevivem a abrir o imóvel e Voltar aos resultados", async ({ page }) => {
@@ -114,7 +117,7 @@ test.describe("filtros do grid", () => {
     await page.getByRole("button", { name: /ORDENAR POR/ }).click();
     await page.getByRole("option", { name: "Maior preço" }).click();
     await page.waitForURL("**/imoveis?local=Nova+Lima&ordem=maior-preco");
-    await page.locator(".card-title a").first().click();
+    await page.locator(".cz-card-titulo a").first().click();
     await page.waitForURL(/\/imovel\/cz\d+\?de=/);
     await page.locator("a.im-back-link").click();
     await page.waitForURL("**/imoveis?local=Nova+Lima&ordem=maior-preco");

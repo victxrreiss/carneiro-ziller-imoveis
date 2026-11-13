@@ -75,7 +75,7 @@ describe("TabList", () => {
         tabs={[{ id: "venda", label: "VENDA", controls: "painel-venda" }]}
         selected="venda"
         onSelect={() => {}}
-        variant="listagem"
+        variant="finalidade"
         idPrefix="sel"
       />,
     );

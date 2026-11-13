@@ -32,6 +32,30 @@ export const social: { instagram: string | null; linkedin: string | null } = {
   linkedin: null,
 };
 
+/**
+ * Abertura da página inicial. Com `video` preenchido, a seção toca o vídeo (mudo, em loop)
+ * por cima da primeira imagem; sem ele, as imagens se alternam.
+ * Nas frases, a quebra de linha separa a parte em itálico (a segunda linha).
+ */
+export const abertura: {
+  video: null | { mp4: string; poster: string };
+  imagens: readonly { src: string; alt: string }[];
+  frases: readonly string[];
+} = {
+  video: null,
+  imagens: [
+    { src: "/images/imoveis/a1843e848f2e8288905697ba4fc1dc0a.jpg", alt: "Casa envidraçada com piscina ao entardecer, com a serra ao fundo" },
+    { src: "/images/venda-vila-da-serra.jpg", alt: "Varanda de madeira aberta para o jardim e a piscina, à noite" },
+    { src: "/images/imoveis/5e5a1046b6796c80c7e2af56ae2db8e0.jpg", alt: "Sala de estar com janelas do piso ao teto e vista para a cidade" },
+  ],
+  frases: [
+    "Morar bem começa\npela escolha do endereço.",
+    "Entre a serra e a cidade,\no seu lugar.",
+    "Casas que pedem silêncio,\nvistas que pedem tempo.",
+    "Cada imóvel, uma história\nque começa com você.",
+  ],
+};
+
 /** Descrição padrão do site (metadados e Open Graph). */
 export const descricaoSite =
   "Imóveis de alto padrão em Belo Horizonte e Nova Lima. Apartamentos, coberturas, casas em condomínio e terrenos selecionados pela Carneiro & Ziller Imóveis.";

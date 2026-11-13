@@ -46,12 +46,6 @@ export async function getSemelhantes(id: string) {
   return catalogo.semelhantes(id);
 }
 
-export async function getLancamentos() {
-  "use cache";
-  marcar();
-  return catalogo.lancamentosHome();
-}
-
 export async function getTemLancamentos() {
   "use cache";
   marcar();

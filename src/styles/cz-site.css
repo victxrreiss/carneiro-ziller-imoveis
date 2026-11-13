@@ -112,25 +112,6 @@
 .cz .cat[aria-current="true"]{border-color:var(--azul-noite);color:var(--azul-noite);font-weight:500;box-shadow:inset 0 -2px 0 var(--vinho)}
 .cz .r-page{font-size:12px;letter-spacing:.18em;color:var(--cinza)}
 .cz .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px 24px;list-style:none;margin:0;padding:0}
-.cz .card{position:relative;background:var(--branco);display:flex;flex-direction:column;height:100%;transition:box-shadow .3s ease,transform .3s ease}
-.cz .card:hover{box-shadow:0 22px 44px rgba(65,64,66,.14);transform:translateY(-3px)}
-.cz .card:focus-within{outline:2px solid var(--azul-noite);outline-offset:3px}
-.cz .card-media{position:relative;aspect-ratio:16/11;overflow:hidden;background:var(--areia)}
-.cz .card-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s ease}
-.cz .card:hover .card-img{transform:scale(1.05)}
-.cz .badge{position:absolute;top:14px;left:14px;padding:6px 11px;background:var(--fundo);color:var(--vinho);font-size:10px;font-weight:600;letter-spacing:.22em}
-.cz .card-body{padding:22px 22px 20px;display:flex;flex-direction:column;gap:8px;flex:1}
-.cz .card-loc{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--cinza)}
-.cz .card-title{margin:0;font-family:var(--serif);font-weight:400;font-size:23px;line-height:1.15}
-.cz .card-title a{color:var(--azul-noite);outline:none}
-.cz .card-title a::after{content:"";position:absolute;inset:0;z-index:1}
-.cz .card-specs{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--texto-secundario);margin-top:4px}
-.cz .card-specs span{display:flex;align-items:center;gap:6px}
-.cz .card-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto;padding-top:16px;border-top:1px solid var(--areia)}
-.cz .card-price-alt{display:block;font-size:12px;font-weight:500;color:var(--texto-secundario);margin-top:2px}
-.cz .card-price{font-size:18px;font-weight:600;color:var(--azul-noite);font-variant-numeric:tabular-nums}
-.cz .card-arrow{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid var(--areia);transition:border-color .2s ease}
-.cz .card:hover .card-arrow{border-color:var(--azul-noite)}
 .cz .sk{background:var(--branco);display:flex;flex-direction:column}
 .cz .sk-media{aspect-ratio:16/11}
 .cz .sk-body{padding:22px;display:flex;flex-direction:column;gap:12px}
@@ -273,6 +254,26 @@ footer.cz-rodape .cz-rodape-social a{display:flex;align-items:center;justify-con
 .cz-rodape-base{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;max-width:var(--cz-largura);margin:0 auto;padding:22px var(--cz-respiro);border-top:1px solid rgba(255,255,255,.1);font-size:12px;color:rgba(255,255,255,.5)}
 
 /* Marca d'água sobre as fotos: o pai precisa de position:relative. */
+/* Card de imóvel (CardImovel): grid, destaques da Home e semelhantes. Sem fundo, sem borda. */
+.cz-card{position:relative;display:flex;flex-direction:column;gap:16px;color:var(--texto);font-family:var(--font-sans);font-weight:300;line-height:1.65}
+.cz-card *{box-sizing:border-box}
+.cz-card:focus-within{outline:2px solid var(--noite);outline-offset:6px}
+.cz-card-foto{position:relative;aspect-ratio:4/3;overflow:hidden;background:var(--areia)}
+.cz-card-foto img{width:100%;height:100%;object-fit:cover;transition:transform 1.2s cubic-bezier(.2,.6,.2,1)}
+.cz-card:hover .cz-card-foto img{transform:scale(1.05)}
+.cz-card-foto .cz-marca-dagua{font-size:9px}
+.cz-card-tag{position:absolute;top:14px;left:14px;z-index:2;padding:6px 10px;background:rgba(251,250,247,.92);color:var(--noite);font-size:10px;font-weight:400;line-height:1.5;letter-spacing:.26em;text-transform:uppercase}
+.cz-card-meta{font-size:11px;font-weight:400;letter-spacing:.26em;text-transform:uppercase;color:var(--bronze)}
+.cz-card-titulo{margin:0;font-family:var(--font-display);font-weight:400;font-size:26px;line-height:1.15}
+.cz-card-titulo a{color:var(--noite);outline:none;transition:color .2s ease}
+.cz-card:hover .cz-card-titulo a{color:var(--vinho)}
+/* O card inteiro é o link do título. */
+.cz-card-titulo a::after{content:"";position:absolute;inset:0;z-index:3}
+.cz-card-dados{display:flex;flex-wrap:wrap;gap:6px 0;font-size:13.5px;color:var(--texto-2)}
+.cz-card-dados span + span::before{content:"·";margin:0 10px;color:var(--champanhe)}
+.cz-card-preco{margin-top:2px;font-family:var(--font-display);font-size:24px;font-weight:500;line-height:1.3;letter-spacing:.01em;color:var(--noite);font-variant-numeric:lining-nums}
+.cz-card-preco small{margin-left:6px;font-family:var(--font-sans);font-size:12px;font-weight:300;color:var(--texto-2)}
+
 .cz-marca-dagua{position:absolute;left:0;right:0;bottom:7%;z-index:2;display:flex;flex-direction:column;align-items:center;gap:.35em;color:#FFFFFF;opacity:.72;pointer-events:none;font-size:clamp(7px,1.2cqw,14px);filter:drop-shadow(0 1px 2px rgba(0,0,0,.45)) drop-shadow(0 0 12px rgba(0,0,0,.25))}
 .cz-marca-dagua svg{display:block;width:2.6em;height:2.6em}
 .cz-marca-dagua span{font-family:var(--font-display);font-size:1em;font-weight:500;line-height:1;letter-spacing:.3em;padding-left:.3em;white-space:nowrap}

@@ -9,6 +9,7 @@ export type Regiao = {
   nome: string;
   /** Linha pequena do card (cidades). */
   legenda: string;
+  /** Foto do card da Home; cada região tem a sua (nenhuma repetida). */
   img: string;
   bairros: readonly { bairro: string; cidade: string }[];
   /** Card grande da Home. */
@@ -20,7 +21,7 @@ export const REGIOES: readonly Regiao[] = [
     slug: "belvedere-vila-da-serra",
     nome: "Belvedere e Vila da Serra",
     legenda: "BELO HORIZONTE · NOVA LIMA",
-    img: "/images/regiao-belvedere.jpg",
+    img: "/images/imoveis/5e5a1046b6796c80c7e2af56ae2db8e0.jpg",
     bairros: [
       { bairro: "Belvedere", cidade: "Belo Horizonte" },
       // Grafia do feed da Loft: Belvedere cadastrado em Nova Lima.
@@ -33,7 +34,7 @@ export const REGIOES: readonly Regiao[] = [
     slug: "lourdes-savassi",
     nome: "Lourdes e Savassi",
     legenda: "BELO HORIZONTE",
-    img: "/images/regiao-savassi-lourdes.jpg",
+    img: "/images/imoveis/9511260c5dbfff8011e2f18b84a6012b.jpg",
     bairros: [
       { bairro: "Lourdes", cidade: "Belo Horizonte" },
       { bairro: "Savassi", cidade: "Belo Horizonte" },
@@ -61,7 +62,7 @@ export const REGIOES: readonly Regiao[] = [
     slug: "vale-do-sereno",
     nome: "Vale do Sereno",
     legenda: "NOVA LIMA",
-    img: "/images/regiao-vila-da-serra.jpg",
+    img: "/images/imoveis/a1843e848f2e8288905697ba4fc1dc0a.jpg",
     bairros: [{ bairro: "Vale do Sereno", cidade: "Nova Lima" }],
   },
 ];

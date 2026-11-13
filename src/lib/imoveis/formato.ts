@@ -29,6 +29,10 @@ export function formatarQuartos(n: number): string {
   return `${n} ${n === 1 ? "quarto" : "quartos"}`;
 }
 
+export function formatarVagas(n: number): string {
+  return `${n} ${n === 1 ? "vaga" : "vagas"}`;
+}
+
 export const rotuloFinalidade: Record<Finalidade, string> = {
   venda: "VENDA",
   locacao: "LOCAÇÃO",

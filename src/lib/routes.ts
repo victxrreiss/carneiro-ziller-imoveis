@@ -11,6 +11,8 @@ export const routes = {
   imoveis,
   /** O mesmo grid, já filtrado por lançamentos (decisão do usuário, 2026-10-16). */
   lancamentos: `${imoveis}?finalidade=lancamentos`,
+  /** O grid já com o painel de filtros avançados aberto (link da busca da Home). */
+  filtrosAvancados: `${imoveis}?avancados=1`,
   contato: "/contato",
   sobre: "/sobre",
   privacidade: "/politica-de-privacidade",

@@ -4,25 +4,20 @@ import { useRef, type KeyboardEvent } from "react";
 
 export type Tab = { id: string; label: string; controls?: string };
 
-type Variant = "finalidade" | "listagem";
+type Variant = "finalidade";
 
 const listClass: Record<Variant, string> = {
-  finalidade: "flex gap-6",
-  listagem: "flex gap-7 border-b border-[#D6D0C4]",
+  finalidade: "flex gap-5 min-[900px]:gap-7",
 };
 
-const tabBase = "min-h-11 cursor-pointer border-0 bg-transparent text-xs font-semibold";
+const tabBase = "min-h-11 cursor-pointer border-0 bg-transparent text-xs font-medium uppercase";
 
+// "finalidade": abas da busca da abertura da Home, claras sobre a imagem escura.
 const tabClass: Record<Variant, { base: string; on: string; off: string }> = {
   finalidade: {
-    base: `${tabBase} p-0 tracking-[0.22em]`,
-    on: "text-azul-noite shadow-[inset_0_-2px_0_#78323D]",
-    off: "text-cinza",
-  },
-  listagem: {
-    base: `${tabBase} -mb-px border-b-2 border-solid px-0.5 py-0 tracking-[0.24em]`,
-    on: "border-vinho text-azul-noite",
-    off: "border-transparent text-cinza",
+    base: `${tabBase} p-0 tracking-[0.24em] focus-visible:outline-champanhe`,
+    on: "text-white shadow-[inset_0_-1px_0_var(--champanhe)]",
+    off: "text-white/70 hover:text-white",
   },
 };
 
