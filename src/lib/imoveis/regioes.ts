@@ -23,6 +23,8 @@ export const REGIOES: readonly Regiao[] = [
     img: "/images/regiao-belvedere.jpg",
     bairros: [
       { bairro: "Belvedere", cidade: "Belo Horizonte" },
+      // Grafia do feed da Loft: Belvedere cadastrado em Nova Lima.
+      { bairro: "Belvedere", cidade: "Nova Lima" },
       { bairro: "Vila da Serra", cidade: "Nova Lima" },
     ],
     grande: true,
@@ -42,7 +44,11 @@ export const REGIOES: readonly Regiao[] = [
     nome: "Alphaville Lagoa dos Ingleses",
     legenda: "NOVA LIMA",
     img: "/images/regiao-lagoa-dos-ingleses.jpg",
-    bairros: [{ bairro: "Alphaville Lagoa dos Ingleses", cidade: "Nova Lima" }],
+    bairros: [
+      { bairro: "Alphaville Lagoa dos Ingleses", cidade: "Nova Lima" },
+      // Grafia do feed da Loft.
+      { bairro: "Alphaville", cidade: "Nova Lima" },
+    ],
   },
   {
     slug: "vale-dos-cristais",

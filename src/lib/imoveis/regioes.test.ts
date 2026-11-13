@@ -27,4 +27,12 @@ describe("REGIOES", () => {
     expect(naRegiao(r, { bairro: "Vila da Serra", cidade: "Belo Horizonte" })).toBe(false);
     expect(naRegiao(r, { bairro: "Lourdes", cidade: "Belo Horizonte" })).toBe(false);
   });
+
+  test("grafias reais do feed da Loft caem na região esperada", () => {
+    const regiaoDe = (bairro: string, cidade: string) => REGIOES.find((r) => naRegiao(r, { bairro, cidade }))?.slug;
+    expect(regiaoDe("Alphaville", "Nova Lima")).toBe("alphaville-lagoa-dos-ingleses");
+    expect(regiaoDe("Alphaville Lagoa Dos Ingleses", "Nova Lima")).toBe("alphaville-lagoa-dos-ingleses");
+    expect(regiaoDe("Belvedere", "Nova Lima")).toBe("belvedere-vila-da-serra");
+    expect(regiaoDe("Belvedere", "Belo Horizonte")).toBe("belvedere-vila-da-serra");
+  });
 });
