@@ -34,10 +34,16 @@ export async function getDestaquesHome() {
   return catalogo.destaquesHome();
 }
 
-export async function getRegioes() {
+export async function getRegioesHome() {
   "use cache";
-  cacheLife("max");
-  return catalogo.regioesHome();
+  marcar();
+  return catalogo.regioesComImoveis();
+}
+
+export async function getSemelhantes(id: string) {
+  "use cache";
+  marcar();
+  return catalogo.semelhantes(id);
 }
 
 export async function getLancamentos() {

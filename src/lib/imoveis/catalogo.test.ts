@@ -10,6 +10,8 @@ import {
   listarParaSitemap as listarSitemap,
   obterImovel as obter,
   opcoesLocalizacao as opcoes,
+  regioesComImoveis as regioesCom,
+  semelhantes as semelhantesDe,
   temLancamentos as temLanc,
   validarLocal,
 } from "./catalogo";
@@ -336,5 +338,98 @@ describe("listarParaSitemap", () => {
     const lista = await listarSitemap(amb.db);
     expect(lista.some((i) => i.id === "cz1002")).toBe(false);
     expect(lista).toHaveLength(34 - 1);
+  });
+});
+
+// Deixa só os imóveis dados publicados (os demais viram rascunho) com os valores pedidos.
+async function montar(itens: Record<string, Partial<typeof imoveis.$inferInsert>>) {
+  await amb.db.update(imoveis).set({ situacao: "rascunho" });
+  for (const [id, valores] of Object.entries(itens)) await mudar(id, { situacao: "publicado", ...valores });
+}
+const semelhantes = (id: string) => semelhantesDe(id, amb.db);
+const codigos = (l: { id: string }[]) => l.map((i) => i.id);
+
+describe("regiões", () => {
+  test("regiao válida filtra Belvedere (BH) e Vila da Serra (Nova Lima) juntos", async () => {
+    await montar({
+      cz1001: { bairro: "Belvedere", cidade: "Belo Horizonte" },
+      cz1002: { bairro: "Vila da Serra", cidade: "Nova Lima" },
+      cz1003: { bairro: "Vila da Serra", cidade: "Belo Horizonte" },
+      cz1004: { bairro: "Lourdes", cidade: "Belo Horizonte" },
+    });
+    const r = await buscarImoveis({ regiao: "belvedere-vila-da-serra", pagina: 1 });
+    expect(r.itens.map((i) => i.id).sort()).toEqual(["cz1001", "cz1002"]);
+    expect(await contarImoveis({ regiao: "belvedere-vila-da-serra", pagina: 1 })).toBe(2);
+  });
+
+  test("regioesComImoveis omite região sem imóvel publicado", async () => {
+    await montar({
+      cz1001: { bairro: "Belvedere", cidade: "Belo Horizonte" },
+      cz1002: { bairro: "Vila da Serra", cidade: "Nova Lima" },
+      cz1003: { bairro: "Vale do Sereno", cidade: "Nova Lima" },
+      cz1004: { bairro: "Lourdes", cidade: "Belo Horizonte", situacao: "rascunho" },
+    });
+    const r = await regioesCom(amb.db);
+    expect(r.map((x) => [x.slug, x.total])).toEqual([
+      ["belvedere-vila-da-serra", 2],
+      ["vale-do-sereno", 1],
+    ]);
+  });
+});
+
+describe("semelhantes", () => {
+  const base = { tipo: "Apartamento", finalidade: "venda", cidade: "Belo Horizonte", valor: 1_000_000 } as const;
+
+  test("mesmo tipo e cidade a até 30% primeiro, ordenados pela diferença de preço", async () => {
+    await montar({
+      cz1001: base,
+      cz1002: { ...base, valor: 1_250_000 },
+      cz1003: { ...base, valor: 950_000 },
+      cz1004: { ...base, valor: 1_300_000 },
+      cz1005: { ...base, valor: 1_400_000 }, // fora dos 30%, mesma cidade
+      cz1006: { ...base, valor: 1_010_000, tipo: "Casa" },
+    });
+    expect(codigos(await semelhantes("cz1001"))).toEqual(["cz1003", "cz1002", "cz1004"]);
+  });
+
+  test("completa com outra cidade quando faltam", async () => {
+    await montar({
+      cz1001: base,
+      cz1002: { ...base, valor: 1_100_000 },
+      cz1003: { ...base, cidade: "Nova Lima", valor: 1_050_000 },
+      cz1004: { ...base, cidade: "Nova Lima", valor: 1_020_000 },
+      cz1005: { ...base, cidade: "Nova Lima", valor: 1_900_000 },
+    });
+    expect(codigos(await semelhantes("cz1001"))).toEqual(["cz1002", "cz1004", "cz1003"]);
+  });
+
+  test("nunca inclui o próprio imóvel nem rascunho", async () => {
+    await montar({
+      cz1001: base,
+      cz1002: { ...base, valor: 1_000_001 },
+      cz1003: { ...base, valor: 1_000_002, situacao: "rascunho" },
+    });
+    expect(codigos(await semelhantes("cz1001"))).toEqual(["cz1002"]);
+  });
+
+  test("de imóvel sem valor ignora o preço", async () => {
+    await montar({
+      cz1001: base,
+      cz1002: { ...base, valor: 9_000_000 },
+      cz1003: { ...base, valor: 100_000, cidade: "Nova Lima" },
+      cz1004: { ...base, valor: 5_000_000 },
+    });
+    // Sem valor o imóvel não é "completo" (não é candidato), mas continua sendo ponto de partida.
+    await mudar("cz1001", { valor: null });
+    expect(codigos(await semelhantes("cz1001"))).toEqual(["cz1002", "cz1004", "cz1003"]);
+  });
+
+  test("de imóvel de locação só traz locação", async () => {
+    await montar({
+      cz1001: { ...base, finalidade: "locacao", valor: 10_000 },
+      cz1002: { ...base, finalidade: "venda", valor: 10_000 },
+      cz1003: { ...base, finalidade: "locacao", valor: 11_000 },
+    });
+    expect(codigos(await semelhantes("cz1001"))).toEqual(["cz1003"]);
   });
 });

@@ -169,3 +169,24 @@ describe("ordem e local", () => {
     expect(v.resumo).toBe("Nova Lima");
   });
 });
+
+describe("região", () => {
+  test("regiao desconhecida é descartada", () => {
+    expect(lerFiltros(new URLSearchParams("regiao=nao-existe"))).toEqual({ pagina: 1 });
+  });
+
+  test("regiao e local juntos: vale a regiao", () => {
+    expect(lerFiltros(new URLSearchParams("regiao=lourdes-savassi&local=Nova+Lima"))).toEqual({ regiao: "lourdes-savassi", pagina: 1 });
+    expect(lerFiltros(new URLSearchParams("regiao=nao-existe&local=Nova+Lima"))).toEqual({ local: "Nova Lima", pagina: 1 });
+  });
+
+  test("urlGrid mantém regiao na ordem canônica, logo depois de local", () => {
+    expect(urlGrid({ regiao: "lourdes-savassi", tipo: "Casa", q: "x", pagina: 2 })).toBe("/imoveis?q=x&regiao=lourdes-savassi&tipo=Casa&pagina=2");
+  });
+
+  test("a região vira chip com o nome e semFiltro a remove", () => {
+    const f = { regiao: "belvedere-vila-da-serra", pagina: 3 };
+    expect(rotulosFiltros(f)).toEqual([{ chave: "regiao", rotulo: "Belvedere e Vila da Serra" }]);
+    expect(semFiltro(f, "regiao")).toEqual({ regiao: undefined, pagina: 1 });
+  });
+});

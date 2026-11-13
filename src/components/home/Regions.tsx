@@ -1,12 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowIcon } from "@/components/ui/Icons";
-import { getRegioes } from "@/lib/imoveis";
-import { routes } from "@/lib/routes";
+import { getRegioesHome } from "@/lib/imoveis";
+import { urlGrid } from "@/lib/imoveis/filtros";
 import { SectionHeader } from "./SectionHeader";
 
 export async function Regions() {
-  const regioes = await getRegioes();
+  const regioes = await getRegioesHome();
 
   return (
     <section aria-labelledby="regioes-titulo" className="mx-auto box-content max-w-310 px-6 pt-26">
@@ -24,8 +24,8 @@ export async function Regions() {
         {regioes.map((r) => (
           // Lacuna 2 do README: 280px de altura abaixo de 600px.
           <Link
-            key={r.nome}
-            href={routes.regiao(r.nome)}
+            key={r.slug}
+            href={urlGrid({ regiao: r.slug, pagina: 1 })}
             className="group relative block h-100 overflow-hidden text-white max-[600px]:h-70"
           >
             <Image
@@ -37,7 +37,7 @@ export async function Regions() {
             />
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,29,36,0)_35%,rgba(15,29,36,0.86)_100%)]" />
             <div className="absolute right-6 bottom-6 left-6 flex flex-col gap-2">
-              <div className="text-[11px] tracking-[0.28em] text-areia">{r.cidade}</div>
+              <div className="text-[11px] tracking-[0.28em] text-areia">{r.legenda}</div>
               <div className="font-serif text-[30px] leading-[1.05] text-white">{r.nome}</div>
               <div className="mt-1.5 flex items-center gap-2 text-[13px] font-medium text-white">
                 Ver imóveis <ArrowIcon color="#FFFFFF" />

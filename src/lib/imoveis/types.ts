@@ -77,8 +77,4 @@ export type ImovelCard = {
   alt: string;
 };
 
-export type Regiao = {
-  nome: string;
-  cidade: string;
-  img: string;
-};
+export type { Regiao } from "./regioes";

@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, test } from "vitest";
 import { destaquesHome as tabDestaques, imoveis } from "@/lib/dados/esquema";
 import { criarAmbiente, type Ambiente } from "@/lib/dados/testes";
-import { destaquesHome as destaques, lancamentosHome as lancamentos, regioesHome } from "./catalogo";
+import { destaquesHome as destaques, lancamentosHome as lancamentos } from "./catalogo";
 
 let amb: Ambiente;
 beforeAll(async () => {
@@ -61,13 +61,8 @@ describe("Home: seções automáticas", () => {
     expect(await lancamentosHome()).toEqual([]);
   });
 
-  test("regiões trazem as 4 da Home", () => {
-    expect(regioesHome().map((r) => r.nome)).toEqual(["Belvedere", "Vila da Serra", "Lagoa dos Ingleses", "Savassi e Lourdes"]);
-  });
-
   test("imagens dos imóveis vêm do armazenamento de fotos", async () => {
     const all = [...(await lancamentosHome()), ...(await destaquesHome())];
     expect(all.every((i) => i.img.startsWith("https://fotos.teste/fotos/"))).toBe(true);
-    expect(regioesHome().every((r) => r.img.startsWith("/images/"))).toBe(true);
   });
 });

@@ -8,23 +8,16 @@ import { carregarImovel, carregarImoveis } from "@/lib/dados/consultas";
 import { destaquesHome as tabDestaques, imoveis } from "@/lib/dados/esquema";
 import type { RegistroImovel } from "@/lib/dados/tipos";
 import { FAIXAS_AREA, TIPOS, combinaFinalidade, faixasPreco, type Faixa, type FinalidadeFiltro, type Filtros } from "./filtros";
-import { formatarArea, formatarPreco, formatarQuartos, rotuloEtiqueta } from "./formato";
+import { formatarArea, normalizar, formatarPreco, formatarQuartos, rotuloEtiqueta } from "./formato";
 import { rotuloCaracteristica } from "./caracteristicas";
-import { regioes } from "./mock-data";
-import type { Imovel, ImovelCard, ImovelResumo, PaginaImoveis, Regiao, ResultadoImovel } from "./types";
+import { REGIOES, naRegiao, regiaoPorSlug, type Regiao } from "./regioes";
+import type { Imovel, ImovelCard, ImovelResumo, PaginaImoveis, ResultadoImovel } from "./types";
 
 export const POR_PAGINA = 24;
 /** Cards por seção automática da Home. */
 export const CARDS_HOME = 4;
 /** Quantos destaques a página inicial mostra; os demais esperam na lista do painel. */
 export const MAX_DESTAQUES_HOME = 6;
-
-const normalizar = (s: string) =>
-  s
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase()
-    .trim();
 
 /** Publicado com todos os campos que o site exibe (a publicação exige todos). */
 type Completo = RegistroImovel & { finalidade: NonNullable<RegistroImovel["finalidade"]>; tipo: string; valor: number; area: number };
@@ -132,6 +125,7 @@ async function filtrar(filtros: Filtros, db: Db): Promise<Imovel[]> {
   const preco = faixasPreco(filtros.finalidade).find(([v]) => v === filtros.preco);
   const area = FAIXAS_AREA.find(([v]) => v === filtros.area);
   const local = filtros.local;
+  const regiao = filtros.regiao ? regiaoPorSlug(filtros.regiao) : undefined;
   const lista = (await publicados(db))
     .sort(maisRecentes)
     .map(paraImovel)
@@ -139,6 +133,7 @@ async function filtrar(filtros: Filtros, db: Db): Promise<Imovel[]> {
       (i) =>
         combinaFinalidade(filtros.finalidade, i) &&
         (!local || noLocal(local, i)) &&
+        (!regiao || naRegiao(regiao, i)) &&
         (!q || normalizar(`${i.titulo} ${i.bairro} ${i.cidade} ${i.codigo} ${i.empreendimento ?? ""}`).includes(q)) &&
         (!filtros.tipo || i.tipo === filtros.tipo) &&
         naFaixaDePreco(filtros, preco, i) &&
@@ -263,6 +258,37 @@ export async function destaquesHome(db: Db = conexao()): Promise<ImovelCard[]> {
     .map((r) => card(paraImovel(r)));
 }
 
-export function regioesHome(): Regiao[] {
-  return regioes;
+/** Regiões com ao menos um imóvel publicado, na ordem da lista, com o total. */
+export async function regioesComImoveis(db: Db = conexao()): Promise<(Regiao & { total: number })[]> {
+  const lista = await publicados(db);
+  return REGIOES.map((r) => ({ ...r, total: lista.filter((i) => naRegiao(r, i)).length })).filter((r) => r.total > 0);
+}
+
+const MAX_SEMELHANTES = 3;
+/** Diferença de preço máxima (fração) para valer como "mesmo patamar" na mesma cidade. */
+const FAIXA_SEMELHANTE = 0.3;
+
+/**
+ * Até 3 imóveis parecidos: publicados, do mesmo tipo e da mesma finalidade (venda
+ * com venda, locação com locação), nunca o próprio. Primeiro os da mesma cidade
+ * com preço a até 30% (sem valor, todos da mesma cidade); depois completa com o
+ * mesmo tipo de qualquer cidade. Em cada grupo, menor diferença de preço e, no
+ * empate, o código. O imóvel de partida pode estar indisponível (a página mostra
+ * o aviso e os semelhantes); só rascunho e inexistente não têm semelhantes.
+ */
+export async function semelhantes(id: string, db: Db = conexao()): Promise<ImovelCard[]> {
+  const base = await carregarImovel(db, id);
+  if (!base || base.situacao === "rascunho" || base.tipo === null || base.finalidade === null) return [];
+  const { tipo, finalidade, valor } = base;
+  const distancia = (r: Completo) => (valor === null ? 0 : Math.abs(r.valor - valor));
+  const porProximidade = (a: Completo, b: Completo) => distancia(a) - distancia(b) || a.codigo.localeCompare(b.codigo);
+
+  const candidatos = (await publicados(db)).filter((r) => r.id !== id && r.tipo === tipo && r.finalidade === finalidade);
+  const mesmaCidade = (r: Completo) => normalizar(r.cidade) === normalizar(base.cidade);
+  const naFaixa = (r: Completo) => valor === null || Math.abs(r.valor - valor) <= valor * FAIXA_SEMELHANTE;
+
+  const primeiros = candidatos.filter((r) => mesmaCidade(r) && naFaixa(r)).sort(porProximidade);
+  const escolhidos = new Set(primeiros);
+  const demais = candidatos.filter((r) => !escolhidos.has(r)).sort(porProximidade);
+  return [...primeiros, ...demais].slice(0, MAX_SEMELHANTES).map((r) => card(paraImovel(r)));
 }

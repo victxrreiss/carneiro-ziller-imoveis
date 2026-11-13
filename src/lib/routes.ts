@@ -21,7 +21,6 @@ export const routes = {
   imovel: (id: string, de?: string) => (de === undefined ? imovel(id) : `${imovel(id)}?de=${encodeURIComponent(de)}`),
   /** Tela do imóvel com o formulário de interesse já aberto. */
   agendarVisita: (id: string) => `${imovel(id)}#${ANCORA_AGENDAR}`,
-  regiao: (nome: string) => `${imoveis}?q=${encodeURIComponent(nome)}`,
 } as const;
 
 /**
