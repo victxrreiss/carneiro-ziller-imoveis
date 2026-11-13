@@ -190,3 +190,21 @@ describe("região", () => {
     expect(semFiltro(f, "regiao")).toEqual({ regiao: undefined, pagina: 1 });
   });
 });
+
+describe("lerFiltros: `local` repetido (busca da Home sem JavaScript)", () => {
+  test("vale o último preenchido, na URL e no objeto de searchParams", () => {
+    expect(lerFiltros(new URLSearchParams("local=Nova+Lima&local=Vila+da+Serra%2C+Nova+Lima")).local).toBe("Vila da Serra, Nova Lima");
+    expect(lerFiltros({ local: ["Nova Lima", "Vila da Serra, Nova Lima"] }).local).toBe("Vila da Serra, Nova Lima");
+  });
+
+  test("vazios não contam: só a cidade, só o bairro ou nenhum", () => {
+    expect(lerFiltros(new URLSearchParams("local=Nova+Lima&local=")).local).toBe("Nova Lima");
+    expect(lerFiltros(new URLSearchParams("local=&local=Lourdes%2C+Belo+Horizonte")).local).toBe("Lourdes, Belo Horizonte");
+    expect(lerFiltros(new URLSearchParams("local=&local=+")).local).toBeUndefined();
+    expect(lerFiltros({ local: "Nova Lima" }).local).toBe("Nova Lima");
+  });
+
+  test("com região válida, `local` continua sem valer", () => {
+    expect(lerFiltros(new URLSearchParams("regiao=lourdes-savassi&local=Nova+Lima&local=")).local).toBeUndefined();
+  });
+});

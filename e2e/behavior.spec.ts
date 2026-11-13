@@ -154,3 +154,23 @@ test.describe("comportamento da Home", () => {
     expect(await page.locator("[data-abertura-imagem]").first().getAttribute("data-ativa")).toBe("true");
   });
 });
+
+test.describe("Home sem JavaScript", () => {
+  test.use({ javaScriptEnabled: false, viewport: { width: 1440, height: 900 } });
+
+  test("a busca da abertura envia finalidade, tipo, local e quartos", async ({ page }) => {
+    await page.goto("/");
+    await page.getByLabel("Tipo de imóvel").selectOption("Apartamento");
+    await page.getByLabel("Cidade").selectOption("Belo Horizonte");
+    await page.getByLabel("Bairro").selectOption("Belvedere, Belo Horizonte");
+    await page.getByLabel("Quartos").selectOption("3");
+    await page.getByRole("button", { name: "Buscar" }).click();
+    await page.waitForURL(/\/imoveis\?/);
+    const url = new URL(page.url());
+    expect(url.searchParams.get("finalidade")).toBe("comprar");
+    expect(url.searchParams.get("tipo")).toBe("Apartamento");
+    expect(url.searchParams.getAll("local")).toEqual(["Belo Horizonte", "Belvedere, Belo Horizonte"]);
+    expect(url.searchParams.get("quartos")).toBe("3");
+  });
+});
+

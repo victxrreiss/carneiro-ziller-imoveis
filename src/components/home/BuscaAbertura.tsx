@@ -2,7 +2,7 @@
 
 import Form from "next/form";
 import Link from "next/link";
-import { useId, useState, type ReactNode } from "react";
+import { useId, useState, useSyncExternalStore, type ReactNode } from "react";
 import { TabList, type Tab } from "@/components/ui/TabList";
 import { MINIMOS_QUARTOS } from "@/lib/imoveis/filtros";
 import { routes } from "@/lib/routes";
@@ -49,10 +49,21 @@ function Campo({ rotulo, name, valor, onChange, children }: { rotulo: string; na
   );
 }
 
+const semAssinatura = () => () => {};
+
+/** `false` no HTML do servidor e até a hidratação; `true` depois. */
+function useHidratado(): boolean {
+  return useSyncExternalStore(semAssinatura, () => true, () => false);
+}
+
 /**
  * Busca da abertura: GET para /imoveis com `finalidade`, `tipo`, `local` e `quartos`, os mesmos
- * parâmetros que o grid lê (`lerFiltros`). Cidade e bairro viram um `local` só
- * ("<Cidade>" ou "<Bairro>, <Cidade>"). Campo sem escolha não entra na URL.
+ * parâmetros que o grid lê (`lerFiltros`). Cidade e bairro viram `local`
+ * ("<Cidade>" ou "<Bairro>, <Cidade>").
+ *
+ * Funciona sem JavaScript: no HTML do servidor todo select tem `name` (cidade e bairro enviam
+ * `local` os dois, e `lerFiltros` fica com o último preenchido). Depois da hidratação, campo sem
+ * escolha sai da URL e cidade + bairro viram um `local` só.
  */
 export function BuscaAbertura({ temLancamentos, tipos, locais }: Props) {
   const finalidades = temLancamentos ? [comprar, alugar, lancamentos] : [comprar, alugar];
@@ -62,6 +73,8 @@ export function BuscaAbertura({ temLancamentos, tipos, locais }: Props) {
   /** "<Bairro>, <Cidade>": o mesmo nome de bairro existe em mais de uma cidade. */
   const [bairro, setBairro] = useState("");
   const [quartos, setQuartos] = useState("");
+
+  const hidratado = useHidratado();
 
   const daCidade = locais.find((l) => l.cidade === cidade);
   const local = bairro || cidade;
@@ -75,10 +88,10 @@ export function BuscaAbertura({ temLancamentos, tipos, locais }: Props) {
     <Form action={routes.imoveis} role="search" className="flex flex-col gap-3.5 text-white">
       <TabList label="Finalidade" tabs={finalidades} selected={finalidade} onSelect={setFinalidade} variant="finalidade" />
       <input type="hidden" name="finalidade" value={finalidade} />
-      {local && <input type="hidden" name="local" value={local} />}
+      {hidratado && local && <input type="hidden" name="local" value={local} />}
 
       <div className="grid grid-cols-2 items-end gap-x-5 gap-y-4.5 border border-white/22 bg-noite/55 px-4.5 pt-4.5 pb-5 backdrop-blur-[14px] min-[900px]:grid-cols-[1.2fr_1fr_1fr_.8fr_auto] min-[900px]:gap-7 min-[900px]:px-7 min-[900px]:py-5.5">
-        <Campo rotulo="Tipo de imóvel" name={tipo ? "tipo" : undefined} valor={tipo} onChange={setTipo}>
+        <Campo rotulo="Tipo de imóvel" name={!hidratado || tipo ? "tipo" : undefined} valor={tipo} onChange={setTipo}>
           <option value="">Todos os tipos</option>
           {tipos.map((t) => (
             <option key={t} value={t}>
@@ -86,7 +99,7 @@ export function BuscaAbertura({ temLancamentos, tipos, locais }: Props) {
             </option>
           ))}
         </Campo>
-        <Campo rotulo="Cidade" valor={cidade} onChange={trocarCidade}>
+        <Campo rotulo="Cidade" name={hidratado ? undefined : "local"} valor={cidade} onChange={trocarCidade}>
           <option value="">Todas as cidades</option>
           {locais.map((l) => (
             <option key={l.cidade} value={l.cidade}>
@@ -94,7 +107,7 @@ export function BuscaAbertura({ temLancamentos, tipos, locais }: Props) {
             </option>
           ))}
         </Campo>
-        <Campo rotulo="Bairro" valor={bairro} onChange={setBairro}>
+        <Campo rotulo="Bairro" name={hidratado ? undefined : "local"} valor={bairro} onChange={setBairro}>
           <option value="">Todos os bairros</option>
           {daCidade
             ? daCidade.bairros.map((b) => (
@@ -112,7 +125,7 @@ export function BuscaAbertura({ temLancamentos, tipos, locais }: Props) {
                 </optgroup>
               ))}
         </Campo>
-        <Campo rotulo="Quartos" name={quartos ? "quartos" : undefined} valor={quartos} onChange={setQuartos}>
+        <Campo rotulo="Quartos" name={!hidratado || quartos ? "quartos" : undefined} valor={quartos} onChange={setQuartos}>
           <option value="">Qualquer</option>
           {MINIMOS_QUARTOS.map((n) => (
             <option key={n} value={n}>

@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ComponentProps } from "react";
+import { renderToString } from "react-dom/server";
 import { describe, expect, test, vi } from "vitest";
 import { lerFiltros } from "@/lib/imoveis/filtros";
 import { BuscaAbertura } from "./BuscaAbertura";
@@ -87,5 +88,34 @@ describe("BuscaAbertura", () => {
     busca(true);
     await userEvent.click(screen.getByRole("tab", { name: "Lançamentos" }));
     expect(enviado().finalidade).toBe("lancamentos");
+  });
+
+  test("sem JavaScript, o HTML do servidor já envia tipo, local e quartos", () => {
+    const html = renderToString(<BuscaAbertura temLancamentos tipos={tipos} locais={locais} />);
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const form = doc.querySelector("form")!;
+    expect(form.getAttribute("action")).toBe("/imoveis");
+    const selects = [...form.querySelectorAll("select")];
+    expect(selects.map((s) => s.getAttribute("name"))).toEqual(["tipo", "local", "local", "quartos"]);
+    const [tipo, cidade, bairro, quartos] = selects;
+    const url = () => new URLSearchParams([...new FormData(form)].map(([k, v]) => [k, String(v)]));
+
+    // Nada escolhido: os vazios vão na URL e o grid os descarta.
+    expect(lerFiltros(url())).toEqual({ finalidade: "comprar", pagina: 1 });
+
+    // Só a cidade.
+    tipo.value = "Cobertura";
+    cidade.value = "Nova Lima";
+    quartos.value = "3";
+    expect(lerFiltros(url())).toEqual({ finalidade: "comprar", tipo: "Cobertura", local: "Nova Lima", quartos: "3", pagina: 1 });
+
+    // Cidade e bairro: vale o bairro, que já leva a cidade dele.
+    bairro.value = "Vila da Serra, Nova Lima";
+    expect(url().getAll("local")).toEqual(["Nova Lima", "Vila da Serra, Nova Lima"]);
+    expect(lerFiltros(url()).local).toBe("Vila da Serra, Nova Lima");
+
+    // Só o bairro.
+    cidade.value = "";
+    expect(lerFiltros(url()).local).toBe("Vila da Serra, Nova Lima");
   });
 });

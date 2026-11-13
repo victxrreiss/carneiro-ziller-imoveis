@@ -142,7 +142,12 @@ function seEm<T extends string>(valor: string | undefined, lista: readonly T[]):
 export function lerFiltros(entrada: Entrada): Filtros {
   const finalidade = seEm(ler(entrada, "finalidade"), ["comprar", "alugar", "lancamentos"] as const);
   const q = ler(entrada, "q")?.trim().slice(0, TAMANHO_MAX_BUSCA);
-  const local = ler(entrada, "local")?.trim().slice(0, TAMANHO_MAX_BUSCA).trim();
+  // A busca da Home, sem JavaScript, envia `local` duas vezes (cidade e bairro, vazio quando
+  // não escolhido): vale o último preenchido, que é o mais específico.
+  const local = lerLista(entrada, "local")
+    .map((l) => l.trim().slice(0, TAMANHO_MAX_BUSCA).trim())
+    .filter(Boolean)
+    .at(-1);
   const pedidaRegiao = ler(entrada, "regiao");
   const regiao = pedidaRegiao && regiaoPorSlug(pedidaRegiao) ? pedidaRegiao : undefined;
   const preco = faixasPreco(finalidade).find(([v]) => v === ler(entrada, "preco"))?.[0];
