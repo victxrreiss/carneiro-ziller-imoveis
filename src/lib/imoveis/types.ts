@@ -82,21 +82,3 @@ export type Regiao = {
   cidade: string;
   img: string;
 };
-
-/** Bloco "Oportunidade de hoje" da Home: o imóvel que o ADMIN escolhe no painel. */
-export type Destaque = {
-  /** Anúncio para onde o AGENDAR VISITA leva. */
-  id: string;
-  codigo: string;
-  tipo: string;
-  titulo: string;
-  local: string;
-  descricao: string;
-  area: string;
-  /** Só as especificações que existem (terreno e sala não têm quartos/vagas). */
-  quartos?: string;
-  vagas?: string;
-  valor: string;
-  img: string;
-  alt: string;
-};

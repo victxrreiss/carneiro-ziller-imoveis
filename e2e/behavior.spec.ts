@@ -77,12 +77,11 @@ test.describe("comportamento da Home", () => {
     expect(url.searchParams.get("q")).toBe("Vila & Serra #1");
   });
 
-  test("abas Venda/Locação trocam os cards", async ({ page }) => {
+  test("Imóveis em destaque mostra só os que o ADMIN escolheu", async ({ page }) => {
     await page.goto("/");
+    await expect(page.getByRole("heading", { name: "Imóveis em destaque" })).toBeVisible();
+    await expect(page.getByText("Apartamento no Belvedere").first()).toBeVisible();
     await expect(page.getByText("Laje corporativa")).toBeHidden();
-    await page.getByRole("tab", { name: "LOCAÇÃO" }).click();
-    await expect(page.getByText("Laje corporativa")).toBeVisible();
-    await expect(page.getByText("Residencial das Minas")).toBeHidden();
   });
 
   test("sem favoritos e sem anunciar imóvel", async ({ page }) => {

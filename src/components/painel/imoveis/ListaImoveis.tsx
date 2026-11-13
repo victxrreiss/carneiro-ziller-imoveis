@@ -61,7 +61,7 @@ function Toggle({ ativo, onClick, children }: { ativo: boolean; onClick: () => v
   );
 }
 
-export function ListaImoveis({ linhas, usuario, avisoOportunidade }: { linhas: LinhaLista[]; usuario: Usuario; avisoOportunidade: string | null }) {
+export function ListaImoveis({ linhas, usuario }: { linhas: LinhaLista[]; usuario: Usuario }) {
   const router = useRouter();
   const [removidos, setRemovidos] = useState<Set<string>>(() => new Set());
   const [q, setQ] = useState("");
@@ -244,32 +244,6 @@ export function ListaImoveis({ linhas, usuario, avisoOportunidade }: { linhas: L
         </div>
       </div>
 
-      {avisoOportunidade && (
-        <div className="pn-alert is-error" role="status" style={{ marginBottom: 20 }}>
-          <IcEstrela size={20} />
-          <div>
-            <strong>A Oportunidade de hoje está vazia</strong>
-            <p>
-              {avisoOportunidade} A seção não aparece na Home até você escolher outro imóvel publicado: abra o imóvel e marque “Usar na Oportunidade de
-              hoje”.
-            </p>
-            <div className="pn-alert-actions">
-              <button
-                type="button"
-                className="btn"
-                style={{ minHeight: 44 }}
-                onClick={() => {
-                  limpar();
-                  setSit("publicado");
-                }}
-              >
-                VER IMÓVEIS PUBLICADOS
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {todas.length === 0 ? (
         <div className="pn-box-state">
           <div className="notice">
@@ -404,10 +378,10 @@ export function ListaImoveis({ linhas, usuario, avisoOportunidade }: { linhas: L
                               <Link className="pn-ttl" href={painel.imovel(l.id)}>
                                 {l.titulo || "Imóvel sem título"}
                               </Link>
-                              {l.oportunidade && (
+                              {l.destaque && (
                                 <span className="pn-star">
                                   <IcEstrela />
-                                  OPORTUNIDADE DE HOJE
+                                  DESTAQUE
                                 </span>
                               )}
                             </div>
@@ -476,10 +450,10 @@ export function ListaImoveis({ linhas, usuario, avisoOportunidade }: { linhas: L
                       </div>
                       <div className="pn-card-meta">
                         <span className={SITUACAO[l.situacao].cls}>{SITUACAO[l.situacao].rotulo}</span>
-                        {l.oportunidade && (
+                        {l.destaque && (
                           <span className="pn-star">
                             <IcEstrela />
-                            OPORTUNIDADE DE HOJE
+                            DESTAQUE
                           </span>
                         )}
                       </div>
@@ -574,11 +548,11 @@ export function ListaImoveis({ linhas, usuario, avisoOportunidade }: { linhas: L
             </div>
           </div>
           <p>O imóvel sai do painel e do site, e a página dele deixa de existir. Essa ação não pode ser desfeita.</p>
-          {excluir.oportunidade && (
+          {excluir.destaque && (
             <div className="pn-warn">
               <IcEstrela size={16} />
               <span>
-                Este imóvel está na <strong>Oportunidade de hoje</strong>. Ao excluir, a seção some da Home até você escolher outro imóvel publicado.
+                Este imóvel está nos <strong>destaques da página inicial</strong>. Ao excluir, ele sai da lista.
               </span>
             </div>
           )}

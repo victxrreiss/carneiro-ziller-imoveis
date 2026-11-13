@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { FormImovel } from "@/components/painel/imoveis/FormImovel";
-import { obterParaEdicao, oportunidadeAtual, opcoesResponsavel } from "@/lib/painel/imoveis";
+import { obterParaEdicao, opcoesResponsavel } from "@/lib/painel/imoveis";
 import type { Intencao } from "@/lib/painel/regras";
 import { exigirUsuario } from "@/lib/painel/sessao";
 import { painel } from "@/lib/routes";
@@ -24,7 +24,6 @@ export default async function EditarImovelPage({ params, searchParams }: PagePro
       imovel={imovel}
       usuario={{ id: u.id, nome: u.nome, admin: u.papel === "admin" }}
       responsaveis={await opcoesResponsavel(imovel.responsavelId)}
-      oportunidadeAtual={await oportunidadeAtual()}
       avisoInicial={aviso}
     />
   );

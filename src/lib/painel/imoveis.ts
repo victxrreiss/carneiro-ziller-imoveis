@@ -1,13 +1,14 @@
-// Imóveis no painel: lista, edição, publicação, exclusão e a Oportunidade de
-// hoje da Home. Toda permissão é conferida aqui, não só na tela.
+// Imóveis no painel: lista, edição, publicação, exclusão e a marcação de
+// destaque da página inicial. Toda permissão é conferida aqui, não só na tela.
 // Todas as funções recebem o banco como último parâmetro opcional (testes).
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { armazenamento, assinaturaConfere, type ArmazenamentoFotos, type Envio } from "@/lib/armazenamento";
 import { conexao, type Db } from "@/lib/dados/conexao";
 import { carregarImovel, carregarImoveis } from "@/lib/dados/consultas";
-import { configuracaoSite, fotos as tabFotos, imovelFotos, imoveis, usuarios } from "@/lib/dados/esquema";
-import type { AvisoOportunidade, FotoRegistro, RegistroImovel, SituacaoImovel } from "@/lib/dados/tipos";
+import { destaquesHome, fotos as tabFotos, imovelFotos, imoveis, usuarios } from "@/lib/dados/esquema";
+import type { AvisoDestaque, FotoRegistro, RegistroImovel, SituacaoImovel } from "@/lib/dados/tipos";
 import { ehUuid } from "./contas";
+import { marcarNoFim, tirarDosDestaques } from "./destaques";
 import {
   LIMITES,
   TIPOS_FOTO,
@@ -39,7 +40,7 @@ export type LinhaImovel = {
   alteradoEm: string;
   capa: string | null;
   podeEditar: boolean;
-  oportunidade: boolean;
+  destaque: boolean;
 };
 
 async function nomes(db: Db): Promise<Map<string, string>> {
@@ -47,21 +48,14 @@ async function nomes(db: Db): Promise<Map<string, string>> {
   return new Map(todos.map((u) => [u.id, u.nome]));
 }
 
-export async function configuracao(db: Db) {
-  const [c] = await db.select().from(configuracaoSite).where(eq(configuracaoSite.id, 1)).limit(1);
-  return { oportunidadeId: c?.oportunidadeId ?? null, aviso: c?.aviso ?? null };
-}
-
-export async function gravarConfiguracao(db: Db, oportunidadeId: string | null, aviso: AvisoOportunidade | null) {
-  await db
-    .insert(configuracaoSite)
-    .values({ id: 1, oportunidadeId, aviso })
-    .onConflictDoUpdate({ target: configuracaoSite.id, set: { oportunidadeId, aviso } });
+/** Ids dos imóveis que estão na lista de destaques da página inicial. */
+async function idsDestaque(db: Db): Promise<Set<string>> {
+  return new Set((await db.select({ id: destaquesHome.imovelId }).from(destaquesHome)).map((d) => d.id));
 }
 
 /** Todos veem todos; o Corretor edita só os próprios. Ordem: última alteração primeiro. */
 export async function listarImoveis(u: UsuarioLogado, db: Db = conexao()): Promise<LinhaImovel[]> {
-  const [todos, nomeDe, cfg] = await Promise.all([carregarImoveis(db), nomes(db), configuracao(db)]);
+  const [todos, nomeDe, emDestaque] = await Promise.all([carregarImoveis(db), nomes(db), idsDestaque(db)]);
   return todos
     .sort((a, b) => b.alteradoEm.localeCompare(a.alteradoEm))
     .map((r) => ({
@@ -82,7 +76,7 @@ export async function listarImoveis(u: UsuarioLogado, db: Db = conexao()): Promi
       alteradoEm: r.alteradoEm,
       capa: r.fotos[0]?.src ?? null,
       podeEditar: podeEditar(u, r),
-      oportunidade: r.id === cfg.oportunidadeId && r.situacao === "publicado",
+      destaque: emDestaque.has(r.id) && r.situacao === "publicado",
     }));
 }
 
@@ -100,7 +94,7 @@ export type ImovelEdicao = {
   alteradoEm: string;
   alteradoPorNome: string;
   podeEditar: boolean;
-  oportunidade: boolean;
+  destaque: boolean;
 };
 
 const digitos = (n: number | null) => (n === null ? "" : String(n));
@@ -108,7 +102,7 @@ const digitos = (n: number | null) => (n === null ? "" : String(n));
 export async function obterParaEdicao(u: UsuarioLogado, id: string, db: Db = conexao()): Promise<ImovelEdicao | null> {
   const r = await carregarImovel(db, id.toLowerCase());
   if (!r) return null;
-  const [nomeDe, cfg] = await Promise.all([nomes(db), configuracao(db)]);
+  const [nomeDe, emDestaque] = await Promise.all([nomes(db), idsDestaque(db)]);
   return {
     id: r.id,
     codigo: r.codigo,
@@ -143,7 +137,7 @@ export async function obterParaEdicao(u: UsuarioLogado, id: string, db: Db = con
       fotos: r.fotos.map((f) => ({ id: f.id, alt: f.alt })),
       situacao: r.situacao,
       responsavelId: r.responsavelId,
-      oportunidade: cfg.oportunidadeId === r.id,
+      destaque: emDestaque.has(r.id),
     },
     fotos: r.fotos,
     situacao: r.situacao,
@@ -153,7 +147,7 @@ export async function obterParaEdicao(u: UsuarioLogado, id: string, db: Db = con
     alteradoEm: r.alteradoEm,
     alteradoPorNome: nomeDe.get(r.alteradoPorId) ?? "—",
     podeEditar: podeEditar(u, r),
-    oportunidade: cfg.oportunidadeId === r.id,
+    destaque: emDestaque.has(r.id) && r.situacao === "publicado",
   };
 }
 
@@ -164,22 +158,6 @@ export async function opcoesResponsavel(atualId?: string, db: Db = conexao()): P
     .filter((u) => u.situacao === "ativo" || u.id === atualId)
     .map((u) => ({ id: u.id, nome: u.nome, desativado: u.situacao !== "ativo" }))
     .sort((a, b) => a.nome.localeCompare(b.nome));
-}
-
-export async function oportunidadeAtual(db: Db = conexao()): Promise<{ id: string; codigo: string; titulo: string } | null> {
-  const { oportunidadeId } = await configuracao(db);
-  const r = oportunidadeId ? await carregarImovel(db, oportunidadeId) : null;
-  return r && r.situacao === "publicado" ? { id: r.id, codigo: r.codigo, titulo: r.titulo } : null;
-}
-
-export type AvisoParaAdmin = { aviso: AvisoOportunidade | null; porNome: string | null; foiVoce: boolean };
-
-/** Só para o ADMIN: Oportunidade de hoje vazia e, se houver, quem tirou o imóvel do ar. */
-export async function avisoOportunidadeVazia(u: UsuarioLogado, db: Db = conexao()): Promise<AvisoParaAdmin | null> {
-  if (!ehAdmin(u) || (await oportunidadeAtual(db))) return null;
-  const { aviso } = await configuracao(db);
-  const nomeDe = aviso ? (await nomes(db)).get(aviso.porId) ?? "—" : null;
-  return { aviso, porNome: nomeDe, foiVoce: aviso?.porId === u.id };
 }
 
 // ---------- Fotos (upload direto ao armazenamento) ----------
@@ -256,7 +234,7 @@ export async function proximoCodigo(db: Db): Promise<string> {
 }
 
 export type ResultadoSalvar =
-  | { ok: true; id: string; codigo: string; situacao: SituacaoImovel; novo: boolean; oportunidadeSaiu: boolean }
+  | { ok: true; id: string; codigo: string; situacao: SituacaoImovel; novo: boolean; destaqueSaiu: boolean }
   | { ok: false; erros: ErrosImovel }
   | { ok: false; proibido: true }
   | { ok: false; inexistente: true };
@@ -329,48 +307,41 @@ export async function salvarImovel(
     await tx.delete(imovelFotos).where(eq(imovelFotos.imovelId, imovelId));
     if (novasFotos.length) await tx.insert(imovelFotos).values(novasFotos.map((f, ordem) => ({ imovelId, fotoId: f.fotoId, ordem, alt: f.alt })));
 
-    // Oportunidade de hoje: só publicado; marcar substitui o atual; só o ADMIN escolhe.
-    const cfg = await configuracao(tx);
-    const ehAtual = cfg.oportunidadeId === imovelId;
-    const aviso = (motivo: AvisoOportunidade["motivo"]): AvisoOportunidade => ({ porId: u.id, codigo, titulo: dados.titulo || "Imóvel sem título", motivo, em: new Date().toISOString() });
-    let oportunidadeSaiu = false;
-    if (ehAtual && destino !== "publicado") {
-      await gravarConfiguracao(tx, null, aviso(destino === "indisponivel" ? "indisponivel" : "rascunho"));
-      oportunidadeSaiu = true;
-    } else if (ehAdmin(u) && e.oportunidade !== undefined) {
-      if (e.oportunidade && destino === "publicado") await gravarConfiguracao(tx, imovelId, null);
-      else if (!e.oportunidade && ehAtual) {
-        await gravarConfiguracao(tx, null, aviso("desmarcado"));
-        oportunidadeSaiu = true;
-      }
+    // Destaque da página inicial: só publicado; só o ADMIN marca ou desmarca.
+    const aviso = (motivo: AvisoDestaque["motivo"]): AvisoDestaque => ({ porId: u.id, codigo, titulo: dados.titulo || "Imóvel sem título", motivo, em: new Date().toISOString() });
+    let destaqueSaiu = false;
+    if (destino !== "publicado") {
+      destaqueSaiu = await tirarDosDestaques(tx, imovelId, aviso(destino === "indisponivel" ? "indisponivel" : "rascunho"));
+    } else if (ehAdmin(u) && e.destaque !== undefined) {
+      if (e.destaque) await marcarNoFim(tx, imovelId);
+      else destaqueSaiu = await tirarDosDestaques(tx, imovelId, aviso("desmarcado"));
     }
-    return { id: imovelId, codigo, oportunidadeSaiu };
+    return { id: imovelId, codigo, destaqueSaiu };
   });
 
   // Fotos que saíram do imóvel não ficam no bucket público.
   const mantidas = new Set(novasFotos.map((f) => f.fotoId));
   await descartarFotos(db, (existente?.fotos ?? []).map((f) => f.id).filter((fid) => !mantidas.has(fid)));
 
-  return { ok: true, id: resultado.id, codigo: resultado.codigo, situacao: destino, novo: !existente, oportunidadeSaiu: resultado.oportunidadeSaiu };
+  return { ok: true, id: resultado.id, codigo: resultado.codigo, situacao: destino, novo: !existente, destaqueSaiu: resultado.destaqueSaiu };
 }
 
-/** Só ADMIN. Se for o imóvel da Oportunidade de hoje, a seção fica vazia. */
+/** Só ADMIN. Se o imóvel era destaque, ele sai da lista e o ADMIN fica com o aviso. */
 export async function excluirImovel(
   u: UsuarioLogado,
   id: string,
   db: Db = conexao(),
-): Promise<{ ok: true; codigo: string; titulo: string; oportunidadeSaiu: boolean } | { ok: false }> {
+): Promise<{ ok: true; codigo: string; titulo: string; destaqueSaiu: boolean } | { ok: false }> {
   if (!ehAdmin(u)) return { ok: false };
   const r = await carregarImovel(db, id);
   if (!r) return { ok: false };
   const fotoIds = r.fotos.map((f) => f.id);
-  const eraOportunidade = await db.transaction(async (tx) => {
-    const era = (await configuracao(tx)).oportunidadeId === id;
-    if (era) await gravarConfiguracao(tx, null, { porId: u.id, codigo: r.codigo, titulo: r.titulo || "Imóvel sem título", motivo: "excluido", em: new Date().toISOString() });
+  const eraDestaque = await db.transaction(async (tx) => {
+    const era = await tirarDosDestaques(tx, id, { porId: u.id, codigo: r.codigo, titulo: r.titulo || "Imóvel sem título", motivo: "excluido", em: new Date().toISOString() });
     await tx.delete(imoveis).where(eq(imoveis.id, id));
     return era;
   });
   await descartarFotos(db, fotoIds);
-  return { ok: true, codigo: r.codigo, titulo: r.titulo, oportunidadeSaiu: eraOportunidade };
+  return { ok: true, codigo: r.codigo, titulo: r.titulo, destaqueSaiu: eraDestaque };
 }
 

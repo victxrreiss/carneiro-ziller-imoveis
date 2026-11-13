@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { FeaturedProperty } from "@/components/home/FeaturedProperty";
 import { Hero } from "@/components/home/Hero";
 import { Institutional } from "@/components/home/Institutional";
 import { Launches } from "@/components/home/Launches";
@@ -21,7 +20,6 @@ export default function Home() {
       <main>
         <Hero />
         <Regions />
-        <FeaturedProperty />
         <Launches />
         <Institutional />
         <Selected />

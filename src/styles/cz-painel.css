@@ -414,3 +414,12 @@
 .pn-menu-flutuante a,.pn-menu-flutuante button{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:0 16px;border:none;background:transparent;font-family:var(--font-montserrat),"Montserrat",sans-serif;font-size:14px;color:#414042;text-align:left;cursor:pointer;white-space:nowrap;text-decoration:none}
 .pn-menu-flutuante [data-focus],.pn-menu-flutuante a:hover,.pn-menu-flutuante button:hover{background:#F6F4F0;color:#0F1D24}
 .pn-menu-flutuante .is-danger,.pn-menu-flutuante .is-danger[data-focus],.pn-menu-flutuante .is-danger:hover{color:#78323D}
+
+/* Página inicial: lista ordenada de destaques */
+.cz .pn-dest-h{margin:24px 0 10px;font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--azul-noite)}
+.cz .pn-dest-lista{list-style:none;margin:0 0 8px;padding:0;display:flex;flex-direction:column;gap:8px}
+.cz .pn-dest-item{display:flex;align-items:center;gap:14px;padding:10px 14px;background:#FFFFFF;border:1px solid var(--areia)}
+.cz .pn-dest-item .pn-two{flex:1;min-width:0}
+.cz .pn-dest-acoes{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:2px 12px}
+.cz .btn-plain:disabled{color:#9A9A9C;cursor:not-allowed}
+@media (max-width:600px){.cz .pn-dest-item{flex-wrap:wrap}.cz .pn-dest-acoes{width:100%;justify-content:flex-start}}

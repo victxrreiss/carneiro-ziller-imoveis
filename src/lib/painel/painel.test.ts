@@ -1,9 +1,9 @@
 import { count, eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { armazenamento, armazenamentoMemoria, definirArmazenamento } from "@/lib/armazenamento";
-import { oportunidadeDeHoje } from "@/lib/imoveis/catalogo";
+import { destaquesHome } from "@/lib/imoveis/catalogo";
 import { remetente, type remetenteMemoria } from "@/lib/email";
-import { configuracaoSite, fotos, imovelFotos, imoveis, sessoes, tentativasLogin, tokensSenha, usuarios } from "@/lib/dados/esquema";
+import { destaquesHome as tabDestaques, fotos, imovelFotos, imoveis, sessoes, tentativasLogin, tokensSenha, usuarios } from "@/lib/dados/esquema";
 import { criarAmbiente, type Ambiente } from "@/lib/dados/testes";
 import { conferirSenha, gerarSenhaProvisoria, hashToken } from "@/lib/seguranca/senha";
 import {
@@ -25,7 +25,6 @@ import {
   trocarSenhaObrigatoria,
 } from "./contas";
 import {
-  avisoOportunidadeVazia,
   confirmarFoto,
   excluirImovel,
   listarImoveis,
@@ -33,6 +32,7 @@ import {
   prepararEnvioFoto,
   salvarImovel,
 } from "./imoveis";
+import { listarDestaques } from "./destaques";
 import { erroNovaSenha, validarImovel, type EntradaImovel } from "./regras";
 
 let amb: Ambiente;
@@ -190,7 +190,7 @@ describe("cadastro de imóvel", () => {
     expect(await excluirImovel(amb.mariana, "cz1009", amb.db)).toEqual({ ok: false });
     const antes = await contar(fotos);
     const objetosAntes = (armazenamento() as ReturnType<typeof armazenamentoMemoria>).objetos.size;
-    expect(await excluirImovel(amb.admin, "cz1026", amb.db)).toMatchObject({ ok: true, codigo: "CZ1026", oportunidadeSaiu: false });
+    expect(await excluirImovel(amb.admin, "cz1026", amb.db)).toMatchObject({ ok: true, codigo: "CZ1026", destaqueSaiu: false });
     expect(await imovelDe("cz1026")).toBeUndefined();
     expect(await contar(fotos)).toBe(antes - 1);
     expect((armazenamento() as ReturnType<typeof armazenamentoMemoria>).objetos.size).toBe(objetosAntes - 1);
@@ -320,44 +320,44 @@ describe("fotos (upload direto ao armazenamento)", () => {
   });
 });
 
-describe("Oportunidade de hoje", () => {
-  const cfg = async () => (await amb.db.select().from(configuracaoSite))[0];
+describe("destaque no formulário do imóvel", () => {
+  const ids = async () => (await amb.db.select().from(tabDestaques).orderBy(tabDestaques.ordem)).map((d) => d.imovelId);
 
-  test("ADMIN marca outro imóvel publicado e ele substitui o atual", async () => {
+  test("ADMIN marca pelo formulário e o imóvel entra no fim da lista", async () => {
     const entrada = (await obterParaEdicao(amb.admin, "cz1015", amb.db))!.entrada;
-    await salvarImovel(amb.admin, "cz1015", { ...entrada, oportunidade: true }, "salvar", new Date(), amb.db);
-    expect((await cfg()).oportunidadeId).toBe("cz1015");
-    expect((await oportunidadeDeHoje(amb.db))?.codigo).toBe("CZ1015");
+    await salvarImovel(amb.admin, "cz1015", { ...entrada, destaque: true }, "salvar", new Date(), amb.db);
+    expect(await ids()).toEqual(["cz1009", "cz1015"]);
+    expect((await destaquesHome(amb.db)).map((i) => i.id)).toEqual(["cz1009", "cz1015"]);
   });
 
-  test("Corretor não muda a escolha", async () => {
+  test("Corretor não muda a lista", async () => {
     const entrada = (await obterParaEdicao(amb.mariana, "cz1009", amb.db))!.entrada;
-    await salvarImovel(amb.mariana, "cz1009", { ...entrada, oportunidade: false }, "salvar", new Date(), amb.db);
-    expect((await cfg()).oportunidadeId).toBe("cz1009");
+    await salvarImovel(amb.mariana, "cz1009", { ...entrada, destaque: false }, "salvar", new Date(), amb.db);
+    expect(await ids()).toEqual(["cz1009"]);
   });
 
   test("só imóvel publicado entra", async () => {
-    await salvarImovel(amb.admin, null, { ...completa, oportunidade: true }, "rascunho", new Date(), amb.db);
-    expect((await cfg()).oportunidadeId).toBe("cz1009");
+    await salvarImovel(amb.admin, null, { ...completa, destaque: true }, "rascunho", new Date(), amb.db);
+    expect(await ids()).toEqual(["cz1009"]);
   });
 
-  test("Corretor tira o imóvel do ar: a seção some e o ADMIN é avisado", async () => {
+  test("Corretor tira o imóvel do ar: ele sai da lista e o ADMIN fica com o aviso", async () => {
     const entrada = (await obterParaEdicao(amb.mariana, "cz1009", amb.db))!.entrada;
     const r = await salvarImovel(amb.mariana, "cz1009", { ...entrada, situacao: "indisponivel" }, "salvar", new Date(), amb.db);
-    expect(r).toMatchObject({ ok: true, oportunidadeSaiu: true });
-    expect(await oportunidadeDeHoje(amb.db)).toBeNull();
-    expect(await avisoOportunidadeVazia(amb.mariana, amb.db)).toBeNull();
-    const aviso = await avisoOportunidadeVazia(amb.admin, amb.db);
+    expect(r).toMatchObject({ ok: true, destaqueSaiu: true });
+    expect(await ids()).toEqual([]);
+    expect((await listarDestaques(amb.mariana, amb.db)).aviso).toBeNull();
+    const { aviso } = await listarDestaques(amb.admin, amb.db);
     expect(aviso?.porNome).toBe("Mariana Costa");
     expect(aviso?.aviso).toMatchObject({ codigo: "CZ1009", motivo: "indisponivel" });
   });
 
-  test("excluir o imóvel da Oportunidade de hoje esvazia a seção", async () => {
-    expect(await excluirImovel(amb.admin, "cz1009", amb.db)).toMatchObject({ ok: true, oportunidadeSaiu: true });
-    expect((await avisoOportunidadeVazia(amb.admin, amb.db))?.aviso?.motivo).toBe("excluido");
+  test("excluir o imóvel em destaque o tira da lista; marcar outro limpa o aviso", async () => {
+    expect(await excluirImovel(amb.admin, "cz1009", amb.db)).toMatchObject({ ok: true, destaqueSaiu: true });
+    expect((await listarDestaques(amb.admin, amb.db)).aviso?.aviso.motivo).toBe("excluido");
     const entrada = (await obterParaEdicao(amb.admin, "cz1015", amb.db))!.entrada;
-    await salvarImovel(amb.admin, "cz1015", { ...entrada, oportunidade: true }, "salvar", new Date(), amb.db);
-    expect(await avisoOportunidadeVazia(amb.admin, amb.db)).toBeNull();
+    await salvarImovel(amb.admin, "cz1015", { ...entrada, destaque: true }, "salvar", new Date(), amb.db);
+    expect((await listarDestaques(amb.admin, amb.db)).aviso).toBeNull();
   });
 });
 

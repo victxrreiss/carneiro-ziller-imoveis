@@ -6,7 +6,6 @@ import * as catalogo from "./catalogo";
 import type { FinalidadeFiltro, Filtros } from "./filtros";
 
 export type {
-  Destaque,
   Finalidade,
   Foto,
   Imovel,
@@ -29,10 +28,10 @@ function marcar() {
   cacheLife({ stale: 60, revalidate: 300, expire: 3600 });
 }
 
-export async function getDestaque() {
+export async function getDestaquesHome() {
   "use cache";
   marcar();
-  return catalogo.oportunidadeDeHoje();
+  return catalogo.destaquesHome();
 }
 
 export async function getRegioes() {
@@ -51,18 +50,6 @@ export async function getTemLancamentos() {
   "use cache";
   marcar();
   return catalogo.temLancamentos();
-}
-
-export async function getImoveisVenda() {
-  "use cache";
-  marcar();
-  return catalogo.vendaHome();
-}
-
-export async function getImoveisLocacao() {
-  "use cache";
-  marcar();
-  return catalogo.locacaoHome();
 }
 
 export async function buscarImoveis(filtros: Filtros) {

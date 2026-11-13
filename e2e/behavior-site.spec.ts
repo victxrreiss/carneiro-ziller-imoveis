@@ -13,13 +13,11 @@ test.describe("navegação entre as telas", () => {
     await expect(page.locator("a.im-back-link")).toHaveText("VOLTAR AOS LANÇAMENTOS");
   });
 
-  test("AGENDAR VISITA da Home abre o formulário do imóvel em destaque", async ({ page }) => {
+  test("o card do imóvel em destaque da Home abre o anúncio", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: "AGENDAR VISITA" }).click();
+    await page.getByRole("link", { name: "Ver imóvel: Apartamento no Belvedere" }).click();
     await page.waitForURL("**/imovel/cz1009");
-    await expect(page.getByRole("dialog", { name: "Agendar visita" })).toBeVisible();
-    await expect(page.getByLabel(/^NOME/)).toBeFocused();
-    expect(new URL(page.url()).hash).toBe("");
+    await expect(page.getByRole("heading", { level: 1, name: "Apartamento no Belvedere" })).toBeVisible();
   });
 
   test("busca da Home chega ao grid filtrado", async ({ page }) => {

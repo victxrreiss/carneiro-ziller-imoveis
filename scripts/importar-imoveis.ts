@@ -5,8 +5,8 @@ import { count, sql } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import type { ArmazenamentoFotos } from "../src/lib/armazenamento";
 import type { Db } from "../src/lib/dados/criar-conexao";
-import { configuracaoSite, fotos, imovelFotos, imoveis } from "../src/lib/dados/esquema";
-import { OPORTUNIDADE_INICIAL, sementeImoveis } from "./semente-imoveis";
+import { destaquesHome, fotos, imovelFotos, imoveis } from "../src/lib/dados/esquema";
+import { DESTAQUE_INICIAL, sementeImoveis } from "./semente-imoveis";
 
 /** UUID estável por imóvel e posição: semear de novo gera as mesmas URLs de foto (o HTML pré-renderizado continua válido). */
 function idDaFoto(imovelId: string, ordem: number): string {
@@ -70,7 +70,6 @@ export async function importarImoveis(db: Db, o: OpcoesImportacao): Promise<{ im
   // Os códigos entraram explícitos: o próximo gerado pela sequence continua depois do maior.
   const maior = Math.max(...lista.map((s) => Number(s.codigo.replace(/\D/g, ""))));
   await db.execute(sql`select setval('imovel_codigo_seq', ${maior})`);
-  if (!lista.some((s) => s.id === OPORTUNIDADE_INICIAL)) return { imoveis: lista.length, fotos: totalFotos };
-  await db.insert(configuracaoSite).values({ id: 1, oportunidadeId: OPORTUNIDADE_INICIAL, aviso: null }).onConflictDoUpdate({ target: configuracaoSite.id, set: { oportunidadeId: OPORTUNIDADE_INICIAL, aviso: null } });
+  if (lista.some((s) => s.id === DESTAQUE_INICIAL)) await db.insert(destaquesHome).values({ imovelId: DESTAQUE_INICIAL, ordem: 1 });
   return { imoveis: lista.length, fotos: totalFotos };
 }

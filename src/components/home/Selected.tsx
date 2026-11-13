@@ -1,15 +1,17 @@
-import { getImoveisLocacao, getImoveisVenda } from "@/lib/imoveis";
-import { SelectedTabs } from "./SelectedTabs";
+import { getDestaquesHome } from "@/lib/imoveis";
+import { PropertyGrid } from "./PropertyGrid";
+import { SectionHeader } from "./SectionHeader";
 
 export async function Selected() {
-  const [venda, locacao] = await Promise.all([getImoveisVenda(), getImoveisLocacao()]);
-  // Automática: os mais recentes de cada finalidade. Sem nenhum, a seção não aparece.
-  if (!venda.length && !locacao.length) return null;
+  const items = await getDestaquesHome();
+  // Escolhidos pelo ADMIN no painel. Sem nenhum, a seção não aparece.
+  if (!items.length) return null;
 
   return (
     // pb de 120px: o respiro que a seção CTA (removida) dava antes do rodapé.
     <section aria-labelledby="sel-titulo" className="mx-auto box-content max-w-310 px-6 pt-30 pb-30">
-      <SelectedTabs venda={venda} locacao={locacao} />
+      <SectionHeader id="sel-titulo" label="SELECIONADOS" title="Imóveis em destaque" gapClass="gap-5" />
+      <PropertyGrid items={items} />
     </section>
   );
 }

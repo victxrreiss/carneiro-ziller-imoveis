@@ -11,20 +11,18 @@
 // - Sumiu da rodada: se foi importado como publicado e ainda é igual ao snapshot, vira
 //   indisponível; rascunho que sumiu não muda (`ausentesRascunho`), para não ganhar página pública.
 // - Primeira rodada: os 3 imóveis de exemplo saem, com as fotos deles (pelas chaves).
-// - Oportunidade: só é escolhida sozinha na primeira rodada ou quando a atual era um imóvel importado que
-//   saiu do ar nesta rodada (o publicado completo à venda de maior valor, com foto). Nas demais, fica como está.
+// - Destaques da página inicial: a importação não escolhe nenhum (é do ADMIN). Imóvel que vira indisponível
+//   por sair da Loft também sai da lista de destaques.
 // - Feed truncado: se menos de 80% dos importados como publicados aparecem na rodada, aborta antes de gravar
 //   (a menos que `forcar`).
 //
 // Apagar só alvos identificados: imóveis pelo id, fotos pelos ids (e só as sem vínculo).
-import { and, asc, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
+import { asc, eq, inArray } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { assinaturaConfere, type ArmazenamentoFotos } from "../../src/lib/armazenamento";
 import type { Db } from "../../src/lib/dados/criar-conexao";
-import { fotos as tabFotos, imovelFotos, imoveis, importacaoLoft } from "../../src/lib/dados/esquema";
-import { carregarImovel } from "../../src/lib/dados/consultas";
-import { completo } from "../../src/lib/imoveis/catalogo";
-import { configuracao, descartarFotos, gravarConfiguracao, proximoCodigo } from "../../src/lib/painel/imoveis";
+import { destaquesHome, fotos as tabFotos, imovelFotos, imoveis, importacaoLoft } from "../../src/lib/dados/esquema";
+import { descartarFotos, proximoCodigo } from "../../src/lib/painel/imoveis";
 import { LIMITES, TIPOS_FOTO, validarImovel, type EntradaImovel } from "../../src/lib/painel/regras";
 import { EXEMPLOS, sementeImoveis } from "../semente-imoveis";
 import type { ImovelLoft } from "./mapear";
@@ -44,7 +42,6 @@ export type Relatorio = {
   fotosFalhas: { referencia: string; url: string; erro: string }[];
   avisos: { referencia: string; aviso: string }[];
   exemplosRemovidos: string[];
-  oportunidade: string | null;
 };
 
 export type Progresso = {
@@ -227,7 +224,7 @@ async function removerExemplos(db: Db, o: OpcoesLoft, r: Relatorio): Promise<voi
     const [controlado] = await db.select().from(importacaoLoft).where(eq(importacaoLoft.imovelId, id)).limit(1);
     if (controlado) continue;
     const fotoIds = await idsDasFotos(db, id);
-    // `imovel_fotos` sai em cascata; a Oportunidade (FK set null) é reatribuída no fim.
+    // `imovel_fotos` e o destaque (se houver) saem em cascata.
     await db.delete(imoveis).where(eq(imoveis.id, id));
     await descartarFotos(db, fotoIds, o.armazenamento);
     r.exemplosRemovidos.push(id);
@@ -240,7 +237,7 @@ export async function importarLoft(db: Db, lista: ImovelLoft[], o: OpcoesLoft): 
   const agora = o.agora ?? new Date();
   const r: Relatorio = {
     criados: [], atualizados: [], camposPreservados: [], indisponibilizados: [], ausentesRascunho: [], excluidosNoPainel: [],
-    fotosBaixadas: 0, fotosFalhas: [], avisos: [], exemplosRemovidos: [], oportunidade: null,
+    fotosBaixadas: 0, fotosFalhas: [], avisos: [], exemplosRemovidos: [],
   };
   const aviso = (referencia: string, texto: string) => r.avisos.push({ referencia, aviso: texto });
 
@@ -391,7 +388,6 @@ export async function importarLoft(db: Db, lista: ImovelLoft[], o: OpcoesLoft): 
     await progresso(ref, resultado.mudou ? "atualizado" : resultado.preservados.length ? "preservado" : "sem mudança", resultado.codigo, fotosInfo);
   }
 
-  const saiuDoAr = new Set<string>();
   // Sumiu da rodada: indisponível, se foi importado publicado e ninguém mexeu nele desde então.
   for (const c of controle.values()) {
     if (vistos.has(c.referencia) || !c.imovelId) continue;
@@ -410,42 +406,12 @@ export async function importarLoft(db: Db, lista: ImovelLoft[], o: OpcoesLoft): 
       await tx.update(imoveis).set({ situacao: "indisponivel", alteradoEm: agora, alteradoPorId: o.responsavelId }).where(eq(imoveis.id, imovelId));
       // O snapshot acompanha: se voltar ao feed, a situação volta a seguir a Loft.
       await tx.update(importacaoLoft).set({ valores: { ...anterior, situacao: "indisponivel" }, importadoEm: agora }).where(eq(importacaoLoft.referencia, c.referencia));
+      await tx.delete(destaquesHome).where(eq(destaquesHome.imovelId, imovelId));
       return "indisponivel" as const;
     });
-    if (resultado === "indisponivel") {
-      r.indisponibilizados.push(c.referencia);
-      saiuDoAr.add(imovelId);
-    }
+    if (resultado === "indisponivel") r.indisponibilizados.push(c.referencia);
     if (resultado === "editado") aviso(c.referencia, "Saiu da Loft, mas foi editado no painel: a situação foi mantida.");
   }
 
-  // Oportunidade: só mexe sozinha na primeira rodada ou se a atual era um importado que acabou de sair
-  // do ar. Nos demais casos respeita o ADMIN (que pode ter esvaziado ou trocado) e não apaga o aviso do painel.
-  // Escolha: o publicado completo (mesma regra de `oportunidadeDeHoje`) à venda de maior valor, com foto.
-  const cfg = await configuracao(db);
-  const op = cfg.oportunidadeId ? await carregarImovel(db, cfg.oportunidadeId) : null;
-  const reatribuir = primeiraRodada || (cfg.oportunidadeId !== null && saiuDoAr.has(cfg.oportunidadeId));
-  if (reatribuir && (!op || op.situacao !== "publicado" || !completo(op))) {
-    const [melhor] = await db
-      .select({ id: imoveis.id })
-      .from(imoveis)
-      .where(
-        and(
-          eq(imoveis.situacao, "publicado"),
-          // Os campos de `completo` (catalogo.ts): finalidade, tipo, valor e área.
-          eq(imoveis.finalidade, "venda"),
-          isNotNull(imoveis.tipo),
-          isNotNull(imoveis.valor),
-          isNotNull(imoveis.area),
-          sql`exists (select 1 from imovel_fotos where imovel_fotos.imovel_id = ${imoveis.id})`,
-        ),
-      )
-      .orderBy(desc(imoveis.valor), asc(imoveis.codigo))
-      .limit(1);
-    if (melhor) {
-      await gravarConfiguracao(db, melhor.id, null);
-      r.oportunidade = melhor.id;
-    }
-  }
   return r;
 }
