@@ -102,4 +102,23 @@ describe("destaques da página inicial", () => {
     expect(await ids()).toEqual(["cz1006"]);
     expect((await destaquesHome(amb.db)).map((i) => i.id)).toEqual(["cz1006"]);
   });
+
+  test("salvar de novo um destaque que já está na lista não apaga o aviso de outro que saiu", async () => {
+    await marcar("cz1005", "cz1009");
+    await marcarDestaque(amb.admin, "cz1009", false, amb.db);
+    const entrada = (await obterParaEdicao(amb.admin, "cz1005", amb.db))!.entrada;
+    await salvarImovel(amb.admin, "cz1005", { ...entrada, destaque: true, titulo: "Novo título" }, "salvar", new Date(), amb.db);
+    const { itens, aviso } = await listarDestaques(amb.admin, amb.db);
+    expect(itens.map((i) => i.id)).toEqual(["cz1005"]);
+    expect(aviso?.aviso).toMatchObject({ motivo: "desmarcado", codigo: "CZ1009" });
+  });
+
+  test("publicado mas incompleto não conta como naHome, igual à Home (o seguinte ocupa a vaga)", async () => {
+    const sete = ["cz1005", "cz1006", "cz1007", "cz1008", "cz1015", "cz1016", "cz1017"];
+    await marcar(...sete);
+    await amb.db.update(imoveis).set({ area: null }).where(eq(imoveis.id, "cz1005"));
+    const { itens } = await listarDestaques(amb.admin, amb.db);
+    expect(itens.map((i) => i.naHome)).toEqual([false, true, true, true, true, true, true]);
+    expect(itens.filter((i) => i.naHome).map((i) => i.id)).toEqual((await destaquesHome(amb.db)).map((i) => i.id));
+  });
 });

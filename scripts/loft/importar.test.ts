@@ -313,6 +313,15 @@ describe("importarLoft", () => {
     expect(await porRef("906")).toMatchObject({ situacao: "rascunho", publicadoEm: null });
   });
 
+  test("publicado passa a rascunho pelo feed (pendentes): sai dos destaques", async () => {
+    await importarLoft(amb.db, lista(), opcoes());
+    const id = (await porRef("901")).id;
+    await amb.db.insert(destaquesHome).values({ imovelId: id, ordem: 1 });
+    await importarLoft(amb.db, mudar(lista(), "901", (i) => (i.situacao = "rascunho")), opcoes());
+    expect((await porRef("901")).situacao).toBe("rascunho");
+    expect(await destaques()).toEqual([]);
+  });
+
   test("campo sem entrada no snapshot: adota o do feed se a coluna está vazia; senão preserva", async () => {
     await importarLoft(amb.db, lista(), opcoes());
     for (const [ref, campo] of [["901", "andar"], ["903", "quartos"]] as const) {

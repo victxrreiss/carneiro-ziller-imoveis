@@ -21,7 +21,8 @@ import { asc, eq, inArray } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import { assinaturaConfere, type ArmazenamentoFotos } from "../../src/lib/armazenamento";
 import type { Db } from "../../src/lib/dados/criar-conexao";
-import { destaquesHome, fotos as tabFotos, imovelFotos, imoveis, importacaoLoft } from "../../src/lib/dados/esquema";
+import { fotos as tabFotos, imovelFotos, imoveis, importacaoLoft } from "../../src/lib/dados/esquema";
+import { sairDosDestaques } from "../../src/lib/painel/destaques";
 import { descartarFotos, proximoCodigo } from "../../src/lib/painel/imoveis";
 import { LIMITES, TIPOS_FOTO, validarImovel, type EntradaImovel } from "../../src/lib/painel/regras";
 import { EXEMPLOS, sementeImoveis } from "../semente-imoveis";
@@ -372,6 +373,8 @@ export async function importarLoft(db: Db, lista: ImovelLoft[], o: OpcoesLoft): 
           .update(imoveis)
           .set({ ...mudar, alteradoEm: agora, alteradoPorId: o.responsavelId, ...(primeiraPublicacao ? { publicadoEm: agora } : {}) })
           .where(eq(imoveis.id, imovelId));
+        // Saiu de publicado pelo feed (pendente/rascunho): sai também dos destaques da página inicial.
+        if (mudar.situacao !== undefined && mudar.situacao !== "publicado") await sairDosDestaques(tx, imovelId);
       }
       await tx.update(importacaoLoft).set({ valores: snapshot, fotosOrigem, fotoIds, importadoEm: agora }).where(eq(importacaoLoft.referencia, ref));
       return { mudou, preservados, codigo: atual.codigo };
@@ -406,7 +409,7 @@ export async function importarLoft(db: Db, lista: ImovelLoft[], o: OpcoesLoft): 
       await tx.update(imoveis).set({ situacao: "indisponivel", alteradoEm: agora, alteradoPorId: o.responsavelId }).where(eq(imoveis.id, imovelId));
       // O snapshot acompanha: se voltar ao feed, a situação volta a seguir a Loft.
       await tx.update(importacaoLoft).set({ valores: { ...anterior, situacao: "indisponivel" }, importadoEm: agora }).where(eq(importacaoLoft.referencia, c.referencia));
-      await tx.delete(destaquesHome).where(eq(destaquesHome.imovelId, imovelId));
+      await sairDosDestaques(tx, imovelId);
       return "indisponivel" as const;
     });
     if (resultado === "indisponivel") r.indisponibilizados.push(c.referencia);

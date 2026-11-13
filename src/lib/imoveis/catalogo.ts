@@ -7,7 +7,6 @@ import { conexao, type Db } from "@/lib/dados/conexao";
 import { carregarImovel, carregarImoveis } from "@/lib/dados/consultas";
 import { destaquesHome as tabDestaques, imoveis } from "@/lib/dados/esquema";
 import type { RegistroImovel } from "@/lib/dados/tipos";
-import { MAX_DESTAQUES_HOME } from "@/lib/painel/destaques";
 import { FAIXAS_AREA, TIPOS, combinaFinalidade, faixasPreco, type Faixa, type FinalidadeFiltro, type Filtros } from "./filtros";
 import { formatarArea, formatarPreco, formatarQuartos, rotuloEtiqueta } from "./formato";
 import { rotuloCaracteristica } from "./caracteristicas";
@@ -17,6 +16,8 @@ import type { Imovel, ImovelCard, ImovelResumo, PaginaImoveis, Regiao, Resultado
 export const POR_PAGINA = 24;
 /** Cards por seção automática da Home. */
 export const CARDS_HOME = 4;
+/** Quantos destaques a página inicial mostra; os demais esperam na lista do painel. */
+export const MAX_DESTAQUES_HOME = 6;
 
 const normalizar = (s: string) =>
   s

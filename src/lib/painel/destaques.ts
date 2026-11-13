@@ -7,10 +7,10 @@ import { conexao, type Db } from "@/lib/dados/conexao";
 import { carregarImoveis } from "@/lib/dados/consultas";
 import { configuracaoSite, destaquesHome, imoveis, usuarios } from "@/lib/dados/esquema";
 import type { AvisoDestaque } from "@/lib/dados/tipos";
+import { completo, MAX_DESTAQUES_HOME } from "@/lib/imoveis/catalogo";
 import { ehAdmin, type UsuarioLogado } from "./regras";
 
-/** Quantos destaques a página inicial mostra; os demais esperam na lista. */
-export const MAX_DESTAQUES_HOME = 6;
+export { MAX_DESTAQUES_HOME };
 
 export type LinhaDestaque = { id: string; codigo: string; titulo: string; capa: string | null; naHome: boolean };
 export type AvisoParaAdmin = { aviso: AvisoDestaque; porNome: string; foiVoce: boolean };
@@ -25,11 +25,16 @@ export async function gravarAviso(db: Db, aviso: AvisoDestaque | null) {
   await db.insert(configuracaoSite).values({ id: 1, aviso }).onConflictDoUpdate({ target: configuracaoSite.id, set: { aviso } });
 }
 
-/** Põe o imóvel no fim da lista (se ainda não estiver) e apaga o aviso. */
+/** Põe o imóvel no fim da lista. Só se ele entrou de fato (não estava) o aviso é apagado: salvar de novo um destaque não mexe nele. */
 export async function marcarNoFim(db: Db, imovelId: string) {
   const [{ proxima }] = await db.select({ proxima: sql<number>`coalesce(max(${destaquesHome.ordem}), 0) + 1` }).from(destaquesHome);
-  await db.insert(destaquesHome).values({ imovelId, ordem: proxima }).onConflictDoNothing();
-  await gravarAviso(db, null);
+  const entrou = await db.insert(destaquesHome).values({ imovelId, ordem: proxima }).onConflictDoNothing().returning({ id: destaquesHome.imovelId });
+  if (entrou.length) await gravarAviso(db, null);
+}
+
+/** Sem aviso: para quem tira o imóvel de publicado sem ser uma ação de pessoa (a importação da Loft). */
+export async function sairDosDestaques(db: Db, imovelId: string) {
+  await db.delete(destaquesHome).where(eq(destaquesHome.imovelId, imovelId));
 }
 
 /** Tira o imóvel da lista e grava o aviso. Devolve `false` se ele não era destaque (nada muda). */
@@ -40,7 +45,7 @@ export async function tirarDosDestaques(db: Db, imovelId: string, aviso: AvisoDe
   return true;
 }
 
-/** Destaques que valem hoje (imóvel publicado), na ordem escolhida. */
+/** Destaques de imóveis publicados, na ordem escolhida. */
 async function ordenados(db: Db) {
   const linhas = await db
     .select({ id: destaquesHome.imovelId, ordem: destaquesHome.ordem })
@@ -58,9 +63,14 @@ export async function listarDestaques(
   if (!ehAdmin(u)) return { itens: [], aviso: null };
   const ordem = await ordenados(db);
   const registros = ordem.length ? new Map((await carregarImoveis(db, inArray(imoveis.id, ordem.map((o) => o.id)))).map((r) => [r.id, r])) : new Map();
-  const itens = ordem.flatMap((o, i) => {
+  // Mesma regra de `destaquesHome` (catálogo): só imóvel completo conta, e os 6 primeiros deles vão para a Home.
+  let naHomeAteAgora = 0;
+  const itens = ordem.flatMap((o) => {
     const r = registros.get(o.id);
-    return r ? [{ id: r.id, codigo: r.codigo, titulo: r.titulo, capa: r.fotos[0]?.src ?? null, naHome: i < MAX_DESTAQUES_HOME }] : [];
+    if (!r) return [];
+    const naHome = completo(r) && naHomeAteAgora < MAX_DESTAQUES_HOME;
+    if (naHome) naHomeAteAgora++;
+    return [{ id: r.id, codigo: r.codigo, titulo: r.titulo, capa: r.fotos[0]?.src ?? null, naHome }];
   });
   const aviso = await lerAviso(db);
   let porNome = "—";
