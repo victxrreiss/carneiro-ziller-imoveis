@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ListaDestaques } from "@/components/painel/destaques/ListaDestaques";
 import { SemPermissao } from "@/components/painel/SemPermissao";
 import { dataAsHora } from "@/lib/painel/datas";
-import { listarDestaques } from "@/lib/painel/destaques";
+import { listarDestaques, MAX_DESTAQUES_HOME } from "@/lib/painel/destaques";
 import { exigirUsuario } from "@/lib/painel/sessao";
 import { painel } from "@/lib/routes";
 
@@ -24,5 +24,5 @@ export default async function PaginaInicialPage() {
   const textoAviso = aviso
     ? `${aviso.foiVoce ? "Você" : aviso.porNome} ${MOTIVO[aviso.aviso.motivo](`${aviso.aviso.codigo} · ${aviso.aviso.titulo}`)} em ${dataAsHora(aviso.aviso.em)}.`
     : null;
-  return <ListaDestaques itens={itens} aviso={textoAviso} />;
+  return <ListaDestaques itens={itens} aviso={textoAviso} max={MAX_DESTAQUES_HOME} />;
 }

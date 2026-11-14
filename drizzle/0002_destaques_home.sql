@@ -4,7 +4,7 @@ CREATE TABLE "destaques_home" (
 	"marcado_em" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "configuracao_site" DROP CONSTRAINT "configuracao_site_oportunidade_id_imoveis_id_fk";
---> statement-breakpoint
 ALTER TABLE "destaques_home" ADD CONSTRAINT "destaques_home_imovel_id_imoveis_id_fk" FOREIGN KEY ("imovel_id") REFERENCES "public"."imoveis"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "configuracao_site" DROP COLUMN "oportunidade_id";
+-- O aviso antigo era o da Oportunidade de hoje (outro formato): a tela de destaques não deve mostrá-lo.
+-- A coluna oportunidade_id fica (expand/contract): o container anterior ainda a lê durante o deploy.
+UPDATE "configuracao_site" SET "aviso" = NULL;

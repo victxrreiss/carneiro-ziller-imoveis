@@ -11,9 +11,8 @@ import type { LinhaDestaque } from "@/lib/painel/destaques";
 import { painel } from "@/lib/routes";
 import { IcEstrela } from "../Icones";
 
-const MAX = 6;
-
-export function ListaDestaques({ itens, aviso }: { itens: LinhaDestaque[]; aviso: string | null }) {
+/** `max`: quantos a Home mostra (`MAX_DESTAQUES_HOME`, passado pela página). */
+export function ListaDestaques({ itens, aviso, max }: { itens: LinhaDestaque[]; aviso: string | null; max: number }) {
   const router = useRouter();
   const [pendente, iniciar] = useTransition();
   const [falha, setFalha] = useState(false);
@@ -68,7 +67,7 @@ export function ListaDestaques({ itens, aviso }: { itens: LinhaDestaque[]; aviso
       <div className="pn-head">
         <div className="pn-head-txt">
           <h1 className="pn-title">Página inicial</h1>
-          <p className="pn-sub">Os imóveis em destaque, na ordem em que aparecem no site. A Home mostra os {MAX} primeiros.</p>
+          <p className="pn-sub">Os imóveis em destaque, na ordem em que aparecem no site. A Home mostra os {max} primeiros.</p>
         </div>
       </div>
 
@@ -123,7 +122,7 @@ export function ListaDestaques({ itens, aviso }: { itens: LinhaDestaque[]; aviso
               <h2 id="pn-dest-fora" className="pn-dest-h">
                 Ficam de fora ({fora.length})
               </h2>
-              <p className="pn-hint">A página inicial mostra só {MAX}. Estes entram se algum dos de cima sair.</p>
+              <p className="pn-hint">A página inicial mostra só {max}. Estes entram se algum dos de cima sair.</p>
               <ol className="pn-dest-lista">
                 {fora.map(linha)}
               </ol>

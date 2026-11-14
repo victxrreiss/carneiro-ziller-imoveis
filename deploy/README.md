@@ -41,6 +41,13 @@ O script:
 
 A VPS não compila nada (2 vCPU divididos entre os clientes).
 
+As migrations rodam antes de o container novo subir, então o container antigo continua no ar com o banco já migrado: uma migration só acrescenta; tirar coluna ou tabela fica para uma versão seguinte (expand/contract).
+
+### Depois do deploy da Prioridade 2 (destaques da página inicial)
+
+- **O ADMIN marca os destaques em Painel → Página inicial.** A seção "Imóveis em destaque" da Home some enquanto a lista estiver vazia; marque 3 ou 6 imóveis publicados, para fechar a grade (a Home mostra no máximo 6).
+- **A coluna `configuracao_site.oportunidade_id` é obsoleta** (era a "Oportunidade de hoje"): nenhum código a usa, e ela só ficou para o container anterior não cair durante o deploy. Sai numa versão futura, com uma migration de `DROP COLUMN`, depois que esta versão estiver no ar.
+
 Outros comandos, também pelo túnel:
 
 ```bash

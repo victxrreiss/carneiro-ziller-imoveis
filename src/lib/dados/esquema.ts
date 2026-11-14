@@ -190,6 +190,12 @@ export const configuracaoSite = pgTable(
   "configuracao_site",
   {
     id: integer("id").primaryKey().default(1),
+    /**
+     * OBSOLETA (era a "Oportunidade de hoje"): nenhum código lê nem grava. Fica no esquema só para o
+     * container da versão anterior continuar funcionando durante o deploy (expand/contract). Sai
+     * numa migração futura, com um DROP, quando nenhum container antigo puder mais rodar.
+     */
+    oportunidadeId: text("oportunidade_id").references(() => imoveis.id, { onDelete: "set null" }),
     aviso: jsonb("aviso").$type<AvisoDestaque>(),
   },
   (t) => [check("configuracao_site_unica", sql`${t.id} = 1`)],

@@ -17,7 +17,7 @@ export type AvisoParaAdmin = { aviso: AvisoDestaque; porNome: string; foiVoce: b
 export type ResultadoDestaque = { ok: true } | { ok: false; erro: "permissao" | "nao-publicado" | "inexistente" };
 
 export async function lerAviso(db: Db): Promise<AvisoDestaque | null> {
-  const [c] = await db.select().from(configuracaoSite).where(eq(configuracaoSite.id, 1)).limit(1);
+  const [c] = await db.select({ aviso: configuracaoSite.aviso }).from(configuracaoSite).where(eq(configuracaoSite.id, 1)).limit(1);
   return c?.aviso ?? null;
 }
 

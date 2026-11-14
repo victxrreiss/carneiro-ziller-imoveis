@@ -1,5 +1,5 @@
 {
-  "id": "2754a11d-87b5-43b5-89ac-10e2db158636",
+  "id": "aa6a1d05-84f4-49e2-84ec-611f00d61b77",
   "prevId": "a5fdd723-af7e-4ae6-9a1b-8cb11ce35485",
   "version": "7",
   "dialect": "postgresql",
@@ -15,6 +15,12 @@
           "notNull": true,
           "default": 1
         },
+        "oportunidade_id": {
+          "name": "oportunidade_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "aviso": {
           "name": "aviso",
           "type": "jsonb",
@@ -23,7 +29,21 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "configuracao_site_oportunidade_id_imoveis_id_fk": {
+          "name": "configuracao_site_oportunidade_id_imoveis_id_fk",
+          "tableFrom": "configuracao_site",
+          "tableTo": "imoveis",
+          "columnsFrom": [
+            "oportunidade_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
