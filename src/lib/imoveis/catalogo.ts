@@ -2,7 +2,7 @@
 // indisponíveis existem apenas para a página com o aviso. Sem cache: ./index.ts
 // as expõe com "use cache" para as páginas. O último parâmetro é o banco
 // (padrão: conexão do app; os testes passam um PGlite).
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, ne } from "drizzle-orm";
 import { conexao, type Db } from "@/lib/dados/conexao";
 import { carregarImovel, carregarImoveis } from "@/lib/dados/consultas";
 import { destaquesHome as tabDestaques, imoveis } from "@/lib/dados/esquema";
@@ -249,7 +249,10 @@ export async function semelhantes(id: string, db: Db = conexao()): Promise<Imove
   const distancia = (r: Completo) => (valor === null ? 0 : Math.abs(r.valor - valor));
   const porProximidade = (a: Completo, b: Completo) => distancia(a) - distancia(b) || a.codigo.localeCompare(b.codigo);
 
-  const candidatos = (await publicados(db)).filter((r) => r.id !== id && r.tipo === tipo && r.finalidade === finalidade);
+  // Só os candidatos saem do banco (com as fotos), não o catálogo inteiro.
+  const candidatos = (
+    await carregarImoveis(db, and(eq(imoveis.situacao, "publicado"), eq(imoveis.tipo, tipo), eq(imoveis.finalidade, finalidade), ne(imoveis.id, id)))
+  ).filter(completo);
   const mesmaCidade = (r: Completo) => normalizar(r.cidade) === normalizar(base.cidade);
   const naFaixa = (r: Completo) => valor === null || Math.abs(r.valor - valor) <= valor * FAIXA_SEMELHANTE;
 

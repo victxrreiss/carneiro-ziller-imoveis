@@ -1,5 +1,6 @@
 import { eq, inArray } from "drizzle-orm";
-import { beforeAll, beforeEach, describe, expect, test } from "vitest";
+import { beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
+import { carregarImoveis } from "@/lib/dados/consultas";
 import { imoveis } from "@/lib/dados/esquema";
 import { criarAmbiente, type Ambiente } from "@/lib/dados/testes";
 import {
@@ -15,6 +16,12 @@ import {
   validarLocal,
 } from "./catalogo";
 import type { FinalidadeFiltro, Filtros } from "./filtros";
+
+// A leitura de imóveis continua a real; o espião só conta o que cada consulta trouxe do banco.
+vi.mock("@/lib/dados/consultas", async (original) => {
+  const real = await original<typeof import("@/lib/dados/consultas")>();
+  return { ...real, carregarImoveis: vi.fn(real.carregarImoveis) };
+});
 
 let amb: Ambiente;
 beforeAll(async () => {
@@ -421,6 +428,18 @@ describe("semelhantes", () => {
     // Sem valor o imóvel não é "completo" (não é candidato), mas continua sendo ponto de partida.
     await mudar("cz1001", { valor: null });
     expect(codigos(await semelhantes("cz1001"))).toEqual(["cz1002", "cz1004", "cz1003"]);
+  });
+
+  test("lê do banco só os candidatos (publicados do mesmo tipo e finalidade), não o catálogo inteiro", async () => {
+    // A semente inteira publicada: 34 imóveis de vários tipos e finalidades.
+    const espiao = vi.mocked(carregarImoveis);
+    espiao.mockClear();
+    const r = await semelhantes("cz1009"); // Apartamento à venda
+    expect(r.length).toBeGreaterThan(0);
+    const lidos = (await Promise.all(espiao.mock.results.map((x) => x.value))).flat();
+    expect(lidos.length).toBeGreaterThan(0);
+    expect(lidos.length).toBeLessThan(34);
+    for (const i of lidos) expect([i.situacao, i.tipo, i.finalidade, i.id === "cz1009"]).toEqual(["publicado", "Apartamento", "venda", false]);
   });
 
   test("de imóvel de locação só traz locação", async () => {
