@@ -66,7 +66,8 @@ test.describe("navegação entre as telas", () => {
     await page.goto("/");
     await page.getByLabel("Cidade").selectOption("Nova Lima");
     await page.getByRole("button", { name: "Buscar" }).click();
-    await page.waitForURL(/\/imoveis\?/);
+    // Antes ou depois da hidratação, a cidade escolhida vai na URL.
+    await page.waitForURL(/\/imoveis\?.*local=Nova\+Lima/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Imóveis");
     await expect(page.getByRole("navigation", { name: "Finalidade" }).getByRole("link", { name: "Comprar" })).toHaveAttribute("aria-current", "true");
     await expect(grade(page).getByLabel("Cidade")).toHaveValue("Nova Lima");

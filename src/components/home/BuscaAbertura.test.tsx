@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ComponentProps } from "react";
 import { renderToString } from "react-dom/server";
@@ -12,6 +12,9 @@ vi.mock("next/form", () => ({
   default: (props: ComponentProps<"form">) => <form {...props} />,
 }));
 
+const push = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+
 const tipos = ["Apartamento", "Cobertura", "Casa em condomínio"];
 const locais = [
   { cidade: "Belo Horizonte", bairros: ["Belvedere", "Lourdes"] },
@@ -22,9 +25,14 @@ function busca(temLancamentos = true) {
   return render(<BuscaAbertura temLancamentos={temLancamentos} tipos={tipos} locais={locais} />);
 }
 
+/** Toca em Buscar e devolve os parâmetros da URL para onde a busca navegou. */
 function enviado() {
-  const form = screen.getByRole("search") as HTMLFormElement;
-  return Object.fromEntries(new FormData(form));
+  push.mockClear();
+  fireEvent.click(screen.getByRole("button", { name: "Buscar" }));
+  expect(push).toHaveBeenCalledTimes(1);
+  const url = new URL(push.mock.calls[0][0], "http://localhost");
+  expect(url.pathname).toBe("/imoveis");
+  return Object.fromEntries(url.searchParams);
 }
 
 describe("BuscaAbertura", () => {
@@ -71,6 +79,22 @@ describe("BuscaAbertura", () => {
     await userEvent.selectOptions(screen.getByLabelText("Cidade"), "Nova Lima");
     expect(enviado().local).toBe("Nova Lima");
     expect(bairro.value).toBe("");
+  });
+
+  test("escolha que só chegou ao DOM (antes da hidratação) continua indo na busca", () => {
+    busca();
+    const select = (rotulo: string) => screen.getByLabelText(rotulo) as HTMLSelectElement;
+    // Depois da hidratação nenhum select perde o name: é o DOM que vai na URL, não o estado.
+    expect(screen.getAllByRole("combobox").map((s) => s.getAttribute("name"))).toEqual(["tipo", "local", "local", "quartos"]);
+    // Valor posto direto no DOM, sem evento de change (o React não fica sabendo).
+    select("Tipo de imóvel").value = "Cobertura";
+    select("Cidade").value = "Nova Lima";
+    select("Quartos").value = "3";
+    expect(enviado()).toEqual({ finalidade: "comprar", tipo: "Cobertura", local: "Nova Lima", quartos: "3" });
+
+    // Bairro também só no DOM: vale o bairro, que já leva a cidade.
+    select("Bairro").value = "Vila da Serra, Nova Lima";
+    expect(enviado()).toEqual({ finalidade: "comprar", tipo: "Cobertura", local: "Vila da Serra, Nova Lima", quartos: "3" });
   });
 
   test("Filtros avançados leva a /imoveis com o painel aberto", () => {
