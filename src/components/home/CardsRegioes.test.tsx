@@ -53,8 +53,4 @@ describe("CardsRegioes", () => {
     regioes.mockResolvedValue([]);
     expect(await CardsRegioes()).toBeNull();
   });
-
-  test("cada região tem uma foto diferente", () => {
-    expect(new Set(REGIOES.map((r) => r.img)).size).toBe(REGIOES.length);
-  });
 });

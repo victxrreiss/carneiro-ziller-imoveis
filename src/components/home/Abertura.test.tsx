@@ -30,6 +30,31 @@ describe("Abertura", () => {
     expect(doc.querySelector("video")).toBeNull();
   });
 
+  test("o h1 é só a primeira frase; as que alternam ficam fora dele, escondidas dos leitores de tela", () => {
+    const html = renderToString(<Abertura>busca</Abertura>);
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const h1s = doc.querySelectorAll("h1");
+    expect(h1s).toHaveLength(1);
+    expect(texto(h1s[0])).toBe("Morar bem começa pela escolha do endereço.");
+    expect(h1s[0].hasAttribute("aria-hidden")).toBe(false);
+    const frases = [...doc.querySelectorAll("[data-abertura-frase]")];
+    expect(frases).toHaveLength(4);
+    for (const f of frases.slice(1)) {
+      expect(f.closest("h1")).toBeNull();
+      expect(f.getAttribute("aria-hidden")).toBe("true");
+    }
+  });
+
+  test("com a troca de frase, o h1 continua o mesmo e acessível", () => {
+    movimentoReduzido(false);
+    vi.useFakeTimers();
+    const { container, getByRole } = render(<Abertura>busca</Abertura>);
+    act(() => void vi.advanceTimersByTime(6000));
+    expect(ativas(container, "[data-abertura-frase]")).toEqual(["false", "true", "false", "false"]);
+    expect(texto(getByRole("heading", { level: 1 }))).toBe("Morar bem começa pela escolha do endereço.");
+    expect(container.querySelector("h1")!.hasAttribute("aria-hidden")).toBe(false);
+  });
+
   test("Rolar para baixo aponta para a âncora do conteúdo, que existe mesmo sem cards de tipo", () => {
     movimentoReduzido(true);
     const { getByRole } = render(<Abertura>busca</Abertura>);

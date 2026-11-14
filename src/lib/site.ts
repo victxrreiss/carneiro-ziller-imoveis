@@ -46,7 +46,7 @@ export const abertura: {
   imagens: [
     { src: "/images/imoveis/a1843e848f2e8288905697ba4fc1dc0a.jpg", alt: "Casa envidraçada com piscina ao entardecer, com a serra ao fundo" },
     { src: "/images/venda-vila-da-serra.jpg", alt: "Varanda de madeira aberta para o jardim e a piscina, à noite" },
-    { src: "/images/imoveis/5e5a1046b6796c80c7e2af56ae2db8e0.jpg", alt: "Sala de estar com janelas do piso ao teto e vista para a cidade" },
+    { src: "/images/imoveis/f40a059ac95c00760f5ea57662eb9888.jpg", alt: "Duas torres residenciais entre jardins, sob céu azul" },
   ],
   frases: [
     "Morar bem começa\npela escolha do endereço.",

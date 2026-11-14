@@ -7,12 +7,13 @@ import { CabecalhoSecao, CardCategoria, linkSeta, moldura } from "./partes";
 /** No máximo 4 cards, nesta ordem; "Terrenos" só entra quando algum dos outros não tem imóvel. */
 const MAX_CARDS = 4;
 
-const CARDS: readonly { tipo: string; legenda: string; img: string }[] = [
-  { tipo: "Apartamento", legenda: "Belo Horizonte · Nova Lima", img: "/images/destaque-belvedere.jpg" },
-  { tipo: "Cobertura", legenda: "Vista e terraço", img: "/images/imoveis/fb93739e7184d00c58fed8564f56afa2.jpg" },
+/** Cada card com uma foto que não se repete na Home (fotos-home.test.ts). */
+export const CARDS: readonly { tipo: string; legenda: string; img: string }[] = [
+  { tipo: "Apartamento", legenda: "Belo Horizonte · Nova Lima", img: "/images/imoveis/83078fec9317d4739d499615a6faacfb.jpg" },
+  { tipo: "Cobertura", legenda: "Vista e terraço", img: "/images/imoveis/5e5a1046b6796c80c7e2af56ae2db8e0.jpg" },
   { tipo: "Casa em condomínio", legenda: "Nova Lima", img: "/images/venda-residencial-das-minas.jpg" },
   { tipo: "Casa", legenda: "Belo Horizonte", img: "/images/venda-cidade-jardim.jpg" },
-  { tipo: "Terreno", legenda: "Para construir", img: "/images/regiao-lagoa-dos-ingleses.jpg" },
+  { tipo: "Terreno", legenda: "Para construir", img: "/images/hero-predio.png" },
 ];
 
 const colunas: Record<number, string> = {

@@ -9,7 +9,7 @@ export type Regiao = {
   nome: string;
   /** Linha pequena do card (cidades). */
   legenda: string;
-  /** Foto do card da Home; cada região tem a sua (nenhuma repetida). */
+  /** Foto do card da Home; nenhuma foto se repete na Home (fotos-home.test.ts). */
   img: string;
   bairros: readonly { bairro: string; cidade: string }[];
   /** Card grande da Home. */
@@ -21,7 +21,7 @@ export const REGIOES: readonly Regiao[] = [
     slug: "belvedere-vila-da-serra",
     nome: "Belvedere e Vila da Serra",
     legenda: "BELO HORIZONTE · NOVA LIMA",
-    img: "/images/imoveis/5e5a1046b6796c80c7e2af56ae2db8e0.jpg",
+    img: "/images/imoveis/d4db06613b4c066d84abe7cfea7b132b.jpg",
     bairros: [
       { bairro: "Belvedere", cidade: "Belo Horizonte" },
       // Grafia do feed da Loft: Belvedere cadastrado em Nova Lima.
@@ -62,7 +62,7 @@ export const REGIOES: readonly Regiao[] = [
     slug: "vale-do-sereno",
     nome: "Vale do Sereno",
     legenda: "NOVA LIMA",
-    img: "/images/imoveis/a1843e848f2e8288905697ba4fc1dc0a.jpg",
+    img: "/images/imoveis/9e9687278cf5c0bc894a25af3ad26b27.jpg",
     bairros: [{ bairro: "Vale do Sereno", cidade: "Nova Lima" }],
   },
 ];

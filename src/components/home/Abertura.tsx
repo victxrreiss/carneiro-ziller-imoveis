@@ -14,7 +14,7 @@ const TROCA_MS = 6000;
  * Abertura em tela cheia: imagens alternando com zoom lento (ou o vídeo de `site.ts`), véu
  * azul-noite, frases alternando e, embaixo, a busca (`children`). O HTML do servidor já traz a
  * primeira imagem e a primeira frase ativas; a troca só começa no cliente e não acontece com
- * `prefers-reduced-motion`.
+ * `prefers-reduced-motion`. O h1 é sempre a primeira frase; as outras são decoração.
  */
 export function Abertura({ config = abertura, children }: { config?: Config; children: ReactNode }) {
   const [passo, setPasso] = useState(0);
@@ -73,17 +73,20 @@ export function Abertura({ config = abertura, children }: { config?: Config; chi
       <div className={`${moldura} relative z-2 flex flex-col gap-7.5 pt-27.5 pb-[clamp(56px,8vh,84px)] min-[900px]:gap-[clamp(34px,5vh,64px)] min-[900px]:pt-35`}>
         <div className="flex max-w-215 flex-col gap-5.5">
           <Rotulo escuro>Belo Horizonte · Nova Lima</Rotulo>
-          <h1 className="m-0 grid font-display text-[clamp(36px,10.5vw,54px)] leading-[1.02] font-light tracking-[-0.015em] min-[900px]:text-[clamp(40px,6.2vw,92px)]">
+          {/* O h1 é só a primeira frase, estável para leitores de tela e buscadores; as outras se
+              alternam por cima dela, na mesma célula da grade, como decoração (aria-hidden). */}
+          <div className="grid font-display text-[clamp(36px,10.5vw,54px)] leading-[1.02] font-light tracking-[-0.015em] min-[900px]:text-[clamp(40px,6.2vw,92px)]">
             {frases.map((frase, k) => {
               const ativa = k === passo % frases.length;
               const [primeira, segunda] = frase.split("\n");
+              const Tag = k === 0 ? "h1" : "span";
               return (
-                <span
+                <Tag
                   key={frase}
-                  aria-hidden={!ativa}
+                  aria-hidden={k === 0 ? undefined : true}
                   data-abertura-frase=""
                   data-ativa={ativa}
-                  className="col-start-1 row-start-1 translate-y-3.5 opacity-0 transition-[opacity,translate] duration-1200 ease-[ease] data-[ativa=true]:translate-y-0 data-[ativa=true]:opacity-100"
+                  className="col-start-1 row-start-1 m-0 translate-y-3.5 opacity-0 transition-[opacity,translate] duration-1200 ease-[ease] data-[ativa=true]:translate-y-0 data-[ativa=true]:opacity-100"
                 >
                   {primeira}
                   {segunda && (
@@ -93,10 +96,10 @@ export function Abertura({ config = abertura, children }: { config?: Config; chi
                       <em className="text-champanhe italic">{segunda}</em>
                     </>
                   )}
-                </span>
+                </Tag>
               );
             })}
-          </h1>
+          </div>
           <p className="m-0 max-w-[46ch] text-[15px] leading-[1.65] font-light text-white/80 min-[900px]:text-[17px]">
             Apartamentos, coberturas e casas selecionados em Belo Horizonte e Nova Lima.
           </p>

@@ -7,6 +7,9 @@ import { moldura, Rotulo, tituloSecao } from "./partes";
 const botao =
   "inline-flex min-h-12.5 w-full items-center justify-center border px-7 text-xs font-medium tracking-[0.22em] whitespace-nowrap uppercase transition-colors duration-250 focus-visible:outline-champanhe min-[900px]:w-auto";
 
+/** Foto de fundo do bloco (nenhuma foto se repete na Home: ver fotos-home.test.ts). */
+export const FOTO_INSTITUCIONAL = "/images/institucional.jpg";
+
 /**
  * Bloco institucional escuro. Fala de uma empresa só (marca única): o título conta a união das
  * duas trajetórias, sem tratar a Carneiro & Ziller como duas unidades.
@@ -14,7 +17,7 @@ const botao =
 export function Institutional() {
   return (
     <section aria-labelledby="inst-titulo" className="relative overflow-hidden bg-noite text-white">
-      <Image src="/images/institucional.jpg" alt="" fill sizes="100vw" className="object-cover opacity-28" />
+      <Image src={FOTO_INSTITUCIONAL} alt="" fill sizes="100vw" className="object-cover opacity-28" />
       <div className={`${moldura} relative z-1 flex flex-col items-center gap-6.5 py-[clamp(80px,10vw,140px)] text-center`}>
         <Rotulo escuro>A Carneiro &amp; Ziller</Rotulo>
         <h2 id="inst-titulo" className={`${tituloSecao} text-white`}>
