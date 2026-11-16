@@ -1,8 +1,9 @@
 // Filtros do grid de imóveis. Vivem na URL
-// (?finalidade=&q=&local=&tipo=&preco=&area=&quartos=&vagas=&suites=&carac=&ordem=&pagina=), para o link ser
+// (?finalidade=&q=&local=&regiao=&tipo=&preco=&area=&quartos=&vagas=&suites=&carac=&ordem=&pagina=), para o link ser
 // compartilhável e para o "Voltar aos resultados" da tela do imóvel.
 import { routes } from "@/lib/routes";
 import { CARACTERISTICAS_FILTRO, rotuloCaracteristica } from "./caracteristicas";
+import { regiaoPorSlug } from "./regioes";
 import type { ImovelResumo } from "./types";
 
 export type FinalidadeFiltro = "comprar" | "alugar" | "lancamentos";
@@ -22,6 +23,8 @@ export type Filtros = {
   q?: string;
   /** "<Cidade>" ou "<Bairro>, <Cidade>"; a validação contra o catálogo é `validarLocal`. */
   local?: string;
+  /** Slug de uma região de `regioes.ts`; quando válida, `local` não vale. */
+  regiao?: string;
   tipo?: string;
   preco?: string;
   area?: string;
@@ -44,11 +47,11 @@ export type ChaveFiltro = Exclude<keyof Filtros, "pagina" | "ordem">;
 /** [valor na URL, rótulo, mínimo inclusivo, máximo exclusivo] */
 export type Faixa = readonly [string, string, number, number];
 
-export const FINALIDADES: readonly { valor: FinalidadeFiltro | undefined; rotulo: string }[] = [
-  { valor: undefined, rotulo: "TODOS" },
-  { valor: "comprar", rotulo: "COMPRAR" },
-  { valor: "alugar", rotulo: "ALUGAR" },
-  { valor: "lancamentos", rotulo: "LANÇAMENTOS" },
+/** Abas de finalidade do grid, na ordem em que aparecem. Sem finalidade na URL, nenhuma fica marcada. */
+export const FINALIDADES: readonly { valor: FinalidadeFiltro; rotulo: string }[] = [
+  { valor: "comprar", rotulo: "Comprar" },
+  { valor: "alugar", rotulo: "Alugar" },
+  { valor: "lancamentos", rotulo: "Lançamentos" },
 ];
 
 /**
@@ -63,12 +66,6 @@ export function combinaFinalidade(filtro: FinalidadeFiltro | undefined, i: Pick<
   return i.finalidade === "locacao" || (i.finalidade === "venda" && i.valorLocacao !== null);
 }
 
-const rotuloChipFinalidade: Record<FinalidadeFiltro, string> = {
-  comprar: "Comprar",
-  alugar: "Alugar",
-  lancamentos: "Lançamentos",
-};
-
 export const TIPOS = [
   "Apartamento",
   "Cobertura",
@@ -81,6 +78,24 @@ export const TIPOS = [
   "Prédio comercial",
   "Casa comercial",
 ] as const;
+
+const PLURAL_TIPO: Record<(typeof TIPOS)[number], string> = {
+  Apartamento: "Apartamentos",
+  Cobertura: "Coberturas",
+  Studio: "Studios",
+  Loft: "Lofts",
+  "Casa em condomínio": "Casas em condomínio",
+  Casa: "Casas",
+  Terreno: "Terrenos",
+  "Sala / Laje corporativa": "Salas / Lajes corporativas",
+  "Prédio comercial": "Prédios comerciais",
+  "Casa comercial": "Casas comerciais",
+};
+
+/** Plural do tipo para títulos e links ("Coberturas"); `undefined` para um tipo fora de `TIPOS`. */
+export function pluralTipo(tipo: string): string | undefined {
+  return Object.hasOwn(PLURAL_TIPO, tipo) ? PLURAL_TIPO[tipo as (typeof TIPOS)[number]] : undefined;
+}
 
 export const FAIXAS_PRECO_VENDA: readonly Faixa[] = [
   ["ate-1.5m", "Até R$ 1,5 milhão", 0, 1_500_000],
@@ -139,7 +154,14 @@ function seEm<T extends string>(valor: string | undefined, lista: readonly T[]):
 export function lerFiltros(entrada: Entrada): Filtros {
   const finalidade = seEm(ler(entrada, "finalidade"), ["comprar", "alugar", "lancamentos"] as const);
   const q = ler(entrada, "q")?.trim().slice(0, TAMANHO_MAX_BUSCA);
-  const local = ler(entrada, "local")?.trim().slice(0, TAMANHO_MAX_BUSCA).trim();
+  // A busca da Home, sem JavaScript, envia `local` duas vezes (cidade e bairro, vazio quando
+  // não escolhido): vale o último preenchido, que é o mais específico.
+  const local = lerLista(entrada, "local")
+    .map((l) => l.trim().slice(0, TAMANHO_MAX_BUSCA).trim())
+    .filter(Boolean)
+    .at(-1);
+  const pedidaRegiao = ler(entrada, "regiao");
+  const regiao = pedidaRegiao && regiaoPorSlug(pedidaRegiao) ? pedidaRegiao : undefined;
   const preco = faixasPreco(finalidade).find(([v]) => v === ler(entrada, "preco"))?.[0];
   const area = FAIXAS_AREA.find(([v]) => v === ler(entrada, "area"))?.[0];
   const pagina = Number.parseInt(ler(entrada, "pagina") ?? "", 10);
@@ -147,7 +169,9 @@ export function lerFiltros(entrada: Entrada): Filtros {
   const filtros: Filtros = {
     finalidade,
     q: q || undefined,
-    local: local || undefined,
+    // Região e local juntos: vale a região.
+    local: regiao ? undefined : local || undefined,
+    regiao,
     tipo: seEm(ler(entrada, "tipo"), TIPOS),
     preco,
     area,
@@ -161,7 +185,7 @@ export function lerFiltros(entrada: Entrada): Filtros {
   return Object.fromEntries(Object.entries(filtros).filter(([, v]) => v !== undefined && !(Array.isArray(v) && v.length === 0))) as Filtros;
 }
 
-const ORDEM: Exclude<ChaveFiltro, "carac">[] = ["finalidade", "q", "local", "tipo", "preco", "area", "quartos", "vagas", "suites"];
+const ORDEM: Exclude<ChaveFiltro, "carac">[] = ["finalidade", "q", "local", "regiao", "tipo", "preco", "area", "quartos", "vagas", "suites"];
 
 export function filtrosParaQuery(filtros: Filtros): string {
   const p = new URLSearchParams();
@@ -195,8 +219,13 @@ export function comFinalidade(filtros: Filtros, finalidade: FinalidadeFiltro | u
   return { ...filtros, finalidade, preco: precoValido ? filtros.preco : undefined, pagina: 1 };
 }
 
-export function contarFiltrosPainel(filtros: Filtros): number {
-  return rotulosFiltros(filtros).filter((r) => r.chave !== "q").length;
+/**
+ * Algum filtro que fica recolhido em "Filtros avançados" (preço, área, vagas, suítes, texto,
+ * características) ou uma ordenação fora do padrão: o painel abre sozinho para a pessoa ver o
+ * que está valendo.
+ */
+export function temFiltroAvancado(filtros: Filtros): boolean {
+  return Boolean(filtros.preco || filtros.area || filtros.vagas || filtros.suites || filtros.q || filtros.carac?.length || filtros.ordem);
 }
 
 export type RotuloFiltro = {
@@ -209,9 +238,11 @@ export type RotuloFiltro = {
 export function rotulosFiltros(filtros: Filtros): RotuloFiltro[] {
   const r: RotuloFiltro[] = [];
   const faixa = (lista: readonly Faixa[], v?: string) => lista.find(([valor]) => valor === v)?.[1];
-  if (filtros.finalidade) r.push({ chave: "finalidade", rotulo: rotuloChipFinalidade[filtros.finalidade] });
+  if (filtros.finalidade) r.push({ chave: "finalidade", rotulo: FINALIDADES.find((f) => f.valor === filtros.finalidade)!.rotulo });
   if (filtros.q) r.push({ chave: "q", rotulo: `“${filtros.q}”` });
   if (filtros.local) r.push({ chave: "local", rotulo: filtros.local });
+  const regiao = filtros.regiao ? regiaoPorSlug(filtros.regiao) : undefined;
+  if (regiao) r.push({ chave: "regiao", rotulo: regiao.nome });
   if (filtros.tipo) r.push({ chave: "tipo", rotulo: filtros.tipo });
   const preco = faixa(faixasPreco(filtros.finalidade), filtros.preco);
   if (preco) r.push({ chave: "preco", rotulo: preco });

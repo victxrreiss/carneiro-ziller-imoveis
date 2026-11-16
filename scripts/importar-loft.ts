@@ -122,7 +122,6 @@ function resumoRelatorio(r: Relatorio, ignorados: Ignorados): string {
     `  fotos com falha: ${r.fotosFalhas.length}`,
     `  avisos: ${r.avisos.length}`,
     `  exemplos removidos: ${r.exemplosRemovidos.length}`,
-    `  Oportunidade: ${r.oportunidade ?? "inalterada"}`,
     ...linhaIgnorados(ignorados),
   ].join("\n");
 }

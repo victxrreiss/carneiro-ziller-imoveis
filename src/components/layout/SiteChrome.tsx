@@ -1,54 +1,11 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
-import { temLancamentosParaMenu } from "@/lib/imoveis/lancamentos";
-import { itensNavegacao, painel, routes, type NavKey } from "@/lib/routes";
-import { empresa } from "@/lib/site";
+import type { NavKey } from "@/lib/routes";
 import { Footer } from "./Footer";
-import { Logo } from "./Logo";
-import { MenuDrawer } from "./MenuDrawer";
-
-export function Topbar() {
-  return (
-    <div className="topbar">
-      <div className="wrap">
-        <div className="units">
-          <span>
-            Carneiro &amp; Ziller · {empresa.telefone}
-          </span>
-        </div>
-        <div className="creci">{empresa.creci}</div>
-      </div>
-    </div>
-  );
-}
-
-export async function SiteHeader({ current }: { current?: NavKey }) {
-  const items = itensNavegacao(await temLancamentosParaMenu()).map((item) => ({ ...item, current: current !== undefined && item.key === current }));
-  return (
-    <header className="site-header">
-      <div className="wrap">
-        <Link href={routes.home} className="logo">
-          <Logo />
-        </Link>
-        <nav className="nav" aria-label="Principal">
-          {items.map((item) => (
-            <Link key={item.key} href={item.href} aria-current={item.current ? "page" : undefined}>
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-        <Link href={painel.entrar} className="btn-corretor">
-          SOU CORRETOR
-        </Link>
-        <MenuDrawer items={items} buttonClassName="menu-btn" />
-      </div>
-    </header>
-  );
-}
+import { Header } from "./Header";
 
 /**
- * Moldura das telas internas (grid e imóvel): barra superior, header, conteúdo
- * e rodapé, sob o escopo `.cz` dos estilos do handoff.
+ * Moldura das telas internas (grid, imóvel e institucionais): cabeçalho sólido,
+ * conteúdo e rodapé, sob o escopo `.cz` dos estilos dessas telas.
  */
 export function SiteChrome({
   current,
@@ -61,8 +18,7 @@ export function SiteChrome({
 }) {
   return (
     <div className={className ? `cz ${className}` : "cz"}>
-      <Topbar />
-      <SiteHeader current={current} />
+      <Header current={current} />
       {children}
       <Footer />
     </div>

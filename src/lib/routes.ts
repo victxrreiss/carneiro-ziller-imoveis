@@ -11,6 +11,8 @@ export const routes = {
   imoveis,
   /** O mesmo grid, já filtrado por lançamentos (decisão do usuário, 2026-10-16). */
   lancamentos: `${imoveis}?finalidade=lancamentos`,
+  /** O grid já com o painel de filtros avançados aberto (link da busca da Home). */
+  filtrosAvancados: `${imoveis}?avancados=1`,
   contato: "/contato",
   sobre: "/sobre",
   privacidade: "/politica-de-privacidade",
@@ -21,7 +23,6 @@ export const routes = {
   imovel: (id: string, de?: string) => (de === undefined ? imovel(id) : `${imovel(id)}?de=${encodeURIComponent(de)}`),
   /** Tela do imóvel com o formulário de interesse já aberto. */
   agendarVisita: (id: string) => `${imovel(id)}#${ANCORA_AGENDAR}`,
-  regiao: (nome: string) => `${imoveis}?q=${encodeURIComponent(nome)}`,
 } as const;
 
 /**
@@ -42,6 +43,7 @@ export const painel = {
   novoImovel: "/painel/imoveis/novo",
   imovel: (id: string) => `/painel/imoveis/${encodeURIComponent(id)}`,
   contatos: "/painel/contatos",
+  paginaInicial: "/painel/pagina-inicial",
   usuarios: "/painel/usuarios",
   conta: "/painel/conta",
 } as const;

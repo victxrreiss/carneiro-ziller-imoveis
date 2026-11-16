@@ -11,7 +11,7 @@ test.describe("comportamento da Home", () => {
     });
   }
 
-  test("abaixo de 900px o menu vira gaveta", async ({ page }) => {
+  test("abaixo de 900px o menu vira botão e abre em tela cheia", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
     const header = page.locator("header");
@@ -19,8 +19,10 @@ test.describe("comportamento da Home", () => {
     await expect(header.getByRole("link", { name: "Sobre nós" })).toBeHidden();
 
     await header.getByRole("button", { name: "Abrir menu" }).click();
-    const gaveta = page.getByRole("dialog", { name: "Menu" });
-    await expect(gaveta.getByRole("link", { name: "Sobre nós" })).toBeVisible();
+    const menu = page.getByRole("dialog", { name: "Menu" });
+    await expect(menu.getByRole("link", { name: "Sobre nós" })).toBeVisible();
+    await expect(menu.getByRole("link", { name: "Falar no WhatsApp" })).toBeVisible();
+    await expect(menu).toContainText("CRECI 7904");
   });
 
   test("em 900px ou mais o menu é horizontal", async ({ page }) => {
@@ -31,24 +33,37 @@ test.describe("comportamento da Home", () => {
     await expect(header.getByRole("link", { name: "Sobre nós" })).toBeVisible();
   });
 
-  test("hover no card sobe 3px", async ({ page }) => {
+  test("a abertura ocupa a tela, com o cabeçalho transparente por cima", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
-    const card = page.locator('section[aria-labelledby="lanc-titulo"] article').first();
-    await card.scrollIntoViewIfNeeded();
-    const before = (await card.boundingBox())!.y;
-    await card.hover();
-    await page.waitForTimeout(450);
-    expect((await card.boundingBox())!.y).toBeCloseTo(before - 3, 0);
+    const abertura = page.getByRole("region", { name: "Apresentação" });
+    const caixa = (await abertura.boundingBox())!;
+    expect(caixa.y).toBe(0);
+    expect(caixa.height).toBeGreaterThanOrEqual(900);
+    await expect(abertura.getByRole("heading", { level: 1 })).toContainText("Morar bem começa");
+    const header = page.locator("header");
+    expect((await header.boundingBox())!.y).toBe(0);
+    expect(await header.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
   });
 
-  test("hover no tile de região dá zoom na imagem", async ({ page }) => {
+  test("hover no card de destaque dá zoom na foto", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    const card = page.locator('section[aria-labelledby="destaques-titulo"] article').first();
+    await card.scrollIntoViewIfNeeded();
+    await card.hover();
+    await page.waitForTimeout(1400);
+    const transform = await card.locator(".cz-card-foto img").evaluate((img) => getComputedStyle(img).transform);
+    expect(transform).toBe("matrix(1.05, 0, 0, 1.05, 0, 0)");
+  });
+
+  test("hover no card de região dá zoom na imagem", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
     const tile = page.locator('section[aria-labelledby="regioes-titulo"] a').first();
     await tile.scrollIntoViewIfNeeded();
     await tile.hover();
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(1400);
     const scale = await tile.locator("img").evaluate((img) => getComputedStyle(img).scale);
     expect(scale).toBe("1.06");
   });
@@ -64,25 +79,51 @@ test.describe("comportamento da Home", () => {
     expect(outline).toBe("solid 2px 3px");
   });
 
-  test("busca leva para /imoveis com finalidade e texto codificados", async ({ page }) => {
+  test("busca leva para /imoveis com finalidade, tipo, local e quartos", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
-    await page.getByRole("tab", { name: "ALUGAR" }).click();
-    await page.getByLabel("Buscar imóvel").fill("Vila & Serra #1");
+    await page.getByRole("tab", { name: "Alugar" }).click();
+    await page.getByLabel("Tipo de imóvel").selectOption("Apartamento");
+    await page.getByLabel("Cidade").selectOption("Belo Horizonte");
+    await page.getByLabel("Bairro").selectOption({ label: "Belvedere" });
+    await page.getByLabel("Quartos").selectOption("3");
     await page.getByRole("button", { name: "Buscar" }).click();
     await page.waitForURL(/\/imoveis\?/);
     const url = new URL(page.url());
     expect(url.pathname).toBe("/imoveis");
-    expect(url.searchParams.get("finalidade")).toBe("alugar");
-    expect(url.searchParams.get("q")).toBe("Vila & Serra #1");
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      finalidade: "alugar",
+      tipo: "Apartamento",
+      local: "Belvedere, Belo Horizonte",
+      quartos: "3",
+    });
   });
 
-  test("abas Venda/Locação trocam os cards", async ({ page }) => {
+  test("Filtros avançados leva a /imoveis com o painel aberto", async ({ page }) => {
     await page.goto("/");
+    await page.getByRole("link", { name: "Filtros avançados" }).click();
+    await page.waitForURL("**/imoveis?avancados=1");
+    // O conteúdo real, e não o esqueleto que aparece enquanto a página chega.
+    const grade = page.locator("main:visible").filter({ hasNot: page.locator('[aria-busy="true"]') });
+    await expect(grade.locator("details.avancados")).toHaveAttribute("open");
+    await expect(grade.getByLabel("Ordenar por")).toBeVisible();
+  });
+
+  test("cards de tipo e de região abrem a busca filtrada", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    await page.locator('section[aria-labelledby="tipos-titulo"]').getByRole("link", { name: /Coberturas/ }).click();
+    await page.waitForURL("**/imoveis?tipo=Cobertura");
+    await page.goto("/");
+    await page.locator('section[aria-labelledby="regioes-titulo"]').getByRole("link", { name: /Belvedere e Vila da Serra/ }).click();
+    await page.waitForURL("**/imoveis?regiao=belvedere-vila-da-serra");
+  });
+
+  test("Imóveis em destaque mostra só os que o ADMIN escolheu", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "Imóveis em destaque" })).toBeVisible();
+    await expect(page.getByText("Apartamento no Belvedere").first()).toBeVisible();
     await expect(page.getByText("Laje corporativa")).toBeHidden();
-    await page.getByRole("tab", { name: "LOCAÇÃO" }).click();
-    await expect(page.getByText("Laje corporativa")).toBeVisible();
-    await expect(page.getByText("Residencial das Minas")).toBeHidden();
   });
 
   test("sem favoritos e sem anunciar imóvel", async ({ page }) => {
@@ -106,9 +147,47 @@ test.describe("comportamento da Home", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
     const duration = await page
-      .locator('section[aria-labelledby="lanc-titulo"] article')
+      .locator('section[aria-labelledby="destaques-titulo"] .cz-card-foto img')
       .first()
       .evaluate((el) => getComputedStyle(el).transitionDuration);
     expect(duration).toBe("0s");
+    // A abertura fica na primeira imagem e na primeira frase.
+    await page.waitForTimeout(7000);
+    await expect(page.locator('[data-abertura-frase][data-ativa="true"]')).toContainText("Morar bem começa");
+    await expect(page.locator('[data-abertura-imagem][data-ativa="true"]')).toHaveCount(1);
+    expect(await page.locator("[data-abertura-imagem]").first().getAttribute("data-ativa")).toBe("true");
   });
 });
+
+test("Rolar para baixo leva ao conteúdo abaixo da abertura", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/");
+  const rolar = page.getByRole("link", { name: "Rolar para baixo" });
+  const ancora = (await rolar.getAttribute("href"))!;
+  expect(ancora).toMatch(/^#/);
+  // A âncora é da página, não de uma seção que some quando não há imóveis daquele tipo.
+  const alvo = page.locator(ancora);
+  await expect(alvo).toHaveCount(1);
+  expect(await alvo.evaluate((el) => el.tagName)).not.toBe("SECTION");
+  expect(Math.round((await alvo.boundingBox())!.y)).toBe(Math.round((await page.getByRole("region", { name: "Apresentação" }).boundingBox())!.height));
+});
+
+test.describe("Home sem JavaScript", () => {
+  test.use({ javaScriptEnabled: false, viewport: { width: 1440, height: 900 } });
+
+  test("a busca da abertura envia finalidade, tipo, local e quartos", async ({ page }) => {
+    await page.goto("/");
+    await page.getByLabel("Tipo de imóvel").selectOption("Apartamento");
+    await page.getByLabel("Cidade").selectOption("Belo Horizonte");
+    await page.getByLabel("Bairro").selectOption("Belvedere, Belo Horizonte");
+    await page.getByLabel("Quartos").selectOption("3");
+    await page.getByRole("button", { name: "Buscar" }).click();
+    await page.waitForURL(/\/imoveis\?/);
+    const url = new URL(page.url());
+    expect(url.searchParams.get("finalidade")).toBe("comprar");
+    expect(url.searchParams.get("tipo")).toBe("Apartamento");
+    expect(url.searchParams.getAll("local")).toEqual(["Belo Horizonte", "Belvedere, Belo Horizonte"]);
+    expect(url.searchParams.get("quartos")).toBe("3");
+  });
+});
+

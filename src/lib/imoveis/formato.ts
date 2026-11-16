@@ -29,6 +29,10 @@ export function formatarQuartos(n: number): string {
   return `${n} ${n === 1 ? "quarto" : "quartos"}`;
 }
 
+export function formatarVagas(n: number): string {
+  return `${n} ${n === 1 ? "vaga" : "vagas"}`;
+}
+
 export const rotuloFinalidade: Record<Finalidade, string> = {
   venda: "VENDA",
   locacao: "LOCAÇÃO",
@@ -38,3 +42,11 @@ export const rotuloFinalidade: Record<Finalidade, string> = {
 export function rotuloEtiqueta(i: { finalidade: Finalidade; lancamento: boolean }): "LANÇAMENTO" | "VENDA" | "LOCAÇÃO" {
   return i.lancamento ? "LANÇAMENTO" : i.finalidade === "locacao" ? "LOCAÇÃO" : "VENDA";
 }
+
+/** Para comparar texto sem acento, caixa nem espaços nas pontas. */
+export const normalizar = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .trim();

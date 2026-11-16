@@ -9,8 +9,8 @@ import { Portal } from "@/components/ui/Portal";
 import { useDialog } from "@/components/ui/useDialog";
 import type { Papel } from "@/lib/dados/tipos";
 import { painel } from "@/lib/routes";
-import { IcConta, IcContatos, IcFechar, IcImoveis, IcMenu, IcSair, IcUsuarios } from "./Icones";
-import { Marca } from "./ui";
+import { IcConta, IcContatos, IcFechar, IcImoveis, IcMenu, IcPaginaInicial, IcSair, IcUsuarios } from "./Icones";
+import { Logo } from "@/components/layout/Logo";
 
 export type UsuarioShell = { nome: string; papel: Papel };
 
@@ -41,6 +41,14 @@ function Itens({ usuario, onNavegar }: { usuario: UsuarioShell; onNavegar?: () =
           Contatos
         </Link>
       </li>
+      {usuario.papel === "admin" && (
+        <li>
+          <Link href={painel.paginaInicial} aria-current={atual(painel.paginaInicial)} onClick={onNavegar}>
+            <IcPaginaInicial />
+            Página inicial
+          </Link>
+        </li>
+      )}
       {usuario.papel === "admin" && (
         <li>
           <Link href={painel.usuarios} aria-current={atual(painel.usuarios)} onClick={onNavegar}>
@@ -129,7 +137,7 @@ export function Shell({ usuario, children }: { usuario: UsuarioShell; children: 
         <aside className="pn-side" aria-label="Menu do painel">
           <div className="pn-brand">
             <Link href={painel.imoveis} className="logo" aria-label="Carneiro & Ziller — painel, início">
-              <Marca />
+              <Logo />
             </Link>
             <span className="pn-brand-tag">PAINEL</span>
           </div>
@@ -143,7 +151,7 @@ export function Shell({ usuario, children }: { usuario: UsuarioShell; children: 
         <div className="pn-main">
           <header className="pn-top">
             <Link href={painel.imoveis} className="logo" aria-label="Carneiro & Ziller — painel, início">
-              <Marca />
+              <Logo />
             </Link>
             <div className="pn-top-r">
               <MenuMobile usuario={usuario} />

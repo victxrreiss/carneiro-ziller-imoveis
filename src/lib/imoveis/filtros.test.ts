@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { combinaFinalidade, contarFiltrosPainel, contextoVolta, filtrosParaQuery, lerFiltros, rotulosFiltros, semFiltro, tituloGrid, urlGrid } from "./filtros";
+import { combinaFinalidade, contextoVolta, filtrosParaQuery, lerFiltros, pluralTipo, rotulosFiltros, semFiltro, temFiltroAvancado, tituloGrid, TIPOS, urlGrid } from "./filtros";
 
 describe("lerFiltros", () => {
   test("aceita só valores conhecidos", () => {
@@ -155,11 +155,9 @@ describe("ordem e local", () => {
     expect(urlGrid({ ordem: "menor-preco", pagina: 1 })).toBe("/imoveis?ordem=menor-preco");
   });
 
-  test("local vira chip e semFiltro o remove; ordem não é chip nem conta no painel", () => {
+  test("local vira chip e semFiltro o remove; ordem não é chip", () => {
     const f = { local: "Nova Lima", ordem: "maior-area", pagina: 3 } as const;
     expect(rotulosFiltros(f)).toEqual([{ chave: "local", rotulo: "Nova Lima" }]);
-    expect(contarFiltrosPainel(f)).toBe(1);
-    expect(contarFiltrosPainel({ ordem: "maior-preco", pagina: 1 })).toBe(0);
     expect(semFiltro(f, "local")).toEqual({ local: undefined, ordem: "maior-area", pagina: 1 });
   });
 
@@ -167,5 +165,63 @@ describe("ordem e local", () => {
     const v = contextoVolta("local=Nova+Lima&ordem=menor-preco", false);
     expect(v.href).toBe("/imoveis?local=Nova+Lima&ordem=menor-preco");
     expect(v.resumo).toBe("Nova Lima");
+  });
+});
+
+describe("região", () => {
+  test("regiao desconhecida é descartada", () => {
+    expect(lerFiltros(new URLSearchParams("regiao=nao-existe"))).toEqual({ pagina: 1 });
+  });
+
+  test("regiao e local juntos: vale a regiao", () => {
+    expect(lerFiltros(new URLSearchParams("regiao=lourdes-savassi&local=Nova+Lima"))).toEqual({ regiao: "lourdes-savassi", pagina: 1 });
+    expect(lerFiltros(new URLSearchParams("regiao=nao-existe&local=Nova+Lima"))).toEqual({ local: "Nova Lima", pagina: 1 });
+  });
+
+  test("urlGrid mantém regiao na ordem canônica, logo depois de local", () => {
+    expect(urlGrid({ regiao: "lourdes-savassi", tipo: "Casa", q: "x", pagina: 2 })).toBe("/imoveis?q=x&regiao=lourdes-savassi&tipo=Casa&pagina=2");
+  });
+
+  test("a região vira chip com o nome e semFiltro a remove", () => {
+    const f = { regiao: "belvedere-vila-da-serra", pagina: 3 };
+    expect(rotulosFiltros(f)).toEqual([{ chave: "regiao", rotulo: "Belvedere e Vila da Serra" }]);
+    expect(semFiltro(f, "regiao")).toEqual({ regiao: undefined, pagina: 1 });
+  });
+});
+
+describe("lerFiltros: `local` repetido (busca da Home sem JavaScript)", () => {
+  test("vale o último preenchido, na URL e no objeto de searchParams", () => {
+    expect(lerFiltros(new URLSearchParams("local=Nova+Lima&local=Vila+da+Serra%2C+Nova+Lima")).local).toBe("Vila da Serra, Nova Lima");
+    expect(lerFiltros({ local: ["Nova Lima", "Vila da Serra, Nova Lima"] }).local).toBe("Vila da Serra, Nova Lima");
+  });
+
+  test("vazios não contam: só a cidade, só o bairro ou nenhum", () => {
+    expect(lerFiltros(new URLSearchParams("local=Nova+Lima&local=")).local).toBe("Nova Lima");
+    expect(lerFiltros(new URLSearchParams("local=&local=Lourdes%2C+Belo+Horizonte")).local).toBe("Lourdes, Belo Horizonte");
+    expect(lerFiltros(new URLSearchParams("local=&local=+")).local).toBeUndefined();
+    expect(lerFiltros({ local: "Nova Lima" }).local).toBe("Nova Lima");
+  });
+
+  test("com região válida, `local` continua sem valer", () => {
+    expect(lerFiltros(new URLSearchParams("regiao=lourdes-savassi&local=Nova+Lima&local=")).local).toBeUndefined();
+  });
+});
+
+describe("filtros avançados", () => {
+  test("preço, área, vagas, suítes, texto, características e ordem são avançados; os principais não", () => {
+    for (const f of [{ preco: "3m-6m" }, { area: "100-200" }, { vagas: "1" }, { suites: "2" }, { q: "cz" }, { carac: ["piscina"] }, { ordem: "menor-preco" as const }]) {
+      expect(temFiltroAvancado({ ...f, pagina: 1 }), JSON.stringify(f)).toBe(true);
+    }
+    expect(temFiltroAvancado({ pagina: 3 })).toBe(false);
+    expect(temFiltroAvancado({ finalidade: "comprar", tipo: "Casa", local: "Nova Lima", regiao: "lourdes-savassi", quartos: "2", carac: [], pagina: 1 })).toBe(false);
+  });
+});
+
+describe("pluralTipo", () => {
+  test("todo tipo da busca tem plural; tipo desconhecido não", () => {
+    for (const t of TIPOS) expect(pluralTipo(t)).toBeTruthy();
+    expect(pluralTipo("Cobertura")).toBe("Coberturas");
+    expect(pluralTipo("Casa em condomínio")).toBe("Casas em condomínio");
+    expect(pluralTipo("Galpão")).toBeUndefined();
   });
 });

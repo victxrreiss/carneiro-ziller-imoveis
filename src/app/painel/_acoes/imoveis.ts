@@ -50,12 +50,12 @@ function sanear(e: unknown): EntradaImovel {
       .map((f) => ({ id: str(f.id, 100), alt: str(f.alt, 500) })),
     situacao: SITUACOES.includes(o.situacao as SituacaoImovel) ? (o.situacao as SituacaoImovel) : "rascunho",
     responsavelId: typeof o.responsavelId === "string" ? o.responsavelId : undefined,
-    oportunidade: typeof o.oportunidade === "boolean" ? o.oportunidade : undefined,
+    destaque: typeof o.destaque === "boolean" ? o.destaque : undefined,
   };
 }
 
 export type RespostaSalvar =
-  | { ok: true; novo: boolean; codigo: string; situacao: SituacaoImovel; oportunidadeSaiu: boolean; imovel: ImovelEdicao }
+  | { ok: true; novo: boolean; codigo: string; situacao: SituacaoImovel; destaqueSaiu: boolean; imovel: ImovelEdicao }
   | { ok: false; erros: ErrosImovel }
   | { ok: false; falha: "proibido" | "inexistente" };
 
@@ -68,10 +68,10 @@ export async function salvarImovelAction(id: string | null, entrada: unknown, in
     return { ok: false, falha: "proibido" in r ? "proibido" : "inexistente" };
   }
   updateTag(TAG_IMOVEIS);
-  return { ok: true, novo: r.novo, codigo: r.codigo, situacao: r.situacao, oportunidadeSaiu: r.oportunidadeSaiu, imovel: (await obterParaEdicao(u, r.id))! };
+  return { ok: true, novo: r.novo, codigo: r.codigo, situacao: r.situacao, destaqueSaiu: r.destaqueSaiu, imovel: (await obterParaEdicao(u, r.id))! };
 }
 
-export async function excluirImovelAction(id: unknown): Promise<{ ok: true; codigo: string; titulo: string; oportunidadeSaiu: boolean } | { ok: false }> {
+export async function excluirImovelAction(id: unknown): Promise<{ ok: true; codigo: string; titulo: string; destaqueSaiu: boolean } | { ok: false }> {
   const u = await usuarioDaAcao();
   if (typeof id !== "string") return { ok: false };
   const r = await excluirImovel(u, id);

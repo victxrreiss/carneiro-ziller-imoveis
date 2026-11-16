@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { armazenamento, type armazenamentoMemoria } from "../../src/lib/armazenamento";
-import { configuracaoSite, fotos, imovelFotos, imoveis, importacaoLoft } from "../../src/lib/dados/esquema";
+import { destaquesHome, fotos, imovelFotos, imoveis, importacaoLoft } from "../../src/lib/dados/esquema";
 import { carregarImovel } from "../../src/lib/dados/consultas";
 import { criarAmbiente, type Ambiente } from "../../src/lib/dados/testes";
 import { excluirImovel, obterParaEdicao, salvarImovel } from "../../src/lib/painel/imoveis";
@@ -73,7 +73,7 @@ const chavesDe = async (imovelId: string) =>
       .where(eq(imovelFotos.imovelId, imovelId))
       .orderBy(imovelFotos.ordem)
   ).map((f) => f.chave);
-const oportunidade = async () => (await amb.db.select().from(configuracaoSite))[0]?.oportunidadeId ?? null;
+const destaques = async () => (await amb.db.select().from(destaquesHome).orderBy(destaquesHome.ordem)).map((d) => d.imovelId);
 
 /** Salva pelo painel, como a tela faria: a entrada atual com as mudanças. */
 async function salvarNoPainel(u: UsuarioLogado, id: string, f: (e: NonNullable<Awaited<ReturnType<typeof obterParaEdicao>>>["entrada"]) => void) {
@@ -89,7 +89,7 @@ async function criarExemplos() {
 }
 
 describe("importarLoft", () => {
-  test("primeira rodada: cria, define situação, responsável, fotos e Oportunidade, e remove os exemplos", async () => {
+  test("primeira rodada: cria, define situação, responsável e fotos, remove os exemplos (e o destaque deles) e não escolhe destaques", async () => {
     await criarExemplos();
     const chavesExemplos = (await amb.db.select({ chave: fotos.chave }).from(fotos)).map((f) => f.chave);
     expect(chavesExemplos.length).toBeGreaterThan(0);
@@ -122,10 +122,8 @@ describe("importarLoft", () => {
     expect(r.fotosBaixadas).toBe(9);
     expect(r.fotosFalhas).toEqual([]);
 
-    // O publicado de maior valor, à venda e com foto: 905 (R$ 4,3 mi).
-    const op = (await porRef("905")).id;
-    expect(r.oportunidade).toBe(op);
-    expect(await oportunidade()).toBe(op);
+    // Destaque é do ADMIN: a importação não marca nenhum, e o do exemplo cz1009 saiu junto com ele.
+    expect(await destaques()).toEqual([]);
     expect(r.avisos).toContainEqual({ referencia: "904", aviso: "Título ausente, gerado" });
 
     const [ctl] = await amb.db.select().from(importacaoLoft).where(eq(importacaoLoft.referencia, "901"));
@@ -163,7 +161,7 @@ describe("importarLoft", () => {
 
     const r = await importarLoft(amb.db, lista(), opcoes({ agora: new Date("2026-10-30T12:00:00Z") }));
 
-    expect(r).toMatchObject({ criados: [], atualizados: [], camposPreservados: [], indisponibilizados: [], ausentesRascunho: [], excluidosNoPainel: [], fotosBaixadas: 0, fotosFalhas: [], exemplosRemovidos: [], oportunidade: null });
+    expect(r).toMatchObject({ criados: [], atualizados: [], camposPreservados: [], indisponibilizados: [], ausentesRascunho: [], excluidosNoPainel: [], fotosBaixadas: 0, fotosFalhas: [], exemplosRemovidos: [] });
     expect(baixadas).toEqual([]);
     expect({ imoveis: await contar(imoveis), fotos: await contar(fotos), ligacoes: await contar(imovelFotos), controle: await contar(importacaoLoft) }).toEqual(antes);
     expect(memoria().objetos.size).toBe(objetos);
@@ -249,10 +247,11 @@ describe("importarLoft", () => {
     expect(baixadas.filter((u) => u.includes("/902/"))).toHaveLength(2);
   });
 
-  test("sumiu do feed: indisponível; se era a Oportunidade, ela é reatribuída", async () => {
+  test("sumiu do feed: indisponível e sai dos destaques", async () => {
     await importarLoft(amb.db, lista(), opcoes());
     const op = (await porRef("905")).id;
-    expect(await oportunidade()).toBe(op);
+    const outro = (await porRef("903")).id;
+    await amb.db.insert(destaquesHome).values([{ imovelId: op, ordem: 1 }, { imovelId: outro, ordem: 2 }]);
     const editado = await porRef("904");
     await salvarNoPainel(amb.admin, editado.id, (e) => (e.descricao = "Descrição da equipe."));
 
@@ -266,14 +265,10 @@ describe("importarLoft", () => {
     expect((await porRef("905")).situacao).toBe("indisponivel");
     expect((await porRef("904")).situacao).toBe("publicado");
     expect(r.avisos.some((a) => a.referencia === "904" && /editado no painel/.test(a.aviso))).toBe(true);
-    // Próximo publicado de maior valor, à venda e com foto: 903 (R$ 3,2 mi).
-    const novaOp = (await porRef("903")).id;
-    expect(r.oportunidade).toBe(novaOp);
-    expect(await oportunidade()).toBe(novaOp);
+    expect(await destaques()).toEqual([outro]);
 
     const r2 = await importarLoft(amb.db, sem(), opcoes({ forcar: true }));
     expect(r2.indisponibilizados).toEqual([]);
-    expect(r2.oportunidade).toBeNull();
 
     // Voltou ao feed: volta a publicado, sem mudar a data da primeira publicação.
     const r3 = await importarLoft(amb.db, lista(), opcoes({ agora: new Date("2026-11-02T12:00:00Z") }));
@@ -318,17 +313,13 @@ describe("importarLoft", () => {
     expect(await porRef("906")).toMatchObject({ situacao: "rascunho", publicadoEm: null });
   });
 
-  test("Oportunidade só vai para um imóvel que a Home mostra (completo: tipo e área)", async () => {
-    // 905 é o de maior valor, publicado, à venda e com foto, mas sem área: não serve.
-    const r = await importarLoft(amb.db, mudar(lista(), "905", (i) => (i.area = null)), opcoes());
-    expect((await porRef("905")).situacao).toBe("publicado");
-    expect(r.oportunidade).toBe((await porRef("903")).id);
-
-    // Rodadas seguintes respeitam a Oportunidade atual, mesmo incompleta (o ADMIN decide).
-    await amb.db.update(imoveis).set({ tipo: null }).where(eq(imoveis.referenciaLoft, "903"));
-    const r2 = await importarLoft(amb.db, mudar(lista(), "905", (i) => (i.area = null)), opcoes());
-    expect(r2.oportunidade).toBeNull();
-    expect(await oportunidade()).toBe((await porRef("903")).id);
+  test("publicado passa a rascunho pelo feed (pendentes): sai dos destaques", async () => {
+    await importarLoft(amb.db, lista(), opcoes());
+    const id = (await porRef("901")).id;
+    await amb.db.insert(destaquesHome).values({ imovelId: id, ordem: 1 });
+    await importarLoft(amb.db, mudar(lista(), "901", (i) => (i.situacao = "rascunho")), opcoes());
+    expect((await porRef("901")).situacao).toBe("rascunho");
+    expect(await destaques()).toEqual([]);
   });
 
   test("campo sem entrada no snapshot: adota o do feed se a coluna está vazia; senão preserva", async () => {
@@ -348,17 +339,6 @@ describe("importarLoft", () => {
     expect(ctl.valores.andar).toBe(7);
     expect(r.camposPreservados).toEqual([{ referencia: "903", campos: ["quartos"] }]);
     expect((await porRef("903")).quartos).not.toBe(9);
-  });
-
-  test("Oportunidade esvaziada pelo ADMIN (ou com aviso no painel) não é reatribuída fora da primeira rodada", async () => {
-    await importarLoft(amb.db, lista(), opcoes());
-    const aviso = { porId: amb.admin.id, codigo: "CZ1", titulo: "X", motivo: "desmarcado" as const, em: AGORA.toISOString() };
-    await amb.db.update(configuracaoSite).set({ oportunidadeId: null, aviso });
-    const r = await importarLoft(amb.db, lista(), opcoes());
-    expect(r.oportunidade).toBeNull();
-    const [cfg] = await amb.db.select().from(configuracaoSite);
-    expect(cfg.oportunidadeId).toBeNull();
-    expect(cfg.aviso).toMatchObject({ motivo: "desmarcado" });
   });
 
   test("aoProgredir: uma chamada por imóvel, só com referência, código e fotos; parcial a cada N", async () => {

@@ -17,7 +17,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import type { AvisoOportunidade } from "./tipos";
+import type { AvisoDestaque } from "./tipos";
 
 const momento = (nome: string) => timestamp(nome, { withTimezone: true, mode: "date" });
 
@@ -185,16 +185,30 @@ export const tentativasLogin = pgTable("tentativas_login", {
   bloqueadoAte: momento("bloqueado_ate"),
 });
 
-/** Linha única (`id = 1`): Oportunidade de hoje da Home e o aviso ao ADMIN. */
+/** Linha única (`id = 1`): o aviso ao ADMIN quando um destaque sai da lista sem ele desmarcar. */
 export const configuracaoSite = pgTable(
   "configuracao_site",
   {
     id: integer("id").primaryKey().default(1),
+    /**
+     * OBSOLETA (era a "Oportunidade de hoje"): nenhum código lê nem grava. Fica no esquema só para o
+     * container da versão anterior continuar funcionando durante o deploy (expand/contract). Sai
+     * numa migração futura, com um DROP, quando nenhum container antigo puder mais rodar.
+     */
     oportunidadeId: text("oportunidade_id").references(() => imoveis.id, { onDelete: "set null" }),
-    aviso: jsonb("aviso").$type<AvisoOportunidade>(),
+    aviso: jsonb("aviso").$type<AvisoDestaque>(),
   },
   (t) => [check("configuracao_site_unica", sql`${t.id} = 1`)],
 );
+
+/** Imóveis em destaque na página inicial, na ordem que o ADMIN escolheu (`ordem` crescente). */
+export const destaquesHome = pgTable("destaques_home", {
+  imovelId: text("imovel_id")
+    .primaryKey()
+    .references(() => imoveis.id, { onDelete: "cascade" }),
+  ordem: integer("ordem").notNull(),
+  marcadoEm: momento("marcado_em").notNull().defaultNow(),
+});
 
 /** Interesses (leads) enviados pelo formulário do imóvel no site. */
 export const interesses = pgTable(

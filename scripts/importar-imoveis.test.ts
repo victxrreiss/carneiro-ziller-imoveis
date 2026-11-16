@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, test } from "vitest";
 import { armazenamento } from "../src/lib/armazenamento";
-import { configuracaoSite, imoveis } from "../src/lib/dados/esquema";
+import { destaquesHome, imoveis } from "../src/lib/dados/esquema";
 import { criarAmbiente, type Ambiente } from "../src/lib/dados/testes";
 import { importarImoveis } from "./importar-imoveis";
 
@@ -30,10 +30,12 @@ describe("importarImoveis com ids", () => {
     expect(Number(r2.rows[0].proximo)).toBe(1011);
   });
 
-  test("a Oportunidade só é definida se o imóvel dela foi importado", async () => {
+  test("o destaque inicial só é marcado se o imóvel dele foi importado", async () => {
     await importarImoveis(amb.db, { ...opcoes(), ids: ["cz1001"] });
-    const [c] = await amb.db.select().from(configuracaoSite);
-    expect(c?.oportunidadeId ?? null).toBeNull();
+    expect(await amb.db.select().from(destaquesHome)).toHaveLength(0);
+    await amb.reiniciar();
+    await importarImoveis(amb.db, { ...opcoes(), ids: ["cz1009"] });
+    expect((await amb.db.select().from(destaquesHome)).map((d) => d.imovelId)).toEqual(["cz1009"]);
   });
 
   test("id desconhecido é erro, antes de gravar qualquer coisa", async () => {

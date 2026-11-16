@@ -1,5 +1,5 @@
 // deploy/deploy.sh exemplos — uma vez, na produção da VPS: importa 3 imóveis de
-// exemplo (um lançamento, uma venda que é a Oportunidade e uma locação) para o
+// exemplo (um lançamento, uma venda que já vem como destaque e uma locação) para o
 // site não estrear vazio. A equipe edita ou exclui pelo painel. Recusa se o banco
 // já tiver imóveis. Exige o ADMIN criado.
 import "./ambiente";

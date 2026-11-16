@@ -6,7 +6,6 @@ import { buscarImoveis, getContagemPorTipo, getOpcoesLocalizacao, type PaginaImo
 import { validarLocal } from "@/lib/imoveis/catalogo";
 import { lerFiltros, tituloGrid } from "@/lib/imoveis/filtros";
 import { temLancamentosParaMenu } from "@/lib/imoveis/lancamentos";
-import { contarPorQuery } from "./actions";
 
 export async function generateMetadata({ searchParams }: PageProps<"/imoveis">): Promise<Metadata> {
   const { finalidade } = lerFiltros(await searchParams);
@@ -17,7 +16,8 @@ export async function generateMetadata({ searchParams }: PageProps<"/imoveis">):
 }
 
 async function Grid({ searchParams, temLancamentos }: Pick<PageProps<"/imoveis">, "searchParams"> & { temLancamentos: boolean }) {
-  const pedidos = lerFiltros(await searchParams);
+  const parametros = await searchParams;
+  const pedidos = lerFiltros(parametros);
   let filtros = pedidos;
   let resultado: PaginaImoveis | null = null;
   let localizacoes: Awaited<ReturnType<typeof getOpcoesLocalizacao>> = [];
@@ -31,7 +31,7 @@ async function Grid({ searchParams, temLancamentos }: Pick<PageProps<"/imoveis">
   }
   return (
     <SiteChrome current={filtros.finalidade === "lancamentos" ? "lancamentos" : "imoveis"}>
-      <ImoveisView filtros={filtros} resultado={resultado} contar={contarPorQuery} localizacoes={localizacoes} tipos={tipos} temLancamentos={temLancamentos} />
+      <ImoveisView filtros={filtros} resultado={resultado} localizacoes={localizacoes} tipos={tipos} temLancamentos={temLancamentos} avancados={parametros.avancados === "1"} />
     </SiteChrome>
   );
 }
@@ -42,7 +42,7 @@ export default async function ImoveisPage({ searchParams }: PageProps<"/imoveis"
     <Suspense
       fallback={
         <SiteChrome current="imoveis">
-          <ImoveisView filtros={{ pagina: 1 }} resultado={null} contar={contarPorQuery} localizacoes={[]} tipos={[]} temLancamentos={temLancamentos} esqueleto />
+          <ImoveisView filtros={{ pagina: 1 }} resultado={null} localizacoes={[]} tipos={[]} temLancamentos={temLancamentos} esqueleto />
         </SiteChrome>
       }
     >

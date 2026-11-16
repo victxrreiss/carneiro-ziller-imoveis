@@ -85,8 +85,8 @@ export type RegistroUsuario = {
 
 export type TipoToken = "convite" | "redefinicao";
 
-/** Por que a Oportunidade de hoje ficou vazia (aviso ao ADMIN na lista de imóveis). */
-export type AvisoOportunidade = {
+/** Por que um imóvel saiu dos destaques da página inicial (aviso ao ADMIN). */
+export type AvisoDestaque = {
   porId: string;
   codigo: string;
   titulo: string;

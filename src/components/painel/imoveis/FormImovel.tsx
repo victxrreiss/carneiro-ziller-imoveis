@@ -11,13 +11,12 @@ import { data, dataHora } from "@/lib/painel/datas";
 import type { ImovelEdicao } from "@/lib/painel/imoveis";
 import { LIMITES, ORDEM_CAMPOS, UFS, type CampoImovel, type ErrosImovel, type Intencao } from "@/lib/painel/regras";
 import { painel, routes } from "@/lib/routes";
-import { IcAlca, IcAlerta, IcAnterior, IcCadeado, IcErro, IcEstrela, IcExterno, IcImagem, IcLixeira, IcProxima, IcVoltar } from "../Icones";
+import { IcAlca, IcAlerta, IcAnterior, IcCadeado, IcErro, IcExterno, IcImagem, IcLixeira, IcProxima, IcVoltar } from "../Icones";
 import { Aviso, Confirmacao, ErroCampo, Selecao } from "../ui";
 import { enviarFoto, erroArquivo, type FotoTela } from "./fotos";
 
 type Usuario = { id: string; nome: string; admin: boolean };
 type Responsavel = { id: string; nome: string; desativado: boolean };
-type Oportunidade = { id: string; codigo: string; titulo: string } | null;
 
 type Campos = {
   finalidade: Finalidade | "";
@@ -48,7 +47,7 @@ type Campos = {
   descricao: string;
   situacao: SituacaoImovel;
   responsavelId: string;
-  oportunidade: boolean;
+  destaque: boolean;
 };
 
 const NOMES: Record<keyof Campos | "fotos", string> = {
@@ -81,7 +80,7 @@ const NOMES: Record<keyof Campos | "fotos", string> = {
   fotos: "as fotos",
   situacao: "a situação",
   responsavelId: "o responsável",
-  oportunidade: "a Oportunidade de hoje",
+  destaque: "o destaque na página inicial",
 };
 
 const ID_CAMPO: Record<CampoImovel, string> = {
@@ -148,7 +147,7 @@ function camposDe(imovel: ImovelEdicao | null, usuarioId: string): Campos {
     descricao: e?.descricao ?? "",
     situacao: imovel?.situacao ?? "rascunho",
     responsavelId: imovel?.responsavelId ?? usuarioId,
-    oportunidade: imovel?.oportunidade ?? false,
+    destaque: imovel?.destaque ?? false,
   };
 }
 
@@ -169,8 +168,8 @@ function focarCampo(raiz: HTMLElement | null, id: string) {
 
 type AvisoTela = { titulo: string; texto: string; link?: { href: string; rotulo: string } };
 
-function textoAviso(intencao: Intencao, codigo: string, situacao: SituacaoImovel, oportunidadeSaiu: boolean, idImovel: string): AvisoTela {
-  const extra = oportunidadeSaiu ? " A Oportunidade de hoje ficou vazia." : "";
+function textoAviso(intencao: Intencao, codigo: string, situacao: SituacaoImovel, destaqueSaiu: boolean, idImovel: string): AvisoTela {
+  const extra = destaqueSaiu ? " Este imóvel saiu dos destaques da página inicial." : "";
   const link = situacao === "publicado" ? { href: routes.imovel(idImovel), rotulo: "Ver no site" } : undefined;
   if (intencao === "publicar") return { titulo: "Imóvel publicado.", texto: `${codigo} já aparece no site.${extra}`, link };
   if (intencao === "rascunho") return { titulo: "Rascunho salvo.", texto: `${codigo} continua fora do site até ser publicado.${extra}` };
@@ -187,13 +186,11 @@ export function FormImovel({
   imovel: inicial,
   usuario,
   responsaveis,
-  oportunidadeAtual,
   avisoInicial,
 }: {
   imovel: ImovelEdicao | null;
   usuario: Usuario;
   responsaveis: Responsavel[];
-  oportunidadeAtual: Oportunidade;
   avisoInicial: Intencao | null;
 }) {
   const router = useRouter();
@@ -340,9 +337,9 @@ export function FormImovel({
 
   // ---------- Salvar ----------
 
-  const podeMarcarOportunidade = jaPublicado && c.situacao === "publicado";
-  const ehOportunidade = !!salvo && oportunidadeAtual?.id === salvo.id;
-  const oportunidadeSaindo = !so && ehOportunidade && (c.situacao !== "publicado" || (usuario.admin && !c.oportunidade));
+  const podeMarcarDestaque = jaPublicado && c.situacao === "publicado";
+  const ehDestaque = !!salvo?.destaque;
+  const destaqueSaindo = !so && ehDestaque && (c.situacao !== "publicado" || (usuario.admin && !c.destaque));
 
   async function salvar(intencao: Intencao) {
     if (salvando) return;
@@ -371,7 +368,7 @@ export function FormImovel({
           valorLocacao: c.finalidade === "venda" ? c.valorLocacao : "",
           fotos: fotos.map((f) => ({ id: f.id!, alt: f.alt })),
           responsavelId: usuario.admin ? c.responsavelId : undefined,
-          oportunidade: usuario.admin ? c.oportunidade && podeMarcarOportunidade : undefined,
+          destaque: usuario.admin ? c.destaque && podeMarcarDestaque : undefined,
         },
         intencao,
       );
@@ -399,7 +396,7 @@ export function FormImovel({
     setSalvo(r.imovel);
     setC(camposDe(r.imovel, usuario.id));
     setFotos(fotosDe(r.imovel));
-    setAviso(textoAviso(intencao, r.codigo, r.situacao, r.oportunidadeSaiu, r.imovel.id));
+    setAviso(textoAviso(intencao, r.codigo, r.situacao, r.destaqueSaiu, r.imovel.id));
     router.refresh();
   }
 
@@ -1238,46 +1235,33 @@ export function FormImovel({
 
             {usuario.admin && !so && (
               <div className="im-field">
-                <span className="im-lbl">OPORTUNIDADE DE HOJE · HOME</span>
-                <label className={`pn-radio${c.oportunidade && podeMarcarOportunidade ? " is-on" : ""}${podeMarcarOportunidade ? "" : " is-disabled"}`}>
+                <span className="im-lbl">DESTAQUE · PÁGINA INICIAL</span>
+                <label className={`pn-radio${c.destaque && podeMarcarDestaque ? " is-on" : ""}${podeMarcarDestaque ? "" : " is-disabled"}`}>
                   <input
                     type="checkbox"
-                    checked={c.oportunidade && podeMarcarOportunidade}
-                    disabled={!podeMarcarOportunidade}
-                    onChange={(e) => mudar("oportunidade", e.target.checked)}
-                    aria-describedby="pn-oport-help"
+                    checked={c.destaque && podeMarcarDestaque}
+                    disabled={!podeMarcarDestaque}
+                    onChange={(e) => mudar("destaque", e.target.checked)}
+                    aria-describedby="pn-dest-help"
                   />
                   <span className="pn-radio-txt">
-                    <strong>Usar na Oportunidade de hoje</strong>
-                    <span id="pn-oport-help">É o bloco grande da Home, com foto e ficha do imóvel. Só um imóvel por vez, escolhido pelo ADMIN.</span>
+                    <strong>Destaque na página inicial</strong>
+                    <span id="pn-dest-help">O imóvel entra no fim da lista de destaques. A ordem se ajusta em Página inicial.</span>
                   </span>
                 </label>
-                {!podeMarcarOportunidade && !ehOportunidade && <p className="pn-hint">Disponível só para imóvel publicado.</p>}
-                {c.oportunidade && podeMarcarOportunidade && !ehOportunidade && oportunidadeAtual && (
-                  <div className="pn-warn" role="status">
-                    <IcEstrela size={16} />
-                    <span>
-                      Hoje a Oportunidade de hoje é{" "}
-                      <strong>
-                        {oportunidadeAtual.codigo} · {oportunidadeAtual.titulo}
-                      </strong>
-                      . Ao salvar, ele sai da Home e este imóvel entra no lugar.
-                    </span>
-                  </div>
-                )}
-                {c.oportunidade && podeMarcarOportunidade && ehOportunidade && <p className="pn-hint">Este imóvel está na Oportunidade de hoje.</p>}
+                {!podeMarcarDestaque && !ehDestaque && <p className="pn-hint">Disponível só para imóvel publicado.</p>}
               </div>
             )}
 
-            {oportunidadeSaindo && (
+            {destaqueSaindo && (
               <div className="pn-warn" role="status">
                 <IcAlerta size={16} stroke="#78323D" width={1.6} />
                 <span>
                   {c.situacao !== "publicado"
-                    ? `Este imóvel está na Oportunidade de hoje da Home. Ao salvar como ${c.situacao === "indisponivel" ? "Indisponível" : "Rascunho"}, ele sai da Home e a seção fica oculta até ${
-                        usuario.admin ? "você escolher" : "o ADMIN escolher"
-                      } outro imóvel publicado.${usuario.admin ? "" : " O ADMIN recebe um aviso no painel."}`
-                    : "Ao salvar, a Oportunidade de hoje fica vazia e a seção some da Home até você escolher outro imóvel publicado."}
+                    ? `Este imóvel está nos destaques da página inicial. Ao salvar como ${c.situacao === "indisponivel" ? "Indisponível" : "Rascunho"}, ele sai dos destaques${
+                        usuario.admin ? "." : ". O ADMIN recebe um aviso no painel."
+                      }`
+                    : "Ao salvar, este imóvel sai dos destaques da página inicial."}
                 </span>
               </div>
             )}

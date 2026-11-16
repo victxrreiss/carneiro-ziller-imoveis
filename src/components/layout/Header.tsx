@@ -4,41 +4,42 @@ import { itensNavegacao, painel, routes, type NavKey } from "@/lib/routes";
 import { Logo } from "./Logo";
 import { MenuDrawer } from "./MenuDrawer";
 
-/** Header da Home, dentro do hero. As outras telas usam o SiteHeader. */
-export async function Header({ current }: { current: NavKey }) {
-  const items = itensNavegacao(await temLancamentosParaMenu()).map((item) => ({ ...item, current: item.key === current }));
+type Variante = "solida" | "sobre-imagem";
+
+const CLASSE: Record<Variante, string> = {
+  solida: "cz-topo cz-topo-solido",
+  "sobre-imagem": "cz-topo cz-topo-sobre-imagem",
+};
+
+/**
+ * Cabeçalho do site. Sólido em azul-noite nas páginas internas; `sobre-imagem` fica
+ * transparente por cima da abertura da Home (o pai precisa de `position: relative`).
+ * Telefone e CRECI não ficam mais no topo: estão no rodapé e no menu do celular.
+ */
+export async function Header({ current, variante = "solida" }: { current?: NavKey; variante?: Variante }) {
+  const items = itensNavegacao(await temLancamentosParaMenu()).map((item) => ({
+    ...item,
+    current: current !== undefined && item.key === current,
+  }));
 
   return (
-    <header className="relative z-3">
-      <div className="mx-auto flex box-content max-w-310 flex-wrap items-center justify-between gap-x-8 gap-y-4.5 px-6 py-6.5">
-        <Link href={routes.home} className="flex">
-          <Logo />
+    <header className={CLASSE[variante]}>
+      <div className="cz-topo-in">
+        <Link href={routes.home} className="cz-topo-logo">
+          <Logo variante="negativa" />
         </Link>
-        <nav aria-label="Principal" className="flex flex-wrap gap-x-8.5 gap-y-2 text-sm font-medium max-[900px]:hidden">
+        <nav className="nav" aria-label="Principal">
           {items.map((item) => (
-            <Link
-              key={item.key}
-              href={item.href}
-              aria-current={item.current ? "page" : undefined}
-              className={`pb-1.5 transition-colors duration-200 hover:text-vinho ${
-                item.current ? "border-b-2 border-vinho text-azul-noite" : "text-grafite"
-              }`}
-            >
+            <Link key={item.key} href={item.href} aria-current={item.current ? "page" : undefined}>
               {item.label}
             </Link>
           ))}
         </nav>
-        <Link
-          href={painel.entrar}
-          className="bg-azul-noite px-6.5 py-4 text-xs font-semibold tracking-[0.2em] text-white transition-colors duration-200 hover:bg-azul-noite-hover max-[900px]:hidden"
-        >
-          SOU CORRETOR
-        </Link>
-        <div className="min-[900px]:hidden">
-          <MenuDrawer
-            items={items}
-            buttonClassName="flex h-11 w-11 cursor-pointer items-center justify-center border border-areia bg-transparent"
-          />
+        <div className="cz-topo-acoes">
+          <Link href={painel.entrar} className="cz-btn-linha cz-topo-corretor">
+            SOU CORRETOR
+          </Link>
+          <MenuDrawer items={items} />
         </div>
       </div>
     </header>

@@ -24,16 +24,25 @@ const VAZIO: CamposInteresse = { nome: "", telefone: "", email: "", observacoes:
 const ORDEM_FOCO = ["nome", "telefone", "email"] as const;
 const ID_CAMPO: Record<Campo, string> = { nome: "im-nome", telefone: "im-tel", email: "im-email", observacoes: "im-obs" };
 
-type Props = { imovel: Imovel; aberto: boolean; onFechar: () => void };
+/** O que o formulário curto do card lateral já recolheu. */
+export type InicioInteresse = Pick<CamposInteresse, "nome" | "telefone">;
+
+type Props = { imovel: Imovel; aberto: boolean; onFechar: () => void; inicio?: InicioInteresse };
 
 /** Painel lateral (desktop) / tela cheia (mobile) com o formulário de interesse. */
-export function FormularioInteresse({ imovel, aberto, onFechar }: Props) {
-  const [campos, setCampos] = useState(VAZIO);
+export function FormularioInteresse({ imovel, aberto, onFechar, inicio }: Props) {
+  const [campos, setCampos] = useState<CamposInteresse>({ ...VAZIO, ...inicio });
   const [erros, setErros] = useState<ErrosInteresse>({});
   const [enviado, setEnviado] = useState(false);
   const [status, setStatus] = useState<Status>("editando");
   const painelRef = useRef<HTMLDivElement>(null);
   const nomeRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  // Vindo do formulário curto com nome e telefone, o foco já começa no que falta.
+  const [comecaNoEmail] = useState(() => {
+    const pendentes = validarInteresse({ ...VAZIO, ...inicio });
+    return !pendentes.nome && !pendentes.telefone;
+  });
   const [focar, setFocar] = useState<string | null>(null);
   const tituloId = useId();
 
@@ -47,7 +56,7 @@ export function FormularioInteresse({ imovel, aberto, onFechar }: Props) {
     onFechar();
   }
 
-  useDialog({ aberto, onFechar: fechar, painelRef, focoInicialRef: nomeRef });
+  useDialog({ aberto, onFechar: fechar, painelRef, focoInicialRef: comecaNoEmail ? emailRef : nomeRef });
 
   // Foco depois do render: primeiro campo inválido ou o título do sucesso.
   useEffect(() => {
@@ -210,6 +219,7 @@ export function FormularioInteresse({ imovel, aberto, onFechar }: Props) {
                       </span>
                     </label>
                     <input
+                      ref={emailRef}
                       id="im-email"
                       name="email"
                       className={classeCampo}

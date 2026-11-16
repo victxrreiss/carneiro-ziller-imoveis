@@ -1,6 +1,6 @@
 // Painel interno. O banco é compartilhado com o site: estes testes rodam depois dos
 // do site (projeto "painel" em playwright.config.ts), em série, e desfazem o que mudam
-// (o imóvel criado é excluído; a Oportunidade de hoje volta para o CZ1009).
+// (o imóvel criado é excluído, e com ele sai dos destaques; o CZ1009 da semente segue destacado).
 // Contas e senha são geradas a cada execução por scripts/e2e-preparar.ts e chegam por
 // variável de ambiente; nada fixo no repositório.
 import { expect, test, type Page } from "@playwright/test";
@@ -125,17 +125,20 @@ test("ADMIN cadastra: rascunho incompleto, publicar exige os obrigatórios, publ
   await expect(page.locator(`img[alt="Fachada da casa"]`).first()).toBeVisible();
 });
 
-test("Oportunidade de hoje: ADMIN escolhe; Corretor tira do ar e o ADMIN é avisado", async ({ page }) => {
+test("Destaques da página inicial: ADMIN escolhe; Corretor tira do ar e o ADMIN é avisado", async ({ page }) => {
   await entrar(page, ADMIN);
   await page.goto(`/painel/imoveis/${codigo.toLowerCase()}`);
-  await page.getByText("Usar na Oportunidade de hoje").click();
-  await expect(page.getByText("Hoje a Oportunidade de hoje é")).toContainText("CZ1009");
+  await page.getByLabel(/Destaque na página inicial/).check();
   await page.getByRole("button", { name: "RESPONSÁVEL" }).click();
   await page.getByRole("option", { name: "Mariana Costa" }).click();
   await page.getByRole("button", { name: "SALVAR ALTERAÇÕES" }).click();
   await expect(page.getByText("Alterações salvas.", { exact: true })).toBeVisible();
+  await page.goto("/painel/pagina-inicial");
+  await expect(page.getByRole("heading", { name: "Página inicial", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Casa de teste do painel" })).toBeVisible();
   await page.goto("/");
-  await expect(page.locator("#destaque-titulo")).toHaveText("Casa de teste do painel");
+  await expect(page.getByRole("heading", { name: "Imóveis em destaque" })).toBeVisible();
+  await expect(page.getByText("Casa de teste do painel").first()).toBeVisible();
   await sair(page);
 
   await entrar(page, CORRETOR);
@@ -145,21 +148,13 @@ test("Oportunidade de hoje: ADMIN escolhe; Corretor tira do ar e o ADMIN é avis
   await page.getByRole("button", { name: "SALVAR ALTERAÇÕES" }).click();
   await expect(page.getByText("Alterações salvas.", { exact: true })).toBeVisible();
   await page.goto("/");
-  await expect(page.locator("#destaque-titulo")).toHaveCount(0);
-  await page.goto("/painel/imoveis");
-  await expect(page.getByText("A Oportunidade de hoje está vazia")).toHaveCount(0);
+  await expect(page.getByText("Casa de teste do painel")).toHaveCount(0);
   await sair(page);
 
   await entrar(page, ADMIN);
-  await expect(page.getByText("A Oportunidade de hoje está vazia")).toBeVisible();
+  await page.goto("/painel/pagina-inicial");
+  await expect(page.getByText("Um imóvel saiu dos destaques")).toBeVisible();
   await expect(page.getByText(`Mariana Costa marcou ${codigo}`)).toBeVisible();
-  // Volta a semente: CZ1009 na Oportunidade de hoje.
-  await page.goto("/painel/imoveis/cz1009");
-  await page.getByText("Usar na Oportunidade de hoje").click();
-  await page.getByRole("button", { name: "SALVAR ALTERAÇÕES" }).click();
-  await expect(page.getByText("Alterações salvas.", { exact: true })).toBeVisible();
-  await page.goto("/painel/imoveis");
-  await expect(page.getByText("A Oportunidade de hoje está vazia")).toHaveCount(0);
 });
 
 test("ADMIN exclui o imóvel de teste", async ({ page }) => {

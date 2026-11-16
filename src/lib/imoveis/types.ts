@@ -63,40 +63,10 @@ export type PaginaImoveis = {
   paginas: number;
 };
 
-export type RotuloFinalidade = "LANÇAMENTO" | "VENDA" | "LOCAÇÃO";
+/**
+ * Card de imóvel fora do grid (destaques da Home, semelhantes): os mesmos dados do grid,
+ * para o `CardImovel` servir aos três lugares.
+ */
+export type ImovelCard = ImovelResumo;
 
-export type ImovelCard = {
-  id: string;
-  badge: RotuloFinalidade;
-  title: string;
-  location: string;
-  price: string;
-  area: string;
-  beds?: string;
-  img: string;
-  alt: string;
-};
-
-export type Regiao = {
-  nome: string;
-  cidade: string;
-  img: string;
-};
-
-/** Bloco "Oportunidade de hoje" da Home: o imóvel que o ADMIN escolhe no painel. */
-export type Destaque = {
-  /** Anúncio para onde o AGENDAR VISITA leva. */
-  id: string;
-  codigo: string;
-  tipo: string;
-  titulo: string;
-  local: string;
-  descricao: string;
-  area: string;
-  /** Só as especificações que existem (terreno e sala não têm quartos/vagas). */
-  quartos?: string;
-  vagas?: string;
-  valor: string;
-  img: string;
-  alt: string;
-};
+export type { Regiao } from "./regioes";

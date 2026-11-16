@@ -1,32 +1,41 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { IcAlerta, IcBusca, IcSeta, IcVoltar } from "@/components/ui/IconesSite";
 import type { PaginaImoveis } from "@/lib/imoveis";
-import { filtrosParaQuery, ORDENS, urlGrid, type Filtros } from "@/lib/imoveis/filtros";
+import { filtrosParaQuery, rotulosFiltros, semFiltro, urlGrid, type Filtros } from "@/lib/imoveis/filtros";
 import { routes } from "@/lib/routes";
 import { CardImovel } from "./CardImovel";
-import { Dropdown } from "./Dropdown";
 
 export type EstadoResultados = { tipo: "carregando" } | { tipo: "erro" } | { tipo: "ok"; resultado: PaginaImoveis };
 
 type Props = {
   estado: EstadoResultados;
+  /** Filtros da página que o servidor devolveu (paginação e o "Voltar aos resultados" dos cards). */
   filtros: Filtros;
-  /** Tipos com imóveis na finalidade escolhida, para os atalhos por categoria. */
-  tipos: { tipo: string; total: number }[];
+  /** Filtros já escolhidos na tela, que podem estar à frente do servidor: são os chips. */
+  escolhidos: Filtros;
   onPagina: (pagina: number) => void;
-  /** Aplica novos filtros (mudar a ordem volta para a página 1). */
   onAplicar: (filtros: Filtros) => void;
   onLimpar: () => void;
   onTentarDeNovo: () => void;
 };
 
-export function Resultados({ estado, filtros, tipos, onPagina, onAplicar, onLimpar, onTentarDeNovo }: Props) {
+export function Resultados({ estado, filtros, escolhidos, onPagina, onAplicar, onLimpar, onTentarDeNovo }: Props) {
+  const total = estado.tipo === "ok" ? estado.resultado.total : null;
   return (
-    <section className="results" aria-label="Resultados" id="resultados">
+    <section className="resultados" aria-label="Resultados" id="resultados">
       <div className="wrap">
-        {estado.tipo === "ok" && <AtalhosTipo filtros={filtros} tipos={tipos} />}
+        <Topo escolhidos={escolhidos} onAplicar={onAplicar}>
+          {estado.tipo === "carregando" && "Carregando imóveis…"}
+          {total !== null && (
+            <>
+              {total} {total === 1 ? "imóvel" : "imóveis"}
+              <span className="sr-only"> {total === 1 ? "encontrado" : "encontrados"}</span>
+            </>
+          )}
+        </Topo>
         {estado.tipo === "carregando" && <Carregando />}
         {estado.tipo === "erro" && (
           <div className="notice" role="alert">
@@ -45,66 +54,68 @@ export function Resultados({ estado, filtros, tipos, onPagina, onAplicar, onLimp
             </div>
           </div>
         )}
-        {estado.tipo === "ok" && estado.resultado.total === 0 && (
-          <>
-            <div className="r-bar">
-              <h2 className="r-count" aria-live="polite">
-                <strong>0</strong> imóveis encontrados
-              </h2>
+        {total === 0 && (
+          <div className="notice">
+            <div className="notice-icon">
+              <IcBusca size={28} width={1.3} />
             </div>
-            <div className="notice">
-              <div className="notice-icon">
-                <IcBusca size={28} width={1.3} />
-              </div>
-              <h2>Nenhum imóvel encontrado</h2>
-              <p>
-                Não há anúncios com essa combinação de filtros. Remova algum filtro ou limpe todos para ver o portfólio
-                completo.
-              </p>
-              <div className="notice-actions">
-                <button type="button" className="btn" onClick={onLimpar}>
-                  LIMPAR FILTROS
-                </button>
-                <Link className="link-arrow" href={routes.contato}>
-                  Falar com um consultor →
-                </Link>
-              </div>
+            <h2>Nenhum imóvel encontrado</h2>
+            <p>
+              Não há anúncios com essa combinação de filtros. Remova algum filtro ou limpe todos para ver o portfólio
+              completo.
+            </p>
+            <div className="notice-actions">
+              <button type="button" className="btn" onClick={onLimpar}>
+                LIMPAR FILTROS
+              </button>
+              <Link className="link-arrow" href={routes.contato}>
+                Falar com um consultor →
+              </Link>
             </div>
-          </>
+          </div>
         )}
-        {estado.tipo === "ok" && estado.resultado.total > 0 && (
-          <Lista resultado={estado.resultado} filtros={filtros} onPagina={onPagina} onAplicar={onAplicar} />
-        )}
+        {estado.tipo === "ok" && estado.resultado.total > 0 && <Lista resultado={estado.resultado} filtros={filtros} onPagina={onPagina} />}
       </div>
     </section>
   );
 }
 
+/** Linha acima do grid: os filtros ativos (cada chip remove o seu) e a contagem. */
+function Topo({ escolhidos, onAplicar, children }: { escolhidos: Filtros; onAplicar: (f: Filtros) => void; children: ReactNode }) {
+  const chips = rotulosFiltros(escolhidos);
+  return (
+    <div className="res-top">
+      {chips.length > 0 && (
+        <ul className="res-chips" aria-label="Filtros ativos">
+          {chips.map((c) => (
+            <li key={`${c.chave}${c.valor ?? ""}`}>
+              <button type="button" aria-label={`Remover filtro ${c.rotulo}`} onClick={() => onAplicar(semFiltro(escolhidos, c.chave, c.valor))}>
+                {c.rotulo} <span aria-hidden="true">×</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <h2 className="res-total" aria-live="polite">
+        {children}
+      </h2>
+    </div>
+  );
+}
+
 function Carregando() {
   return (
-    <>
-      <div className="r-bar">
-        <h2 className="r-count" aria-live="polite">
-          Carregando imóveis…
-        </h2>
-      </div>
-      <ul className="grid" aria-busy="true">
-        {[1, 2, 3, 4, 5, 6].map((n) => (
-          <li key={n} aria-hidden="true">
-            <div className="sk">
-              <div className="sk-media shimmer" />
-              <div className="sk-body">
-                <div className="sk-line shimmer" style={{ width: "55%" }} />
-                <div className="sk-line shimmer" style={{ height: 22, width: "80%" }} />
-                <div className="sk-line shimmer" style={{ width: "40%" }} />
-                <div style={{ height: 1, background: "#E7E4DC", margin: "8px 0 4px" }} />
-                <div className="sk-line shimmer" style={{ height: 18, width: "45%" }} />
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </>
+    <ul className="cards" aria-busy="true">
+      {[1, 2, 3, 4, 5, 6].map((n) => (
+        <li key={n} aria-hidden="true" className="sk">
+          <div className="sk-foto shimmer" />
+          <div className="sk-linha shimmer" style={{ width: "45%" }} />
+          <div className="sk-linha shimmer" style={{ height: 26, width: "80%" }} />
+          <div className="sk-linha shimmer" style={{ width: "55%" }} />
+          <div className="sk-linha shimmer" style={{ height: 24, width: "40%" }} />
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -123,61 +134,13 @@ export function numerosPaginacao(pagina: number, paginas: number): (number | "ga
   return out;
 }
 
-/** Atalhos por categoria: links para o grid com o tipo escolhido (ou sem tipo, em "Todos"). */
-function AtalhosTipo({ filtros, tipos }: { filtros: Filtros; tipos: { tipo: string; total: number }[] }) {
-  if (tipos.length === 0) return null;
-  const link = (tipo: string | undefined, texto: string) => (
-    <li key={tipo ?? "todos"}>
-      <Link
-        className="cat"
-        href={urlGrid({ ...filtros, tipo, pagina: 1 })}
-        scroll={false}
-        aria-current={filtros.tipo === tipo ? "true" : undefined}
-      >
-        {texto}
-      </Link>
-    </li>
-  );
-  return (
-    <nav className="cats" aria-label="Categorias">
-      <ul>
-        {link(undefined, "Todos")}
-        {tipos.map((t) => link(t.tipo, `${t.tipo} (${t.total})`))}
-      </ul>
-    </nav>
-  );
-}
-
-function Lista({
-  resultado,
-  filtros,
-  onPagina,
-  onAplicar,
-}: {
-  resultado: PaginaImoveis;
-  filtros: Filtros;
-  onPagina: (p: number) => void;
-  onAplicar: (f: Filtros) => void;
-}) {
-  const { itens, total, pagina, paginas } = resultado;
+function Lista({ resultado, filtros, onPagina }: { resultado: PaginaImoveis; filtros: Filtros; onPagina: (p: number) => void }) {
+  const { itens, pagina, paginas } = resultado;
   const de = filtrosParaQuery({ ...filtros, pagina });
   const grid = urlGrid({ ...filtros, pagina });
   return (
     <>
-      <div className="r-bar">
-        <h2 className="r-count" aria-live="polite">
-          <strong>{total}</strong> {total === 1 ? "imóvel encontrado" : "imóveis encontrados"}
-        </h2>
-        <Dropdown
-          rotulo="ORDENAR POR"
-          vazio={ORDENS[0].rotulo}
-          opcoes={ORDENS.flatMap((o) => (o.valor ? [{ valor: o.valor, rotulo: o.rotulo }] : []))}
-          valor={filtros.ordem}
-          onChange={(valor) => onAplicar({ ...filtros, ordem: ORDENS.find((o) => o.valor === valor)?.valor, pagina: 1 })}
-        />
-        <div className="r-page">{paginas > 1 ? `PÁGINA ${pagina} DE ${paginas}` : ""}</div>
-      </div>
-      <ul className="grid">
+      <ul className="cards">
         {itens.map((i, k) => (
           <li key={i.id}>
             <CardImovel imovel={i} de={de} grid={grid} prioridade={k < 3} />
@@ -185,51 +148,38 @@ function Lista({
         ))}
       </ul>
       {paginas > 1 && (
-        <nav className="pager" aria-label="Paginação">
+        // No celular, com Anterior e Próxima juntos, os rótulos somem para caber em uma linha.
+        <nav className={pagina > 1 && pagina < paginas ? "pag pag-meio" : "pag"} aria-label="Paginação">
           <ol>
-            <li>
-              <button
-                type="button"
-                className="pg pg-text"
-                aria-disabled={pagina === 1}
-                aria-label="Página anterior"
-                onClick={() => pagina > 1 && onPagina(pagina - 1)}
-              >
-                <IcVoltar stroke="currentColor" />
-                <span className="pg-label">ANTERIOR</span>
-              </button>
-            </li>
+            {pagina > 1 && (
+              <li>
+                <button type="button" className="pag-texto" aria-label="Página anterior" onClick={() => onPagina(pagina - 1)}>
+                  <IcVoltar stroke="currentColor" />
+                  <span>Anterior</span>
+                </button>
+              </li>
+            )}
             {numerosPaginacao(pagina, paginas).map((n, k) =>
               n === "gap" ? (
-                <li key={`gap-${k}`} className="pg-gap" aria-hidden="true">
+                <li key={`gap-${k}`} className="pag-gap" aria-hidden="true">
                   …
                 </li>
               ) : (
                 <li key={n}>
-                  <button
-                    type="button"
-                    className="pg"
-                    aria-current={n === pagina ? "page" : undefined}
-                    aria-label={`Página ${n}`}
-                    onClick={() => n !== pagina && onPagina(n)}
-                  >
+                  <button type="button" aria-current={n === pagina ? "page" : undefined} aria-label={`Página ${n}`} onClick={() => n !== pagina && onPagina(n)}>
                     {n}
                   </button>
                 </li>
               ),
             )}
-            <li>
-              <button
-                type="button"
-                className="pg pg-text"
-                aria-disabled={pagina === paginas}
-                aria-label="Próxima página"
-                onClick={() => pagina < paginas && onPagina(pagina + 1)}
-              >
-                <span className="pg-label">PRÓXIMA</span>
-                <IcSeta stroke="currentColor" />
-              </button>
-            </li>
+            {pagina < paginas && (
+              <li>
+                <button type="button" className="pag-texto" aria-label="Próxima página" onClick={() => onPagina(pagina + 1)}>
+                  <span>Próxima</span>
+                  <IcSeta stroke="currentColor" />
+                </button>
+              </li>
+            )}
           </ol>
         </nav>
       )}

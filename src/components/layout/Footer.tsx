@@ -2,24 +2,24 @@ import Link from "next/link";
 import { InstagramIcon, LinkedInIcon } from "@/components/ui/Icons";
 import { temLancamentosParaMenu } from "@/lib/imoveis/lancamentos";
 import { itensNavegacao, routes } from "@/lib/routes";
-import { empresa, linkWhatsApp, social } from "@/lib/site";
+import { empresa, linkTelefone, linkWhatsApp, social } from "@/lib/site";
 import { Logo } from "./Logo";
 
 const privacidade = { key: "privacidade", label: "Política de privacidade", href: routes.privacidade };
 
-/** Rodapé do site (versão do grid/Imóvel). Precisa de um ancestral `.cz`. */
+/** Rodapé do site todo: marca, contatos de `site.ts` (telefone, WhatsApp, e-mail, endereço, CRECI) e navegação. */
 export async function Footer() {
   const footerNav = [...itensNavegacao(await temLancamentosParaMenu()), privacidade];
   return (
-    <footer className="footer">
-      <div className="wrap">
-        <div className="f-col" style={{ gap: 22 }}>
-          <Link href={routes.home} className="logo">
-            <Logo variant="negative" />
+    <footer className="cz-rodape">
+      <div className="cz-rodape-in">
+        <div className="cz-rodape-marca">
+          <Link href={routes.home} className="cz-rodape-logo">
+            <Logo variante="negativa" />
           </Link>
-          <p style={{ margin: 0 }}>Imóveis em Belo Horizonte e Nova Lima.</p>
+          <p>Imóveis de alto padrão em Belo Horizonte e Nova Lima.</p>
           {(social.instagram || social.linkedin) && (
-            <div className="social">
+            <div className="cz-rodape-social">
               {social.instagram && (
                 <a href={social.instagram} aria-label="Instagram">
                   <InstagramIcon size={18} color="#E7E4DC" />
@@ -33,11 +33,10 @@ export async function Footer() {
             </div>
           )}
         </div>
-        <div className="f-col">
-          <div className="f-h">{empresa.nome.toUpperCase()}</div>
-          <span>{empresa.creci}</span>
-          <span>{empresa.telefone}</span>
-          <a href={linkWhatsApp()}>WHATSAPP</a>
+        <div className="cz-rodape-col">
+          <h2>Contato</h2>
+          <a href={linkTelefone()}>{empresa.telefone}</a>
+          <a href={linkWhatsApp()}>WhatsApp</a>
           <a href={`mailto:${empresa.email}`}>{empresa.email}</a>
           <span>
             {empresa.endereco[0]}
@@ -45,8 +44,8 @@ export async function Footer() {
             {empresa.endereco[1]}
           </span>
         </div>
-        <nav className="f-col" aria-label="Rodapé">
-          <div className="f-h">NAVEGAÇÃO</div>
+        <nav className="cz-rodape-col" aria-label="Rodapé">
+          <h2>Navegação</h2>
           {footerNav.map((item) => (
             <Link key={item.key} href={item.href}>
               {item.label}
@@ -54,11 +53,9 @@ export async function Footer() {
           ))}
         </nav>
       </div>
-      <div className="f-bottom">
-        <div className="wrap">
-          <span>© 2026 Carneiro &amp; Ziller Imóveis. Todos os direitos reservados.</span>
-          <span>{empresa.creci}</span>
-        </div>
+      <div className="cz-rodape-base">
+        <span>© 2026 {empresa.nome}. Todos os direitos reservados.</span>
+        <span>{empresa.creci}</span>
       </div>
     </footer>
   );

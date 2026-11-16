@@ -61,8 +61,8 @@ export type EntradaImovel = {
   situacao: SituacaoImovel;
   /** Só ADMIN. */
   responsavelId?: string;
-  /** Só ADMIN: usar na Oportunidade de hoje da Home. */
-  oportunidade?: boolean;
+  /** Só ADMIN: destaque na página inicial. */
+  destaque?: boolean;
 };
 
 /** Salvar rascunho · Publicar · Salvar alterações (situação do campo). */

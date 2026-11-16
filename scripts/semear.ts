@@ -1,6 +1,6 @@
 // npm run db:semente — só desenvolvimento local. Importa os 35 imóveis de exemplo
 // (fotos de public/images/imoveis vão para o armazenamento local) e define a
-// Oportunidade de hoje. Exige um ADMIN já criado (`npm run admin:criar`).
+// destaque da página inicial. Exige um ADMIN já criado (`npm run admin:criar`).
 import "./ambiente";
 import { eq } from "drizzle-orm";
 import { readFile } from "node:fs/promises";

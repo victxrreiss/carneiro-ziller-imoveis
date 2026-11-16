@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
-import { Marca } from "../ui";
+import { Logo } from "@/components/layout/Logo";
 
 /** Telas de acesso: sem o menu do painel, só a marca e o cartão. */
 export function CartaoAcesso({ children }: { children: ReactNode }) {
   return (
     <main className="pn-auth">
       <div className="pn-auth-brand">
-        <span className="logo" role="img" aria-label="Carneiro & Ziller Imóveis">
-          <Marca />
+        <span className="logo">
+          <Logo />
         </span>
         <span className="pn-brand-tag">PAINEL INTERNO</span>
       </div>

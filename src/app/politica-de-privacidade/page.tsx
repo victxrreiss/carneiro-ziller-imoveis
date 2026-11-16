@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function PrivacidadePage() {
   return (
-    <PaginaInstitucional titulo="Política de privacidade">
+    <PaginaInstitucional rotulo="Carneiro &amp; Ziller Imóveis" titulo="Política de privacidade">
       <div className="inst-leitura">
         <h2>Quem somos</h2>
         <p>

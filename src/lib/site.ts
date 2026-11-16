@@ -21,10 +21,39 @@ export function linkWhatsApp(mensagem?: string): string {
   return mensagem ? `${base}?text=${encodeURIComponent(mensagem)}` : base;
 }
 
+/** Link `tel:` do telefone da empresa, com o código do país. */
+export function linkTelefone(): string {
+  return `tel:+55${empresa.telefone.replace(/\D/g, "")}`;
+}
+
 // Redes sociais: `null` até o cliente informar a URL; o ícone só aparece com URL real.
 export const social: { instagram: string | null; linkedin: string | null } = {
   instagram: null,
   linkedin: null,
+};
+
+/**
+ * Abertura da página inicial. Com `video` preenchido, a seção toca o vídeo (mudo, em loop)
+ * por cima da primeira imagem; sem ele, as imagens se alternam.
+ * Nas frases, a quebra de linha separa a parte em itálico (a segunda linha).
+ */
+export const abertura: {
+  video: null | { mp4: string; poster: string };
+  imagens: readonly { src: string; alt: string }[];
+  frases: readonly string[];
+} = {
+  video: null,
+  imagens: [
+    { src: "/images/imoveis/a1843e848f2e8288905697ba4fc1dc0a.jpg", alt: "Casa envidraçada com piscina ao entardecer, com a serra ao fundo" },
+    { src: "/images/venda-vila-da-serra.jpg", alt: "Varanda de madeira aberta para o jardim e a piscina, à noite" },
+    { src: "/images/imoveis/f40a059ac95c00760f5ea57662eb9888.jpg", alt: "Duas torres residenciais entre jardins, sob céu azul" },
+  ],
+  frases: [
+    "Morar bem começa\npela escolha do endereço.",
+    "Entre a serra e a cidade,\no seu lugar.",
+    "Casas que pedem silêncio,\nvistas que pedem tempo.",
+    "Cada imóvel, uma história\nque começa com você.",
+  ],
 };
 
 /** Descrição padrão do site (metadados e Open Graph). */

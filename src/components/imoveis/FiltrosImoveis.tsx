@@ -1,313 +1,323 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type FormEvent } from "react";
-import { IcBusca, IcFiltros, IcX } from "@/components/ui/IconesSite";
-import { useDialog } from "@/components/ui/useDialog";
+import Link from "next/link";
+import { useId, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import {
   comFinalidade,
-  contarFiltrosPainel,
   FAIXAS_AREA,
   faixasPreco,
   FINALIDADES,
-  filtrosParaQuery,
   MINIMOS_QUARTOS,
   MINIMOS_SUITES,
   MINIMOS_VAGAS,
-  rotulosFiltros,
-  semFiltro,
+  ORDENS,
+  temFiltroAvancado,
   TIPOS,
-  type ChaveFiltro,
+  urlGrid,
+  type Faixa,
   type Filtros,
 } from "@/lib/imoveis/filtros";
 import { CARACTERISTICAS_FILTRO, rotuloCaracteristica } from "@/lib/imoveis/caracteristicas";
-import { Dropdown, type Opcao } from "./Dropdown";
+import { naRegiao, REGIOES } from "@/lib/imoveis/regioes";
+import { routes } from "@/lib/routes";
+
+type Localizacoes = { cidade: string; bairros: string[] }[];
 
 type Props = {
   filtros: Filtros;
   onAplicar: (filtros: Filtros) => void;
-  /** Quantos imóveis a querystring de filtros traria (botão "VER N IMÓVEIS"). Server Action. */
-  contar: (query: string) => Promise<number>;
-  totalAtual: number;
   /** Cidades e bairros com imóveis publicados (`getOpcoesLocalizacao`). */
-  localizacoes: { cidade: string; bairros: string[] }[];
-  /** Sem lançamentos publicados, a opção LANÇAMENTOS não é oferecida (a URL antiga continua valendo). */
+  localizacoes: Localizacoes;
+  /** Tipos com imóvel na finalidade escolhida (`getContagemPorTipo`); vazio enquanto carrega. */
+  tipos: { tipo: string; total: number }[];
+  /** Sem lançamentos publicados, a aba Lançamentos não é oferecida (a URL antiga continua valendo). */
   temLancamentos: boolean;
+  /** `?avancados=1` (link "Filtros avançados" da Home): o painel já chega aberto. */
+  avancados?: boolean;
 };
 
 const LIMPOS: Filtros = { pagina: 1 };
-const opcoesFaixa = (lista: readonly (readonly [string, string, number, number])[]) =>
-  lista.map(([valor, rotulo]) => ({ valor, rotulo }));
-/** Por cidade: "Toda a cidade" (valor "<Cidade>") e depois cada bairro (valor "<Bairro>, <Cidade>"). */
-const opcoesLocalizacao = (lista: Props["localizacoes"]): Opcao[] =>
-  lista.flatMap(({ cidade, bairros }) => [
-    { valor: cidade, rotulo: "Toda a cidade", grupo: cidade, resumo: cidade },
-    ...bairros.map((b) => ({ valor: `${b}, ${cidade}`, rotulo: b, grupo: cidade, resumo: `${b}, ${cidade}` })),
-  ]);
-const opcoesMinimo = (lista: readonly string[]) => lista.map((v) => ({ valor: v, rotulo: `${v} ou mais` }));
+/** Valor das opções do grupo "Regiões" no select de Bairro (os bairros usam "<Bairro>, <Cidade>"). */
+const PREFIXO_REGIAO = "regiao:";
 
-export function FiltrosImoveis({ filtros, onAplicar, contar, totalAtual, localizacoes, temLancamentos }: Props) {
+function Campo({
+  rotulo,
+  name,
+  valor,
+  onChange,
+  desabilitado,
+  dica,
+  children,
+}: {
+  rotulo: string;
+  name: string;
+  valor: string;
+  onChange: (valor: string) => void;
+  desabilitado?: boolean;
+  /** Texto pequeno sob o campo (por que está desabilitado). */
+  dica?: string;
+  children: ReactNode;
+}) {
+  const id = useId();
+  // Rótulo ao lado, e não em volta: o nome acessível do campo é só o rótulo, sem o texto das opções.
+  return (
+    <div className="campo">
+      <label htmlFor={id}>{rotulo}</label>
+      <select id={id} name={name} value={valor} disabled={desabilitado} aria-describedby={dica ? `${id}-dica` : undefined} onChange={(e) => onChange(e.target.value)}>
+        {children}
+      </select>
+      {dica && (
+        <span className="campo-dica" id={`${id}-dica`}>
+          {dica}
+        </span>
+      )}
+    </div>
+  );
+}
+
+const opcoesFaixa = (lista: readonly Faixa[]) =>
+  lista.map(([valor, rotulo]) => (
+    <option key={valor} value={valor}>
+      {rotulo}
+    </option>
+  ));
+const opcoesMinimo = (lista: readonly string[]) =>
+  lista.map((n) => (
+    <option key={n} value={n}>
+      {n}+
+    </option>
+  ));
+
+/** Separa o `local` da URL em cidade e bairro ("<Bairro>, <Cidade>"); a cidade de um bairro vem junto. */
+function lerLocal(local: string | undefined, localizacoes: Localizacoes): { cidade: string; bairro: string } {
+  for (const { cidade, bairros } of localizacoes) {
+    if (local === cidade) return { cidade, bairro: "" };
+    if (bairros.some((b) => `${b}, ${cidade}` === local)) return { cidade, bairro: local! };
+  }
+  return { cidade: "", bairro: "" };
+}
+
+/**
+ * Regiões oferecidas no select de Bairro: só os "pares", isto é, as que juntam pelo menos dois
+ * bairros com imóvel publicado (com um só, a região repetiria a opção do próprio bairro). Com
+ * cidade escolhida, as que passam por ela. A região que já está na URL aparece sempre.
+ */
+function regioesDoSelect(localizacoes: Localizacoes, cidade: string, atual: string | undefined) {
+  return REGIOES.filter((r) => {
+    if (r.slug === atual) return true;
+    // Uma entrada por bairro da região com imóvel publicado, guardando a cidade dele.
+    const cidadesDosBairros = localizacoes.flatMap((l) => l.bairros.filter((bairro) => naRegiao(r, { bairro, cidade: l.cidade })).map(() => l.cidade));
+    return cidadesDosBairros.length > 1 && (!cidade || cidadesDosBairros.includes(cidade));
+  });
+}
+
+/**
+ * Filtros do grid, como na proposta: abas de finalidade, os quatro filtros principais (tipo,
+ * cidade, bairro, quartos) sempre à vista e o resto recolhido em "Filtros avançados". Cada
+ * escolha já aplica (a URL é a fonte da verdade); o texto vale ao enviar.
+ *
+ * Antes da hidratação já é HTML que funciona: as abas são links, o painel é um <details> e o
+ * form é um GET para /imoveis com os mesmos nomes de parâmetro (cidade e bairro enviam `local`
+ * os dois, e `lerFiltros` fica com o último preenchido; a região da URL vai num campo oculto).
+ * Escolher outra região ou característica só funciona com JavaScript.
+ */
+export function FiltrosImoveis({ filtros, onAplicar, localizacoes, tipos, temLancamentos, avancados = false }: Props) {
   const [busca, setBusca] = useState(filtros.q ?? "");
-  const [painelAberto, setPainelAberto] = useState(false);
-  const [rascunho, setRascunho] = useState(filtros);
-  const [contagem, setContagem] = useState(totalAtual);
-  const painelRef = useRef<HTMLDivElement>(null);
-  const botaoFiltrosRef = useRef<HTMLButtonElement>(null);
-  const tituloPainelId = useId();
-
-  // A URL é a fonte da verdade: quando ela muda, o campo de busca acompanha.
+  // A URL é a fonte da verdade: quando ela muda, o campo de texto acompanha.
   const [qAnterior, setQAnterior] = useState(filtros.q);
   if (qAnterior !== filtros.q) {
     setQAnterior(filtros.q);
     setBusca(filtros.q ?? "");
   }
 
-  useDialog({ aberto: painelAberto, onFechar: () => setPainelAberto(false), painelRef, retornoRef: botaoFiltrosRef });
-
-  // Com o painel mobile aberto, as escolhas ficam num rascunho até "VER N IMÓVEIS".
-  const ativos = painelAberto ? rascunho : filtros;
-  function mudar(proximo: Filtros) {
-    if (painelAberto) setRascunho(proximo);
-    else onAplicar(proximo);
+  // O painel abre sozinho quando a URL traz um filtro avançado, mas nunca fecha sozinho.
+  const pedeAberto = avancados || temFiltroAvancado(filtros);
+  const [aberto, setAberto] = useState(pedeAberto);
+  const [pediaAberto, setPediaAberto] = useState(pedeAberto);
+  if (pediaAberto !== pedeAberto) {
+    setPediaAberto(pedeAberto);
+    if (pedeAberto) setAberto(true);
   }
 
-  useEffect(() => {
-    if (!painelAberto) return;
-    let vigente = true;
-    contar(filtrosParaQuery(rascunho)).then(
-      (n) => vigente && setContagem(n),
-      () => {},
-    );
-    return () => {
-      vigente = false;
-    };
-  }, [painelAberto, rascunho, contar]);
+  const mudar = (parte: Partial<Filtros>) => onAplicar({ ...filtros, ...parte, pagina: 1 });
+  const { cidade, bairro } = lerLocal(filtros.local, localizacoes);
+  const regioes = regioesDoSelect(localizacoes, cidade, filtros.regiao);
+  const doBairro = localizacoes.filter((l) => !cidade || l.cidade === cidade);
+  const precos = faixasPreco(filtros.finalidade);
+  // O tipo escolhido continua na lista mesmo sem imóvel na finalidade atual.
+  const tiposComImovel = tipos.length ? TIPOS.filter((t) => t === filtros.tipo || tipos.some((x) => x.tipo === t)) : TIPOS;
+  // Se a URL já pede lançamentos, a aba fica para refletir o estado atual.
+  const finalidades = FINALIDADES.filter((f) => f.valor !== "lancamentos" || temLancamentos || filtros.finalidade === "lancamentos");
 
-  function abrirPainel() {
-    setRascunho(filtros);
-    setContagem(totalAtual);
-    setPainelAberto(true);
+  function trocarBairro(valor: string) {
+    if (valor.startsWith(PREFIXO_REGIAO)) mudar({ regiao: valor.slice(PREFIXO_REGIAO.length), local: undefined });
+    else mudar({ regiao: undefined, local: valor || cidade || undefined });
   }
 
-  function aplicarPainel() {
-    setPainelAberto(false);
-    onAplicar({ ...rascunho, pagina: 1 });
-  }
-
-  function enviarBusca(e: FormEvent) {
+  function enviar(e: FormEvent) {
     e.preventDefault();
-    onAplicar({ ...filtros, q: busca.trim() || undefined, pagina: 1 });
+    mudar({ q: busca.trim() || undefined });
   }
 
-  const set = (chave: ChaveFiltro) => (valor: string | undefined) => mudar({ ...ativos, [chave]: valor, pagina: 1 });
-  const chips = rotulosFiltros(filtros);
-  const noPainel = contarFiltrosPainel(filtros);
-  const precos = faixasPreco(ativos.finalidade);
-
-  // Se a URL já pede lançamentos, a opção fica para refletir o estado atual.
-  const finalidadesVisiveis = FINALIDADES.filter((f) => f.valor !== "lancamentos" || temLancamentos || filtros.finalidade === "lancamentos");
-
-  const segmentado = (classe: string) => (
-    <div className={classe} role="radiogroup" aria-label="Finalidade">
-      {finalidadesVisiveis.map((f) => (
-        <button
-          key={f.rotulo}
-          type="button"
-          role="radio"
-          aria-checked={ativos.finalidade === f.valor}
-          onClick={() => mudar(comFinalidade(ativos, f.valor))}
-        >
-          {f.rotulo}
-        </button>
-      ))}
-    </div>
-  );
+  function irParaAba(e: MouseEvent, proximos: Filtros) {
+    // Ctrl/⌘ + clique e botão do meio abrem o link em outra aba, como qualquer link.
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    e.preventDefault();
+    onAplicar(proximos);
+  }
 
   return (
-    <>
-      <section className="filters" aria-label="Filtros">
-        <div className="wrap">
-          <form
-            className={ativos.finalidade ? "ff" : "ff has-hint"}
-            role="search"
-            aria-label="Filtrar imóveis"
-            onSubmit={enviarBusca}
-          >
-            <div className="f-top">
-              {segmentado("seg")}
-              <div className="search">
-                <label htmlFor="q" className="sr-only">
-                  Buscar por bairro, cidade, condomínio ou código
-                </label>
+    <section className="filtros" aria-label="Filtros">
+      <div className="wrap">
+        <form className="busca" role="search" aria-label="Filtrar imóveis" action={routes.imoveis} onSubmit={enviar}>
+          <nav className="busca-abas" aria-label="Finalidade">
+            {finalidades.map((f) => {
+              const proximos = comFinalidade(filtros, f.valor);
+              return (
+                <Link
+                  key={f.valor}
+                  href={urlGrid(proximos)}
+                  scroll={false}
+                  aria-current={filtros.finalidade === f.valor ? "true" : undefined}
+                  onClick={(e) => irParaAba(e, proximos)}
+                >
+                  {f.rotulo}
+                </Link>
+              );
+            })}
+          </nav>
+          {filtros.finalidade && <input type="hidden" name="finalidade" value={filtros.finalidade} />}
+          {/* Antes da hidratação, o select de Bairro enviaria `local=regiao:<slug>`, que `lerFiltros` descarta. */}
+          {filtros.regiao && <input type="hidden" name="regiao" value={filtros.regiao} />}
+
+          <div className="busca-bar">
+            <Campo rotulo="Tipo de imóvel" name="tipo" valor={filtros.tipo ?? ""} onChange={(v) => mudar({ tipo: v || undefined })}>
+              <option value="">Todos os tipos</option>
+              {tiposComImovel.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </Campo>
+            <Campo rotulo="Cidade" name="local" valor={cidade} onChange={(v) => mudar({ regiao: undefined, local: v || undefined })}>
+              <option value="">Todas as cidades</option>
+              {localizacoes.map((l) => (
+                <option key={l.cidade} value={l.cidade}>
+                  {l.cidade}
+                </option>
+              ))}
+            </Campo>
+            <Campo rotulo="Bairro" name="local" valor={filtros.regiao ? PREFIXO_REGIAO + filtros.regiao : bairro} onChange={trocarBairro}>
+              <option value="">Todos os bairros</option>
+              {regioes.length > 0 && (
+                <optgroup label="Regiões">
+                  {regioes.map((r) => (
+                    <option key={r.slug} value={PREFIXO_REGIAO + r.slug}>
+                      {r.nome}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              {doBairro.map((l) => (
+                <optgroup key={l.cidade} label={l.cidade}>
+                  {l.bairros.map((b) => (
+                    <option key={b} value={`${b}, ${l.cidade}`}>
+                      {b}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </Campo>
+            <Campo rotulo="Quartos" name="quartos" valor={filtros.quartos ?? ""} onChange={(v) => mudar({ quartos: v || undefined })}>
+              <option value="">Qualquer</option>
+              {opcoesMinimo(MINIMOS_QUARTOS)}
+            </Campo>
+            <button type="submit" className="buscar">
+              Buscar
+            </button>
+          </div>
+
+          <details className="avancados" open={aberto} onToggle={(e) => setAberto(e.currentTarget.open)}>
+            <summary>
+              <span>Filtros avançados</span>
+              <small>Preço, área, vagas, suítes, características, código e ordenação</small>
+            </summary>
+            <div className="avancados-in">
+              <Campo
+                rotulo="Preço"
+                name="preco"
+                valor={filtros.preco ?? ""}
+                onChange={(v) => mudar({ preco: v || undefined })}
+                desabilitado={!filtros.finalidade}
+                // Sem finalidade não dá para saber se a faixa é de venda ou de aluguel.
+                dica={filtros.finalidade ? undefined : "Escolha Comprar ou Alugar"}
+              >
+                <option value="">Qualquer valor</option>
+                {opcoesFaixa(precos)}
+              </Campo>
+              <Campo rotulo="Área" name="area" valor={filtros.area ?? ""} onChange={(v) => mudar({ area: v || undefined })}>
+                <option value="">Qualquer área</option>
+                {opcoesFaixa(FAIXAS_AREA)}
+              </Campo>
+              <Campo rotulo="Vagas" name="vagas" valor={filtros.vagas ?? ""} onChange={(v) => mudar({ vagas: v || undefined })}>
+                <option value="">Qualquer</option>
+                {opcoesMinimo(MINIMOS_VAGAS)}
+              </Campo>
+              <Campo rotulo="Suítes" name="suites" valor={filtros.suites ?? ""} onChange={(v) => mudar({ suites: v || undefined })}>
+                <option value="">Qualquer</option>
+                {opcoesMinimo(MINIMOS_SUITES)}
+              </Campo>
+              <div className="campo">
+                <label htmlFor="q">Código ou texto</label>
                 <input
                   id="q"
+                  name="q"
                   type="search"
-                  placeholder="Bairro, cidade, condomínio ou código"
+                  placeholder="CZ1234"
                   autoComplete="off"
                   maxLength={80}
                   value={busca}
                   onChange={(e) => setBusca(e.target.value)}
                 />
-                <button type="submit" aria-label="Buscar">
-                  <IcBusca size={20} stroke="#FFFFFF" width={1.7} />
-                </button>
               </div>
-            </div>
-
-            <div className="f-mobile-bar">
-              <button
-                ref={botaoFiltrosRef}
-                type="button"
-                className="btn-filters"
-                aria-expanded={painelAberto}
-                onClick={abrirPainel}
+              <Campo
+                rotulo="Ordenar por"
+                name="ordem"
+                valor={filtros.ordem ?? ""}
+                onChange={(v) => mudar({ ordem: ORDENS.find((o) => o.valor === v)?.valor })}
               >
-                <IcFiltros size={18} width={1.6} />
-                FILTROS
-                {noPainel > 0 && (
-                  <>
-                    <span className="count">{noPainel}</span>
-                    <span className="sr-only">filtros ativos</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            <div
-              ref={painelRef}
-              className={painelAberto ? "f-panel open" : "f-panel"}
-              {...(painelAberto ? { role: "dialog", "aria-modal": true, "aria-labelledby": tituloPainelId } : {})}
-            >
-              <div className="f-panel-head">
-                <h2 id={tituloPainelId}>Filtros</h2>
-                <button className="icon-btn" type="button" aria-label="Fechar filtros" onClick={() => setPainelAberto(false)}>
-                  <IcX size={18} width={1.6} />
-                </button>
-              </div>
-              <div className="f-panel-body">
-                <div className="seg-m-wrap">
-                  <span className="lbl">FINALIDADE</span>
-                  {segmentado("seg seg-m")}
-                </div>
-                <div className="f-grid">
-                  <Dropdown
-                    rotulo="LOCALIZAÇÃO"
-                    vazio="Todas as localizações"
-                    opcoes={opcoesLocalizacao(localizacoes)}
-                    valor={ativos.local}
-                    onChange={set("local")}
-                    largo
-                  />
-                  <Dropdown
-                    rotulo="TIPO DE IMÓVEL"
-                    vazio="Todos os tipos"
-                    opcoes={TIPOS.map((t) => ({ valor: t, rotulo: t }))}
-                    valor={ativos.tipo}
-                    onChange={set("tipo")}
-                    largo
-                  />
-                  <Dropdown
-                    rotulo="FAIXA DE PREÇO"
-                    vazio="Qualquer valor"
-                    opcoes={opcoesFaixa(precos)}
-                    valor={ativos.preco}
-                    onChange={set("preco")}
-                    largo
-                    desabilitado={!ativos.finalidade}
-                    dica={ativos.finalidade ? undefined : "Escolha a finalidade para filtrar por preço."}
-                  />
-                  <Dropdown
-                    rotulo="ÁREA (M²)"
-                    vazio="Qualquer área"
-                    opcoes={opcoesFaixa(FAIXAS_AREA)}
-                    valor={ativos.area}
-                    onChange={set("area")}
-                    largo
-                  />
-                  <Dropdown
-                    rotulo="QUARTOS"
-                    vazio="Qualquer"
-                    opcoes={opcoesMinimo(MINIMOS_QUARTOS)}
-                    valor={ativos.quartos}
-                    onChange={set("quartos")}
-                  />
-                  <Dropdown
-                    rotulo="VAGAS"
-                    vazio="Qualquer"
-                    opcoes={opcoesMinimo(MINIMOS_VAGAS)}
-                    valor={ativos.vagas}
-                    onChange={set("vagas")}
-                  />
-                  <Dropdown
-                    rotulo="SUÍTES"
-                    vazio="Qualquer"
-                    opcoes={opcoesMinimo(MINIMOS_SUITES)}
-                    valor={ativos.suites}
-                    onChange={set("suites")}
-                  />
-                  <button type="button" className="clear" disabled={chips.length === 0} onClick={() => onAplicar(LIMPOS)}>
-                    <IcX size={14} stroke="currentColor" width={1.8} />
-                    LIMPAR FILTROS
-                  </button>
-                  <div className="f-carac" role="group" aria-label="Características">
-                    <span className="lbl" aria-hidden="true">
-                      CARACTERÍSTICAS
-                    </span>
-                    {CARACTERISTICAS_FILTRO.map((c) => {
-                      const marcada = ativos.carac?.includes(c) ?? false;
-                      return (
-                        <button
-                          key={c}
-                          type="button"
-                          className="tog"
-                          aria-pressed={marcada}
-                          onClick={() =>
-                            mudar({
-                              ...ativos,
-                              carac: marcada ? ativos.carac?.filter((x) => x !== c) : [...(ativos.carac ?? []), c],
-                              pagina: 1,
-                            })
-                          }
-                        >
-                          {rotuloCaracteristica(c)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-              <div className="f-panel-foot">
-                <button type="button" className="btn btn-ghost" onClick={() => setRascunho(LIMPOS)}>
-                  LIMPAR
-                </button>
-                <button type="button" className="btn" onClick={aplicarPainel}>
-                  VER {contagem} IMÓVEIS
-                </button>
-              </div>
-            </div>
-
-            {chips.length > 0 && (
-              <div className="chips" aria-label="Filtros ativos">
-                <span className="chips-lbl">FILTROS ATIVOS</span>
-                {chips.map((c) => (
-                  <button
-                    key={`${c.chave}${c.valor ?? ""}`}
-                    type="button"
-                    className="chip"
-                    aria-label={`Remover filtro ${c.rotulo}`}
-                    onClick={() => onAplicar(semFiltro(filtros, c.chave, c.valor))}
-                  >
-                    {c.rotulo}
-                    <span className="x">
-                      <IcX size={12} width={2} />
-                    </span>
-                  </button>
+                {ORDENS.map((o) => (
+                  <option key={o.rotulo} value={o.valor ?? ""}>
+                    {o.rotulo}
+                  </option>
                 ))}
+              </Campo>
+              <div className="carac" role="group" aria-label="Características">
+                {CARACTERISTICAS_FILTRO.map((c) => {
+                  const marcada = filtros.carac?.includes(c) ?? false;
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      aria-pressed={marcada}
+                      onClick={() => mudar({ carac: marcada ? filtros.carac?.filter((x) => x !== c) : [...(filtros.carac ?? []), c] })}
+                    >
+                      {rotuloCaracteristica(c)}
+                    </button>
+                  );
+                })}
+                {/* Sem JavaScript, o Buscar mantém as características que já estavam na URL. */}
+                {filtros.carac?.map((c) => <input key={c} type="hidden" name="carac" value={c} />)}
               </div>
-            )}
-          </form>
-        </div>
-      </section>
-      {painelAberto && <div className="scrim" onClick={() => setPainelAberto(false)} />}
-    </>
+              <div className="avancados-acoes">
+                <button type="button" className="limpar" onClick={() => onAplicar(LIMPOS)}>
+                  Limpar filtros
+                </button>
+              </div>
+            </div>
+          </details>
+        </form>
+      </div>
+    </section>
   );
 }

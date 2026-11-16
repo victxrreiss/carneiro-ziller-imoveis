@@ -57,8 +57,10 @@ The full runbook is `deploy/README.md`. In short:
 
 ## Styling (three systems)
 
-- The **Home** (`src/components/home/`, `layout/Header`, `layout/UtilityBar`) uses **Tailwind v4**, with tokens in `@theme` in `src/app/globals.css`.
-- The **grid and property pages** and the shared chrome (`SiteChrome`) use plain CSS from the design handoff (`src/styles/cz-site.css`, `cz-imovel.css`), scoped under `.cz`.
+- The identity tokens (`--noite`, `--champanhe`, `--font-display`, `--font-sans`…) live in `:root` in `src/app/globals.css`, so all three systems share them.
+- The **Home** (`src/components/home/`) uses **Tailwind v4**, with `@theme` in `src/app/globals.css` mapping the tokens to utilities (`bg-noite`, `text-champanhe`).
+- The **grid, property and institutional pages** (and the 404) use plain CSS (`src/styles/cz-site.css`, `cz-imovel.css`), scoped under `.cz`. The title band (`.pg-cab`, `.pg-eyebrow`, `.pg-titulo`) is shared by `/imoveis` and `PaginaInstitucional`; `.pg-aviso` is the full-page notice (404, property not found or unavailable).
+- Two things are plain CSS at the end of `cz-site.css`, **outside** the `.cz` scope, because the Home (Tailwind) uses them too: the shared chrome (`layout/Header`, `Footer`, `MenuDrawer`, `Logo`, `MarcaDagua`) and the property card `CardImovel` (`.cz-card*`), which is shared by the Home (Destaques), `/imoveis` and `/imovel` (Semelhantes).
 - The **panel** uses `src/styles/cz-painel.css`.
 
 ## Design handoff and specs

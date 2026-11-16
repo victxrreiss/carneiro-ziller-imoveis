@@ -2,27 +2,20 @@
 // indisponíveis existem apenas para a página com o aviso. Sem cache: ./index.ts
 // as expõe com "use cache" para as páginas. O último parâmetro é o banco
 // (padrão: conexão do app; os testes passam um PGlite).
-import { eq } from "drizzle-orm";
+import { and, asc, eq, ne } from "drizzle-orm";
 import { conexao, type Db } from "@/lib/dados/conexao";
 import { carregarImovel, carregarImoveis } from "@/lib/dados/consultas";
-import { configuracaoSite, imoveis } from "@/lib/dados/esquema";
+import { destaquesHome as tabDestaques, imoveis } from "@/lib/dados/esquema";
 import type { RegistroImovel } from "@/lib/dados/tipos";
 import { FAIXAS_AREA, TIPOS, combinaFinalidade, faixasPreco, type Faixa, type FinalidadeFiltro, type Filtros } from "./filtros";
-import { formatarArea, formatarPreco, formatarQuartos, formatarReais, rotuloEtiqueta } from "./formato";
+import { normalizar } from "./formato";
 import { rotuloCaracteristica } from "./caracteristicas";
-import { regioes } from "./mock-data";
-import type { Destaque, Imovel, ImovelCard, ImovelResumo, PaginaImoveis, Regiao, ResultadoImovel } from "./types";
+import { REGIOES, naRegiao, regiaoPorSlug, type Regiao } from "./regioes";
+import type { Imovel, ImovelCard, ImovelResumo, PaginaImoveis, ResultadoImovel } from "./types";
 
 export const POR_PAGINA = 24;
-/** Cards por seção automática da Home. */
-export const CARDS_HOME = 4;
-
-const normalizar = (s: string) =>
-  s
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase()
-    .trim();
+/** Quantos destaques a página inicial mostra; os demais esperam na lista do painel. */
+export const MAX_DESTAQUES_HOME = 6;
 
 /** Publicado com todos os campos que o site exibe (a publicação exige todos). */
 type Completo = RegistroImovel & { finalidade: NonNullable<RegistroImovel["finalidade"]>; tipo: string; valor: number; area: number };
@@ -75,11 +68,6 @@ function paraImovel(r: Completo): Imovel {
 /** Publicados, na ordem do código. */
 async function publicados(db: Db): Promise<Completo[]> {
   return (await carregarImoveis(db, eq(imoveis.situacao, "publicado"))).filter(completo);
-}
-
-async function oportunidadeId(db: Db): Promise<string | null> {
-  const [c] = await db.select({ id: configuracaoSite.oportunidadeId }).from(configuracaoSite).where(eq(configuracaoSite.id, 1)).limit(1);
-  return c?.id ?? null;
 }
 
 function resumo(i: Imovel): ImovelResumo {
@@ -135,6 +123,7 @@ async function filtrar(filtros: Filtros, db: Db): Promise<Imovel[]> {
   const preco = faixasPreco(filtros.finalidade).find(([v]) => v === filtros.preco);
   const area = FAIXAS_AREA.find(([v]) => v === filtros.area);
   const local = filtros.local;
+  const regiao = filtros.regiao ? regiaoPorSlug(filtros.regiao) : undefined;
   const lista = (await publicados(db))
     .sort(maisRecentes)
     .map(paraImovel)
@@ -142,6 +131,7 @@ async function filtrar(filtros: Filtros, db: Db): Promise<Imovel[]> {
       (i) =>
         combinaFinalidade(filtros.finalidade, i) &&
         (!local || noLocal(local, i)) &&
+        (!regiao || naRegiao(regiao, i)) &&
         (!q || normalizar(`${i.titulo} ${i.bairro} ${i.cidade} ${i.codigo} ${i.empreendimento ?? ""}`).includes(q)) &&
         (!filtros.tipo || i.tipo === filtros.tipo) &&
         naFaixaDePreco(filtros, preco, i) &&
@@ -199,10 +189,6 @@ export async function buscarImoveis(filtros: Filtros, db: Db = conexao()): Promi
   };
 }
 
-export async function contarImoveis(filtros: Filtros, db: Db = conexao()): Promise<number> {
-  return (await filtrar(filtros, db)).length;
-}
-
 export async function obterImovel(id: string, db: Db = conexao()): Promise<ResultadoImovel> {
   const r = await carregarImovel(db, id);
   if (!r || r.situacao === "rascunho") return { situacao: "inexistente" };
@@ -223,73 +209,55 @@ export async function listarParaSitemap(db: Db = conexao()): Promise<{ id: strin
 
 // ---------- Home ----------
 
-function card(i: Imovel): ImovelCard {
-  return {
-    id: i.id,
-    badge: rotuloEtiqueta(i),
-    title: i.titulo,
-    location: `${i.bairro}, ${i.cidade}`,
-    price: formatarPreco(i.valor, i.finalidade),
-    area: formatarArea(i.area),
-    beds: i.quartos ? formatarQuartos(i.quartos) : undefined,
-    img: i.foto.src,
-    alt: i.foto.alt || i.titulo,
-  };
-}
-
-/** Oportunidade de hoje: escolha manual do ADMIN. Sem imóvel publicado escolhido, a seção some. */
-export async function oportunidadeDeHoje(db: Db = conexao()): Promise<Destaque | null> {
-  const id = await oportunidadeId(db);
-  const r = id ? await carregarImovel(db, id) : null;
-  if (!r || r.situacao !== "publicado" || !completo(r)) return null;
-  const i = paraImovel(r);
-  const capa = i.fotos[0] ?? SEM_FOTO;
-  return {
-    id: i.id,
-    codigo: i.codigo,
-    tipo: i.tipo,
-    titulo: i.titulo,
-    local: `${i.bairro}, ${i.cidade} - ${i.uf}`,
-    descricao: i.descricao[0] ?? "",
-    area: formatarArea(i.area),
-    quartos: i.quartos ? String(i.quartos) : undefined,
-    vagas: i.vagas ? String(i.vagas) : undefined,
-    valor: formatarReais(i.valor) + (i.finalidade === "locacao" ? "/mês" : ""),
-    img: capa.src,
-    alt: capa.alt || i.titulo,
-  };
-}
-
-/** Mais recentes pela data da primeira publicação, sem repetir a Oportunidade de hoje. */
-async function recentes(filtro: (r: Completo) => boolean, db: Db): Promise<ImovelCard[]> {
-  const [oportunidade, todos] = await Promise.all([oportunidadeId(db), publicados(db)]);
-  return todos
-    .filter((r) => r.id !== oportunidade && filtro(r))
-    .sort((a, b) => (b.publicadoEm ?? "").localeCompare(a.publicadoEm ?? ""))
-    .slice(0, CARDS_HOME)
-    .map((r) => card(paraImovel(r)));
-}
-
-/** Seção Lançamentos: automática. */
-export function lancamentosHome(db: Db = conexao()): Promise<ImovelCard[]> {
-  return recentes((r) => r.lancamento, db);
-}
-
 /** Há ao menos um lançamento publicado? Decide se o menu mostra "Lançamentos". */
 export async function temLancamentos(db: Db = conexao()): Promise<boolean> {
   return (await publicados(db)).some((r) => r.lancamento);
 }
 
-/** Seção "Imóveis em destaque", aba Venda: automática, sem lançamentos (que têm seção própria). */
-export function vendaHome(db: Db = conexao()): Promise<ImovelCard[]> {
-  return recentes((r) => r.finalidade === "venda" && !r.lancamento, db);
+/** Seção "Imóveis em destaque": a lista que o ADMIN escolhe, na ordem dele, só com imóvel publicado e completo. */
+export async function destaquesHome(db: Db = conexao()): Promise<ImovelCard[]> {
+  const ordem = await db.select({ id: tabDestaques.imovelId }).from(tabDestaques).orderBy(asc(tabDestaques.ordem));
+  const porId = new Map((await publicados(db)).map((r) => [r.id, r]));
+  return ordem
+    .flatMap((o) => porId.get(o.id) ?? [])
+    .slice(0, MAX_DESTAQUES_HOME)
+    .map((r) => resumo(paraImovel(r)));
 }
 
-/** Seção "Imóveis em destaque", aba Locação: automática. */
-export function locacaoHome(db: Db = conexao()): Promise<ImovelCard[]> {
-  return recentes((r) => r.finalidade === "locacao", db);
+/** Regiões com ao menos um imóvel publicado, na ordem da lista, com o total. */
+export async function regioesComImoveis(db: Db = conexao()): Promise<(Regiao & { total: number })[]> {
+  const lista = await publicados(db);
+  return REGIOES.map((r) => ({ ...r, total: lista.filter((i) => naRegiao(r, i)).length })).filter((r) => r.total > 0);
 }
 
-export function regioesHome(): Regiao[] {
-  return regioes;
+const MAX_SEMELHANTES = 3;
+/** Diferença de preço máxima (fração) para valer como "mesmo patamar" na mesma cidade. */
+const FAIXA_SEMELHANTE = 0.3;
+
+/**
+ * Até 3 imóveis parecidos: publicados, do mesmo tipo e da mesma finalidade (venda
+ * com venda, locação com locação), nunca o próprio. Primeiro os da mesma cidade
+ * com preço a até 30% (sem valor, todos da mesma cidade); depois completa com o
+ * mesmo tipo de qualquer cidade. Em cada grupo, menor diferença de preço e, no
+ * empate, o código. O imóvel de partida pode estar indisponível (a página mostra
+ * o aviso e os semelhantes); só rascunho e inexistente não têm semelhantes.
+ */
+export async function semelhantes(id: string, db: Db = conexao()): Promise<ImovelCard[]> {
+  const base = await carregarImovel(db, id);
+  if (!base || base.situacao === "rascunho" || base.tipo === null || base.finalidade === null) return [];
+  const { tipo, finalidade, valor } = base;
+  const distancia = (r: Completo) => (valor === null ? 0 : Math.abs(r.valor - valor));
+  const porProximidade = (a: Completo, b: Completo) => distancia(a) - distancia(b) || a.codigo.localeCompare(b.codigo);
+
+  // Só os candidatos saem do banco (com as fotos), não o catálogo inteiro.
+  const candidatos = (
+    await carregarImoveis(db, and(eq(imoveis.situacao, "publicado"), eq(imoveis.tipo, tipo), eq(imoveis.finalidade, finalidade), ne(imoveis.id, id)))
+  ).filter(completo);
+  const mesmaCidade = (r: Completo) => normalizar(r.cidade) === normalizar(base.cidade);
+  const naFaixa = (r: Completo) => valor === null || Math.abs(r.valor - valor) <= valor * FAIXA_SEMELHANTE;
+
+  const primeiros = candidatos.filter((r) => mesmaCidade(r) && naFaixa(r)).sort(porProximidade);
+  const escolhidos = new Set(primeiros);
+  const demais = candidatos.filter((r) => !escolhidos.has(r)).sort(porProximidade);
+  return [...primeiros, ...demais].slice(0, MAX_SEMELHANTES).map((r) => resumo(paraImovel(r)));
 }

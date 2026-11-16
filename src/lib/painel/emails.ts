@@ -5,8 +5,10 @@ import { remetente, type Mensagem as MensagemEnvio } from "@/lib/email";
 import { painel } from "@/lib/routes";
 import { empresa } from "@/lib/site";
 
-const SERIF = "'DM Serif Display', Georgia, 'Times New Roman', serif";
-const SANS = "'Montserrat', Arial, Helvetica, sans-serif";
+// Fontes da identidade (Cormorant Garamond e Jost) para quem as tiver instaladas; os clientes de
+// e-mail não baixam fontes da web, então quase sempre valem as alternativas (Georgia e Helvetica/Arial).
+const SERIF = "'Cormorant Garamond', Georgia, 'Times New Roman', serif";
+const SANS = "'Jost', 'Helvetica Neue', Helvetica, Arial, sans-serif";
 
 export const VALIDADE_CONVITE_H = 72;
 export const VALIDADE_REDEFINICAO_H = 1;
@@ -25,8 +27,9 @@ function dataHora(ms: number): string {
   return `${f({ day: "2-digit", month: "2-digit", year: "numeric" })} às ${f({ hour: "2-digit", minute: "2-digit" }).replace(":", "h")}`;
 }
 
+// O cabeçalho é a marca em texto sobre azul-noite, como o do site. Sem imagem: os clientes de e-mail
+// não abrem SVG. Os arquivos antigos de public/logo continuam lá para os e-mails já enviados.
 function layout(preCabecalho: string, titulo: string, corpo: string, rodape: string): string {
-  const logo = `${urlBase()}/logo/simbolo-carneiro-azul.svg`;
   return `<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${titulo}</title>
 <style>@media (max-width:480px){.em-pad{padding-left:22px!important;padding-right:22px!important}h1{font-size:26px!important}}</style></head>
@@ -34,19 +37,18 @@ function layout(preCabecalho: string, titulo: string, corpo: string, rodape: str
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#E7E4DC">${esc(preCabecalho)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#E7E4DC;font-family:${SANS};color:#414042"><tr><td style="padding:40px 12px 48px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;margin:0 auto;border-collapse:collapse">
-<tr><td class="em-pad" style="background:#FBFAF7;border-top:3px solid #78323D;padding:28px 40px 24px;border-bottom:1px solid #E7E4DC">
+<tr><td class="em-pad" style="background:#0F1D24;padding:28px 40px 24px">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse"><tr>
-<td style="padding-right:14px;vertical-align:middle"><img src="${logo}" width="40" height="40" alt="" style="display:block;width:40px;height:40px;border:0"></td>
-<td style="vertical-align:middle"><div style="font-family:${SERIF};font-size:22px;line-height:1;color:#414042;white-space:nowrap">CARNEIRO <span style="color:#78323D">&amp;</span> ZILLER</div>
-<div style="height:1px;background:#0F1D24;margin:6px 0 5px"></div>
-<div style="font-size:8px;letter-spacing:0.9em;padding-left:0.9em;color:#6D6E71;text-align:center">IMÓVEIS</div></td>
+<td style="vertical-align:middle"><div style="font-family:${SERIF};font-size:24px;font-weight:500;line-height:1;letter-spacing:0.06em;color:#FFFFFF;white-space:nowrap">CARNEIRO <span style="color:#C4A77A">&amp;</span> ZILLER</div>
+<div style="height:1px;line-height:1px;font-size:1px;background:#C4A77A;margin:8px 0 6px">&nbsp;</div>
+<div style="font-family:${SANS};font-size:9px;letter-spacing:0.7em;padding-left:0.7em;color:#C9C9C9;text-align:center">IMÓVEIS</div></td>
 </tr></table></td></tr>
 <tr><td class="em-pad" style="background:#FFFFFF;padding:40px 40px 36px">
-<div style="font-size:11px;font-weight:600;letter-spacing:0.28em;color:#78323D;margin-bottom:14px">PAINEL INTERNO</div>
-<h1 style="margin:0 0 20px;font-family:${SERIF};font-weight:400;font-size:30px;line-height:1.15;color:#0F1D24">${titulo}</h1>
+<div style="font-size:11px;font-weight:600;letter-spacing:0.28em;color:#86693A;margin-bottom:14px">PAINEL INTERNO</div>
+<h1 style="margin:0 0 20px;font-family:${SERIF};font-weight:400;font-size:30px;line-height:1.2;color:#0F1D24">${titulo}</h1>
 ${corpo}
 </td></tr>
-<tr><td class="em-pad" style="background:#0A1419;border-top:4px solid #78323D;padding:28px 40px;font-size:12px;line-height:1.7;color:#C9C9C9">
+<tr><td class="em-pad" style="background:#0A1419;padding:28px 40px;font-size:12px;line-height:1.7;color:#C9C9C9">
 <div style="font-family:${SERIF};font-size:17px;color:#FFFFFF;margin-bottom:8px">Carneiro &amp; Ziller Imóveis</div>
 <div>${empresa.nome} · ${empresa.creci} · ${empresa.telefone}</div>
 <div style="margin-top:14px;color:#A8A8AA">${rodape}</div>

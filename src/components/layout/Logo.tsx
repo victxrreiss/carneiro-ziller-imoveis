@@ -1,49 +1,29 @@
 import Image from "next/image";
+import { empresa } from "@/lib/site";
 
-type Variant = "default" | "negative";
+type Variante = "positiva" | "negativa";
 
-const styles: Record<Variant, { symbol: string; size: string; text: string; amp: string; rule: string; sub: string }> = {
-  default: {
-    symbol: "/logo/simbolo-carneiro-azul.svg",
-    size: "text-[23px]",
-    text: "text-grafite",
-    amp: "text-vinho",
-    rule: "bg-azul-noite",
-    sub: "text-cinza",
-  },
-  negative: {
-    symbol: "/logo/simbolo-carneiro-branco.svg",
-    size: "text-[22px]",
-    text: "text-white",
-    amp: "",
-    rule: "bg-prata",
-    sub: "text-areia",
-  },
+// Logo B (refinamento), com o texto em curvas: public/logo/. A barra no Z é a
+// assinatura herdada da Ziller e faz parte do desenho.
+const ARQUIVO: Record<Variante, string> = {
+  positiva: "/logo/carneiro-ziller.svg",
+  negativa: "/logo/carneiro-ziller-negativo.svg",
 };
 
 /**
- * Logomarca tipográfica (não há SVG da marca completa). A barra no Z é a
- * assinatura herdada da Ziller e não pode ser omitida.
+ * Logomarca completa. `positiva` para fundo claro, `negativa` para o azul-noite.
+ * O tamanho vem do CSS de quem usa (largura; a altura acompanha a proporção 281:45).
  */
-export function Logo({ variant = "default" }: { variant?: Variant }) {
-  const s = styles[variant];
+export function Logo({ variante = "positiva", className }: { variante?: Variante; className?: string }) {
   return (
-    <span className="flex items-center gap-3.5">
-      <Image src={s.symbol} alt="" width={40} height={40} className="h-10 w-10" />
-      <span className="sr-only">Carneiro &amp; Ziller Imóveis</span>
-      {/* Composição visual: lida como "ZILLERIMÓVEIS" se exposta ao leitor de tela. */}
-      <span aria-hidden="true" className="flex flex-col gap-1.5">
-        <span className={`font-serif ${s.size} leading-none whitespace-nowrap ${s.text}`}>
-          CARNEIRO <span className={s.amp}>&amp;</span>{" "}
-          <span className="relative inline-block">
-            Z
-            <span aria-hidden="true" className="absolute top-1/2 right-[30%] left-[12%] h-px bg-current" />
-          </span>
-          ILLER
-        </span>
-        <span className={`h-px ${s.rule}`} />
-        <span className={`pl-[0.9em] text-center text-[8px] tracking-[0.9em] ${s.sub}`}>IMÓVEIS</span>
-      </span>
-    </span>
+    <Image
+      src={ARQUIVO[variante]}
+      alt={empresa.nome}
+      width={281}
+      height={45}
+      unoptimized
+      loading="eager"
+      className={className ? `cz-logo ${className}` : "cz-logo"}
+    />
   );
 }

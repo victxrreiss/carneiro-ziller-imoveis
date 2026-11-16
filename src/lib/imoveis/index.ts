@@ -6,7 +6,6 @@ import * as catalogo from "./catalogo";
 import type { FinalidadeFiltro, Filtros } from "./filtros";
 
 export type {
-  Destaque,
   Finalidade,
   Foto,
   Imovel,
@@ -29,22 +28,22 @@ function marcar() {
   cacheLife({ stale: 60, revalidate: 300, expire: 3600 });
 }
 
-export async function getDestaque() {
+export async function getDestaquesHome() {
   "use cache";
   marcar();
-  return catalogo.oportunidadeDeHoje();
+  return catalogo.destaquesHome();
 }
 
-export async function getRegioes() {
-  "use cache";
-  cacheLife("max");
-  return catalogo.regioesHome();
-}
-
-export async function getLancamentos() {
+export async function getRegioesHome() {
   "use cache";
   marcar();
-  return catalogo.lancamentosHome();
+  return catalogo.regioesComImoveis();
+}
+
+export async function getSemelhantes(id: string) {
+  "use cache";
+  marcar();
+  return catalogo.semelhantes(id);
 }
 
 export async function getTemLancamentos() {
@@ -53,28 +52,10 @@ export async function getTemLancamentos() {
   return catalogo.temLancamentos();
 }
 
-export async function getImoveisVenda() {
-  "use cache";
-  marcar();
-  return catalogo.vendaHome();
-}
-
-export async function getImoveisLocacao() {
-  "use cache";
-  marcar();
-  return catalogo.locacaoHome();
-}
-
 export async function buscarImoveis(filtros: Filtros) {
   "use cache";
   marcar();
   return catalogo.buscarImoveis(filtros);
-}
-
-export async function contarImoveis(filtros: Filtros) {
-  "use cache";
-  marcar();
-  return catalogo.contarImoveis(filtros);
 }
 
 export async function getOpcoesLocalizacao() {
