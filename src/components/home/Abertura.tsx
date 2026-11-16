@@ -42,11 +42,12 @@ export function Abertura({ config = abertura, children }: { config?: Config; chi
               fill
               // No celular a abertura é mais alta que larga: a foto cobre pela altura e precisa de mais pixels.
               sizes="(max-width: 899px) 250vw, 100vw"
+              quality={90}
               preload={k === 0}
               loading={k === 0 ? "eager" : "lazy"}
               data-abertura-imagem=""
               data-ativa={ativa}
-              className="[transform:scale(1.08)] object-cover opacity-0 transition-opacity duration-2400 ease-[ease] data-[ativa=true]:animate-kenburns data-[ativa=true]:opacity-100 motion-reduce:animate-none!"
+              className="[transform:scale(1.02)] object-cover opacity-0 transition-opacity duration-2400 ease-[ease] data-[ativa=true]:animate-kenburns data-[ativa=true]:opacity-100 motion-reduce:animate-none!"
             />
           );
         })}

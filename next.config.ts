@@ -36,7 +36,8 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   images: {
     formats: ["image/avif", "image/webp"],
-    qualities: [75],
+    // 90 só na abertura em tela cheia (Abertura.tsx); o resto usa o padrão 75.
+    qualities: [75, 90],
     remotePatterns: fotosRemotePatterns(),
     // O otimizador bloqueia host local por padrão (proteção contra SSRF). Só o
     // ambiente local (S3 em localhost) liga isto; NUNCA em produção.

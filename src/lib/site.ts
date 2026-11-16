@@ -43,10 +43,13 @@ export const abertura: {
   frases: readonly string[];
 } = {
   video: null,
+  // Fotos de tela cheia: pelo menos 2560 px de largura (public/images/abertura/), senão ficam
+  // borradas. Provisórias, do Unsplash (licença Unsplash: uso comercial livre, sem atribuição):
+  // 1 Michael Brown (G48h926L2qo), 2 Retrato Inmobiliario (_ELoYrhi3ao), 3 Arthur Baudry (4vioYQ9Nn9Y).
   imagens: [
-    { src: "/images/imoveis/a1843e848f2e8288905697ba4fc1dc0a.jpg", alt: "Casa envidraçada com piscina ao entardecer, com a serra ao fundo" },
-    { src: "/images/venda-vila-da-serra.jpg", alt: "Varanda de madeira aberta para o jardim e a piscina, à noite" },
-    { src: "/images/imoveis/f40a059ac95c00760f5ea57662eb9888.jpg", alt: "Duas torres residenciais entre jardins, sob céu azul" },
+    { src: "/images/abertura/abertura-1.jpg", alt: "Casa contemporânea de vidro e pedra iluminada ao entardecer, com jardim na frente" },
+    { src: "/images/abertura/abertura-2.jpg", alt: "Piscina e varanda com sala de estar ao anoitecer, entre árvores" },
+    { src: "/images/abertura/abertura-3.jpg", alt: "Casa moderna branca com grandes janelas iluminadas ao anoitecer" },
   ],
   frases: [
     "Morar bem começa\npela escolha do endereço.",

@@ -55,10 +55,10 @@
 
   @keyframes kenburns {
     from {
-      transform: scale(1.08) translate(0, 0);
+      transform: scale(1.02) translate(0, 0);
     }
     to {
-      transform: scale(1.18) translate(-1.5%, -1%);
+      transform: scale(1.08) translate(-1%, -0.6%);
     }
   }
 
