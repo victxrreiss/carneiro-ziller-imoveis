@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./base";
 
 test.describe("comportamento da Home", () => {
   for (const width of [390, 1024, 1440]) {

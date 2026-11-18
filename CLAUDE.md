@@ -72,4 +72,4 @@ The full runbook is `deploy/README.md`. In short:
 ## Tests
 
 - Vitest sits next to the code as `*.test.ts(x)`, and also under `scripts/`. `src/lib/dados/testes.ts` gives each file a PGlite DB with the migrations applied and seeded users.
-- The E2E tests (`e2e/`) check behaviour (no horizontal scroll, the drawer menu below 900px, navigation, axe WCAG 2 A/AA, and panel flows in `painel.spec.ts`). Keep the accessible names they rely on stable.
+- The E2E tests (`e2e/`) check behaviour (no horizontal scroll, the drawer menu below 900px, navigation, axe WCAG 2 A/AA, and panel flows in `painel.spec.ts`). Keep the accessible names they rely on stable. The specs import `test`/`expect` from `e2e/base.ts`, which starts every session with the Home logo intro (`home/Intro`, 3 s, once per session) already seen; only `intro.spec.ts` turns that off.

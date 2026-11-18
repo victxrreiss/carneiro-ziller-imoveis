@@ -4,6 +4,7 @@ import { BuscaAbertura } from "@/components/home/BuscaAbertura";
 import { CardsRegioes } from "@/components/home/CardsRegioes";
 import { CardsTipos } from "@/components/home/CardsTipos";
 import { Destaques } from "@/components/home/Destaques";
+import { Intro } from "@/components/home/Intro";
 import { ANCORA_CONTEUDO } from "@/components/home/partes";
 import { Institutional } from "@/components/home/Institutional";
 import { Footer } from "@/components/layout/Footer";
@@ -23,6 +24,8 @@ export default async function Home() {
   return (
     // `relative`: o cabeçalho transparente fica por cima da abertura.
     <div className="relative">
+      {/* Abertura rápida com a logo: antes de tudo, para o script dela decidir antes da primeira pintura. */}
+      <Intro />
       <Header current="home" variante="sobre-imagem" />
       <main>
         <Abertura>

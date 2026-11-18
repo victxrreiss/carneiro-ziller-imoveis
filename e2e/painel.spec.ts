@@ -3,7 +3,7 @@
 // (o imóvel criado é excluído, e com ele sai dos destaques; o CZ1009 da semente segue destacado).
 // Contas e senha são geradas a cada execução por scripts/e2e-preparar.ts e chegam por
 // variável de ambiente; nada fixo no repositório.
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./base";
 
 const SENHA = process.env.E2E_SENHA!;
 const ADMIN = process.env.E2E_ADMIN_EMAIL!;
