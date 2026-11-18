@@ -40,10 +40,10 @@ describe("Footer", () => {
     expect(screen.queryByRole("link", { name: "Lançamentos" })).toBeNull();
   });
 
-  test("a logo negativa leva à Home", async () => {
+  test("o selo negativo leva à Home", async () => {
     render(await Footer());
     const logo = screen.getByRole("link", { name: "Carneiro & Ziller Imóveis" });
     expect(logo).toHaveAttribute("href", "/");
-    expect(logo.querySelector("img")?.getAttribute("src")).toContain("carneiro-ziller-negativo.svg");
+    expect(logo.querySelector("img")?.getAttribute("src")).toContain("carneiro-ziller-selo-negativo.svg");
   });
 });

@@ -15,7 +15,7 @@ export async function Footer() {
       <div className="cz-rodape-in">
         <div className="cz-rodape-marca">
           <Link href={routes.home} className="cz-rodape-logo">
-            <Logo variante="negativa" />
+            <Logo forma="selo" variante="negativa" />
           </Link>
           <p>Imóveis de alto padrão em Belo Horizonte e Nova Lima.</p>
           {(social.instagram || social.linkedin) && (

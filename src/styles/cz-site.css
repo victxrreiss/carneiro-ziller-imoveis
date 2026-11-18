@@ -165,7 +165,8 @@
  * rodapé e marca d'água. Fora do escopo .cz, porque a Home (Tailwind) também usa;
  * os seletores partem do elemento raiz de cada peça para vencer `.cz a`.
  * ========================================================================== */
-.cz-logo{display:block;width:267px;max-width:100%;height:auto}
+.cz-logo{display:block;width:380px;max-width:100%;height:auto}
+footer.cz-rodape .cz-logo{width:320px}
 header.cz-topo *,div.cz-menu *,footer.cz-rodape *{box-sizing:border-box}
 
 /* Botões do cabeçalho e do menu */
@@ -236,24 +237,24 @@ footer.cz-rodape .cz-rodape-social a{display:flex;align-items:center;justify-con
 
 /* Marca d'água sobre as fotos: o pai precisa de position:relative. */
 .cz-marca-dagua{position:absolute;left:0;right:0;bottom:7%;z-index:2;display:flex;flex-direction:column;align-items:center;gap:.35em;color:#FFFFFF;opacity:.72;pointer-events:none;font-size:clamp(7px,1.2cqw,14px);filter:drop-shadow(0 1px 2px rgba(0,0,0,.45)) drop-shadow(0 0 12px rgba(0,0,0,.25))}
-.cz-marca-dagua svg{display:block;width:2.6em;height:2.6em}
-.cz-marca-dagua span{font-family:var(--font-display);font-size:1em;font-weight:500;line-height:1;letter-spacing:.3em;padding-left:.3em;white-space:nowrap}
+.cz-marca-dagua-logo{display:block;width:15em;aspect-ratio:1428/181;background:currentColor;-webkit-mask:url(/logo/carneiro-ziller-horizontal-negativo.svg) center/contain no-repeat;mask:url(/logo/carneiro-ziller-horizontal-negativo.svg) center/contain no-repeat}
 
 /* Entre 900 e 1180px o menu horizontal aperta para caber ao lado da logo e do botão. */
 @media (max-width:1180px){
-  header.cz-topo .cz-logo{width:200px}
+  header.cz-topo .cz-logo{width:260px}
   header.cz-topo .nav{gap:20px;font-size:12px;letter-spacing:.12em}
   header.cz-topo a.cz-topo-corretor{min-height:44px;padding:0 16px;font-size:11px;letter-spacing:.18em}
 }
 @media (max-width:899.98px){
   header.cz-topo .nav,header.cz-topo a.cz-topo-corretor{display:none}
   header.cz-topo .cz-hamb{display:flex}
-  header.cz-topo .cz-logo{width:267px}
+  header.cz-topo .cz-logo{width:260px}
   .cz-topo-in{padding-top:18px;padding-bottom:18px}
   .cz-rodape-in{grid-template-columns:1fr;gap:36px;padding-top:56px}
 }
 @media (max-width:560px){
-  header.cz-topo .cz-logo,footer.cz-rodape .cz-logo{width:225px}
+  header.cz-topo .cz-logo{width:215px}
+  footer.cz-rodape .cz-logo{width:240px}
 }
 @media (prefers-reduced-motion:reduce){
   header.cz-topo *,div.cz-menu *,footer.cz-rodape *{transition:none!important}

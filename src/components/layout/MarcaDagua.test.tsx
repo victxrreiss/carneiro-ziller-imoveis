@@ -1,13 +1,15 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { render } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
 import { MarcaDagua } from "./MarcaDagua";
 
 describe("MarcaDagua", () => {
-  test("desenha o símbolo e o nome da empresa", () => {
+  test("desenha a logo horizontal, cuja forma vem do arquivo da logo no CSS", () => {
     const { container } = render(<MarcaDagua />);
-    const marca = container.firstElementChild!;
-    expect(marca.querySelector("svg path")).not.toBeNull();
-    expect(marca).toHaveTextContent("CARNEIRO & ZILLER");
+    expect(container.querySelector(".cz-marca-dagua > .cz-marca-dagua-logo")).not.toBeNull();
+    const css = readFileSync(path.join(process.cwd(), "src/styles/cz-site.css"), "utf8");
+    expect(css).toMatch(/\.cz-marca-dagua-logo\{[^}]*mask:url\(\/logo\/carneiro-ziller-horizontal-negativo\.svg\)/);
   });
 
   test("é decorativa: aria-hidden e fora da árvore de acessibilidade", () => {

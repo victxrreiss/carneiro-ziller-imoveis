@@ -7,7 +7,7 @@ export function CartaoAcesso({ children }: { children: ReactNode }) {
     <main className="pn-auth">
       <div className="pn-auth-brand">
         <span className="logo">
-          <Logo />
+          <Logo forma="selo" />
         </span>
         <span className="pn-brand-tag">PAINEL INTERNO</span>
       </div>
