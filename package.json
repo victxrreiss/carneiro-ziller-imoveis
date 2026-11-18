@@ -28,9 +28,9 @@
     "@aws-sdk/s3-request-presigner": "^3.1156.0",
     "@headlessui/react": "2.2.10",
     "@node-rs/argon2": "^2.2.2",
-    "@vercel/blob": "^2.8.2",
+    "@vercel/blob": "^2.9.0",
     "drizzle-orm": "^0.45.4",
-    "next": "16.4.2",
+    "next": "16.4.6",
     "nodemailer": "^10.2.1",
     "postgres": "^3.4.9",
     "react": "19.3.0",
@@ -53,14 +53,18 @@
     "@vitejs/plugin-react": "^6.1.2",
     "drizzle-kit": "^0.31.11",
     "eslint": "^9",
-    "eslint-config-next": "16.4.2",
+    "eslint-config-next": "16.4.6",
     "fast-xml-parser": "^5.11.2",
     "jsdom": "^29.1.1",
     "sharp": "^0.35.5",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5",
+    "vite": "^8.3.4",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^5.0.5"
+  },
+  "overrides": {
+    "zod": "^4.6.6"
   }
 }
