@@ -165,7 +165,7 @@
  * rodapé e marca d'água. Fora do escopo .cz, porque a Home (Tailwind) também usa;
  * os seletores partem do elemento raiz de cada peça para vencer `.cz a`.
  * ========================================================================== */
-.cz-logo{display:block;width:380px;max-width:100%;height:auto}
+.cz-logo{display:block;width:280px;max-width:100%;height:auto}
 footer.cz-rodape .cz-logo{width:320px}
 header.cz-topo *,div.cz-menu *,footer.cz-rodape *{box-sizing:border-box}
 
@@ -237,23 +237,23 @@ footer.cz-rodape .cz-rodape-social a{display:flex;align-items:center;justify-con
 
 /* Marca d'água sobre as fotos: o pai precisa de position:relative. */
 .cz-marca-dagua{position:absolute;left:0;right:0;bottom:7%;z-index:2;display:flex;flex-direction:column;align-items:center;gap:.35em;color:#FFFFFF;opacity:.72;pointer-events:none;font-size:clamp(7px,1.2cqw,14px);filter:drop-shadow(0 1px 2px rgba(0,0,0,.45)) drop-shadow(0 0 12px rgba(0,0,0,.25))}
-.cz-marca-dagua-logo{display:block;width:15em;aspect-ratio:1428/181;background:currentColor;-webkit-mask:url(/logo/carneiro-ziller-horizontal-negativo.svg) center/contain no-repeat;mask:url(/logo/carneiro-ziller-horizontal-negativo.svg) center/contain no-repeat}
+.cz-marca-dagua-logo{display:block;width:13em;aspect-ratio:1286/383;background:currentColor;-webkit-mask:url(/logo/carneiro-ziller-selo-negativo.svg) center/contain no-repeat;mask:url(/logo/carneiro-ziller-selo-negativo.svg) center/contain no-repeat}
 
 /* Entre 900 e 1180px o menu horizontal aperta para caber ao lado da logo e do botão. */
 @media (max-width:1180px){
-  header.cz-topo .cz-logo{width:260px}
+  header.cz-topo .cz-logo{width:210px}
   header.cz-topo .nav{gap:20px;font-size:12px;letter-spacing:.12em}
   header.cz-topo a.cz-topo-corretor{min-height:44px;padding:0 16px;font-size:11px;letter-spacing:.18em}
 }
 @media (max-width:899.98px){
   header.cz-topo .nav,header.cz-topo a.cz-topo-corretor{display:none}
   header.cz-topo .cz-hamb{display:flex}
-  header.cz-topo .cz-logo{width:260px}
+  header.cz-topo .cz-logo{width:200px}
   .cz-topo-in{padding-top:18px;padding-bottom:18px}
   .cz-rodape-in{grid-template-columns:1fr;gap:36px;padding-top:56px}
 }
 @media (max-width:560px){
-  header.cz-topo .cz-logo{width:215px}
+  header.cz-topo .cz-logo{width:180px}
   footer.cz-rodape .cz-logo{width:240px}
 }
 @media (prefers-reduced-motion:reduce){
@@ -263,8 +263,9 @@ footer.cz-rodape .cz-rodape-social a{display:flex;align-items:center;justify-con
 /* ───────── Abertura rápida da Home (`home/Intro`) ─────────
    Camada azul-noite por cima de tudo, com a logo se desenhando; dura 3 s com a saída e termina
    sozinha em visibility:hidden (não depende de JavaScript). Só transform, opacity e clip-path.
-   Linha do tempo (ms): anel 80–900 · pontos 100/560 · Z 450–1050 · selo vai para a esquerda 900–1600 ·
-   divisor 950–1400 · símbolo 1100–1600 · CARNEIRO 1220–1800 · INVEST IMÓVEIS 1550–1950 · saída 2450–3000. */
+   Ordem pedida pelo cliente: a Carneiro primeiro, à esquerda, e depois o selo da Ziller, à direita.
+   Linha do tempo (ms): símbolo 80–580 · CARNEIRO 200–780 · INVEST IMÓVEIS 520–920 · Carneiro vai para a
+   esquerda 900–1600 · divisor 950–1400 · anel 1050–1950 · pontos 1150/1610 · Z 1300–1900 · saída 2450–3000. */
 .cz-intro{--acento:#B22D45;--cz-intro-lento:cubic-bezier(.16,1,.3,1);position:fixed;inset:0;z-index:1000;display:grid;place-items:center;overflow:hidden;color:#EFEBE1;background:
   linear-gradient(149deg,rgba(255,255,255,0) 0,rgba(255,255,255,.028) 21%,transparent 21%),
   linear-gradient(149deg,transparent 0 63%,rgba(255,255,255,.026) 63%,rgba(255,255,255,0) 84%),
@@ -274,22 +275,22 @@ footer.cz-rodape .cz-rodape-social a{display:flex;align-items:center;justify-con
 [data-cz-intro="vista"]>.cz-intro{display:none}
 [data-cz-intro="pula"]>.cz-intro{animation:cz-intro-pula 260ms ease-out forwards}
 .cz-intro-marca{width:min(84vw,720px);animation:cz-intro-sobe 550ms cubic-bezier(.4,0,.2,1) 2450ms forwards}
-.cz-intro svg{display:block;width:100%;height:auto;overflow:visible;transform-origin:15.08% 50%;animation:cz-intro-centra 700ms cubic-bezier(.7,0,.2,1) 900ms both}
-.cz-intro-anel{animation:cz-intro-gira 900ms var(--cz-intro-lento) 80ms both}
-.cz-intro-anel path{animation:cz-intro-surge 380ms ease-out calc(80ms + var(--i)*18ms) both}
+.cz-intro svg{display:block;width:100%;height:auto;overflow:visible;transform-origin:27.48% 50%;animation:cz-intro-centra 700ms cubic-bezier(.7,0,.2,1) 900ms both}
+.cz-intro-anel{animation:cz-intro-gira 900ms var(--cz-intro-lento) 1050ms both}
+.cz-intro-anel path{animation:cz-intro-surge 380ms ease-out calc(1050ms + var(--i)*18ms) both}
 .cz-intro-ponto,.cz-intro-z,.cz-intro-divisor,.cz-intro-invest{transform-box:fill-box;transform-origin:center}
 .cz-intro-ponto,.cz-intro-divisor{fill:var(--acento)}
-.cz-intro-ponto{animation:cz-intro-ponto 420ms var(--cz-intro-lento) calc(100ms + var(--i)*460ms) both}
-.cz-intro-z{animation:cz-intro-z 600ms var(--cz-intro-lento) 450ms both}
+.cz-intro-ponto{animation:cz-intro-ponto 420ms var(--cz-intro-lento) calc(1150ms + var(--i)*460ms) both}
+.cz-intro-z{animation:cz-intro-z 600ms var(--cz-intro-lento) 1300ms both}
 .cz-intro-divisor{animation:cz-intro-divisor 450ms var(--cz-intro-lento) 950ms both}
-.cz-intro-simbolo{animation:cz-intro-revela 500ms var(--cz-intro-lento) 1100ms both}
-.cz-intro-carneiro{animation:cz-intro-revela 580ms var(--cz-intro-lento) 1220ms both}
-.cz-intro-invest{animation:cz-intro-invest 400ms ease-out 1550ms both}
+.cz-intro-simbolo{animation:cz-intro-revela 500ms var(--cz-intro-lento) 80ms both}
+.cz-intro-carneiro{animation:cz-intro-revela 580ms var(--cz-intro-lento) 200ms both}
+.cz-intro-invest{animation:cz-intro-invest 400ms ease-out 520ms both}
 .cz-intro-pular{position:absolute;left:0;right:0;bottom:max(28px,env(safe-area-inset-bottom) + 20px);text-align:center;font-family:var(--font-sans);font-size:11px;font-weight:400;letter-spacing:.34em;text-indent:.34em;text-transform:uppercase;opacity:.62;animation:cz-intro-dica 500ms ease-out 350ms backwards}
 @keyframes cz-intro-sai{to{opacity:0;visibility:hidden}}
 @keyframes cz-intro-pula{to{opacity:0;visibility:hidden}}
 @keyframes cz-intro-sobe{to{transform:translateY(-18px)}}
-@keyframes cz-intro-centra{from{transform:translateX(34.92%) scale(1.3)}}
+@keyframes cz-intro-centra{from{transform:translateX(22.52%) scale(1.2)}}
 @keyframes cz-intro-gira{from{transform:rotate(-32deg)}}
 @keyframes cz-intro-surge{from{opacity:0}}
 @keyframes cz-intro-ponto{from{opacity:0;transform:scale(.2)}}

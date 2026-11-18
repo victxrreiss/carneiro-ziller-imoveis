@@ -1,5 +1,5 @@
 /**
- * Marca d'água das fotos: a logo horizontal (public/logo/), em branco translúcido, no centro
+ * Marca d'água das fotos: a logo com o selo da Ziller (public/logo/), em branco translúcido, no centro
  * embaixo. A forma vem do arquivo da logo como máscara e a cor do CSS (`.cz-marca-dagua`).
  * É só uma sobreposição na exibição (decisão do cliente: nunca gravada no arquivo).
  * O elemento pai precisa de `position: relative`; o tamanho acompanha a largura dele

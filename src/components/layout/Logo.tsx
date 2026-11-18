@@ -24,8 +24,8 @@ const TAMANHO: Record<Forma, { width: number; height: number }> = {
 };
 
 /**
- * Logomarca completa. `horizontal` (compacta) no topo e no painel; `selo` onde há espaço
- * (rodapé, entrada do painel). `positiva` para fundo claro, `negativa` para o azul-noite.
+ * Logomarca completa. `selo` em todo o site e no painel (o cliente quer o Z da Ziller sempre com o
+ * círculo); `horizontal` fica disponível, sem uso no momento. `positiva` para fundo claro, `negativa` para o azul-noite.
  * O tamanho vem do CSS de quem usa (largura; a altura acompanha a proporção do arquivo).
  */
 export function Logo({

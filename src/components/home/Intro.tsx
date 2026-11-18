@@ -48,10 +48,11 @@ function concluir() {
 }
 
 /**
- * Abertura rápida da Home: a animação da logo da designer refeita em vetor (o selo da Ziller se
- * escreve em círculo, entra o Z, depois o divisor e a Carneiro), sobre uma camada azul-noite que
- * some e revela a página. Aparece só quando a Home é a porta de entrada do site (carga do
- * documento), uma vez por sessão; chegando à Home por navegação interna ela não toca.
+ * Abertura rápida da Home: a animação da logo da designer refeita em vetor, na ordem que o cliente
+ * pediu (a Carneiro se revela primeiro, depois o divisor e o selo da Ziller se escreve em círculo),
+ * sobre uma camada azul-noite que some e revela a página. Aparece só quando a Home é a porta de
+ * entrada do site (carga do documento), uma vez por sessão; chegando à Home por navegação interna
+ * ela não toca.
  *
  * A camada é decorativa (`aria-hidden`, sem nada focável) e nunca prende a página: a animação
  * inteira, saída incluída, é CSS e termina em `visibility:hidden`. O JavaScript só pula (clique,

@@ -26,7 +26,7 @@ export async function Header({ current, variante = "solida" }: { current?: NavKe
     <header className={CLASSE[variante]}>
       <div className="cz-topo-in">
         <Link href={routes.home} className="cz-topo-logo">
-          <Logo variante="negativa" />
+          <Logo forma="selo" variante="negativa" />
         </Link>
         <nav className="nav" aria-label="Principal">
           {items.map((item) => (

@@ -137,7 +137,7 @@ export function Shell({ usuario, children }: { usuario: UsuarioShell; children: 
         <aside className="pn-side" aria-label="Menu do painel">
           <div className="pn-brand">
             <Link href={painel.imoveis} className="logo" aria-label="Carneiro & Ziller — painel, início">
-              <Logo />
+              <Logo forma="selo" />
             </Link>
             <span className="pn-brand-tag">PAINEL</span>
           </div>
@@ -151,7 +151,7 @@ export function Shell({ usuario, children }: { usuario: UsuarioShell; children: 
         <div className="pn-main">
           <header className="pn-top">
             <Link href={painel.imoveis} className="logo" aria-label="Carneiro & Ziller — painel, início">
-              <Logo />
+              <Logo forma="selo" />
             </Link>
             <div className="pn-top-r">
               <MenuMobile usuario={usuario} />

@@ -5,11 +5,11 @@ import { describe, expect, test } from "vitest";
 import { MarcaDagua } from "./MarcaDagua";
 
 describe("MarcaDagua", () => {
-  test("desenha a logo horizontal, cuja forma vem do arquivo da logo no CSS", () => {
+  test("desenha a logo com o selo, cuja forma vem do arquivo da logo no CSS", () => {
     const { container } = render(<MarcaDagua />);
     expect(container.querySelector(".cz-marca-dagua > .cz-marca-dagua-logo")).not.toBeNull();
     const css = readFileSync(path.join(process.cwd(), "src/styles/cz-site.css"), "utf8");
-    expect(css).toMatch(/\.cz-marca-dagua-logo\{[^}]*mask:url\(\/logo\/carneiro-ziller-horizontal-negativo\.svg\)/);
+    expect(css).toMatch(/\.cz-marca-dagua-logo\{[^}]*mask:url\(\/logo\/carneiro-ziller-selo-negativo\.svg\)/);
   });
 
   test("é decorativa: aria-hidden e fora da árvore de acessibilidade", () => {
