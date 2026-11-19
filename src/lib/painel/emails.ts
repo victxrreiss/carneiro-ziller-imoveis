@@ -157,10 +157,11 @@ export function emailInteresse(o: {
       : "Você recebeu este aviso por ser o corretor responsável pelo imóvel, o administrador do painel ou um endereço cadastrado para receber os interesses do site.",
   );
   const texto = `${titulo}\n\n${geral ? `Um visitante enviou uma mensagem pela página de contato em ${quando}.` : `${o.nome} pediu contato sobre ${ref} em ${quando}.`}\n\nNome: ${o.nome}\nTelefone: ${o.telefone}\nE-mail: ${o.email}${o.observacoes ? `\n\n${o.observacoes}` : ""}\n\n${linkImovel || linkPainel}`;
-  return { para: o.para, assunto: geral ? `Nova mensagem pelo site: ${o.nome}` : `Interesse em ${o.imovel!.codigo.toUpperCase()}: ${o.nome}`, html, texto, link: linkImovel || linkPainel };
+  // "Responder" vai direto para o visitante (o e-mail dele já foi validado em `registrarInteresse`).
+  return { para: o.para, assunto: geral ? `Nova mensagem pelo site: ${o.nome}` : `Interesse em ${o.imovel!.codigo.toUpperCase()}: ${o.nome}`, html, texto, link: linkImovel || linkPainel, responderPara: o.email };
 }
 
 /** Envia pelo SMTP configurado. Lança se o envio falhar: quem chama decide o que responder. */
 export async function enviar(m: Mensagem): Promise<void> {
-  await remetente().enviar({ para: m.para, assunto: m.assunto, html: m.html, texto: m.texto });
+  await remetente().enviar({ para: m.para, assunto: m.assunto, html: m.html, texto: m.texto, responderPara: m.responderPara });
 }

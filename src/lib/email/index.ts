@@ -3,7 +3,8 @@
 import nodemailer, { type Transporter } from "nodemailer";
 import { configSmtp } from "@/lib/config";
 
-export type Mensagem = { para: string; assunto: string; html: string; texto: string };
+/** `responderPara`: para onde vai o "Responder" (o remetente, `EMAIL_DE`, não recebe e-mail). */
+export type Mensagem = { para: string; assunto: string; html: string; texto: string; responderPara?: string };
 
 export interface Remetente {
   enviar(m: Mensagem): Promise<void>;
@@ -24,7 +25,7 @@ export function remetenteSmtp(): Remetente {
           auth: c.usuario ? { user: c.usuario, pass: c.senha } : undefined,
         });
       }
-      await transporte.sendMail({ from: de, to: m.para, subject: m.assunto, html: m.html, text: m.texto });
+      await transporte.sendMail({ from: de, to: m.para, replyTo: m.responderPara, subject: m.assunto, html: m.html, text: m.texto });
     },
   };
 }

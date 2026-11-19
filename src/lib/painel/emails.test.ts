@@ -2,6 +2,11 @@ import { describe, expect, it } from "vitest";
 import { emailConvite, emailInteresse, emailRedefinicao } from "./emails";
 
 describe("emailInteresse", () => {
+  it("o Responder vai para o visitante, não para o remetente do site", () => {
+    const m = emailInteresse({ para: "corretor@exemplo.com", imovel: null, codigo: "", nome: "Ana", telefone: "(31) 99999-0000", email: "ana@cliente.com", observacoes: "" });
+    expect(m.responderPara).toBe("ana@cliente.com");
+  });
+
   it("escapa HTML no pré-cabeçalho (nome e título do imóvel)", () => {
     const m = emailInteresse({
       para: "corretor@exemplo.com",
