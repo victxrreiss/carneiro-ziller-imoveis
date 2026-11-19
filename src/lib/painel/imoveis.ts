@@ -14,6 +14,7 @@ import {
   TIPOS_FOTO,
   ehAdmin,
   podeEditar,
+  podeExcluir,
   situacaoDestino,
   validarImovel,
   type EntradaImovel,
@@ -40,6 +41,7 @@ export type LinhaImovel = {
   alteradoEm: string;
   capa: string | null;
   podeEditar: boolean;
+  podeExcluir: boolean;
   destaque: boolean;
 };
 
@@ -53,7 +55,7 @@ async function idsDestaque(db: Db): Promise<Set<string>> {
   return new Set((await db.select({ id: destaquesHome.imovelId }).from(destaquesHome)).map((d) => d.id));
 }
 
-/** Todos veem todos; o Corretor edita só os próprios. Ordem: última alteração primeiro. */
+/** Todos veem e editam todos (`podeEditar`). Ordem: última alteração primeiro. */
 export async function listarImoveis(u: UsuarioLogado, db: Db = conexao()): Promise<LinhaImovel[]> {
   const [todos, nomeDe, emDestaque] = await Promise.all([carregarImoveis(db), nomes(db), idsDestaque(db)]);
   return todos
@@ -75,7 +77,8 @@ export async function listarImoveis(u: UsuarioLogado, db: Db = conexao()): Promi
       responsavelNome: nomeDe.get(r.responsavelId) ?? "—",
       alteradoEm: r.alteradoEm,
       capa: r.fotos[0]?.src ?? null,
-      podeEditar: podeEditar(u, r),
+      podeEditar: podeEditar(u),
+      podeExcluir: podeExcluir(u),
       destaque: emDestaque.has(r.id) && r.situacao === "publicado",
     }));
 }
@@ -146,7 +149,7 @@ export async function obterParaEdicao(u: UsuarioLogado, id: string, db: Db = con
     criadoEm: r.criadoEm,
     alteradoEm: r.alteradoEm,
     alteradoPorNome: nomeDe.get(r.alteradoPorId) ?? "—",
-    podeEditar: podeEditar(u, r),
+    podeEditar: podeEditar(u),
     destaque: emDestaque.has(r.id) && r.situacao === "publicado",
   };
 }
@@ -249,7 +252,7 @@ export async function salvarImovel(
 ): Promise<ResultadoSalvar> {
   const existente = id ? await carregarImovel(db, id) : null;
   if (id && !existente) return { ok: false, inexistente: true };
-  if (existente && !podeEditar(u, existente)) return { ok: false, proibido: true };
+  if (existente && !podeEditar(u)) return { ok: false, proibido: true };
 
   // Rascunho só existe antes da primeira publicação; depois a situação vem do campo.
   const destino = situacaoDestino(intencao, e.situacao);
@@ -326,13 +329,13 @@ export async function salvarImovel(
   return { ok: true, id: resultado.id, codigo: resultado.codigo, situacao: destino, novo: !existente, destaqueSaiu: resultado.destaqueSaiu };
 }
 
-/** Só ADMIN. Se o imóvel era destaque, ele sai da lista e o ADMIN fica com o aviso. */
+/** Qualquer usuário do painel (`podeExcluir`). Se o imóvel era destaque, ele sai da lista e o ADMIN fica com o aviso. */
 export async function excluirImovel(
   u: UsuarioLogado,
   id: string,
   db: Db = conexao(),
 ): Promise<{ ok: true; codigo: string; titulo: string; destaqueSaiu: boolean } | { ok: false }> {
-  if (!ehAdmin(u)) return { ok: false };
+  if (!podeExcluir(u)) return { ok: false };
   const r = await carregarImovel(db, id);
   if (!r) return { ok: false };
   const fotoIds = r.fotos.map((f) => f.id);

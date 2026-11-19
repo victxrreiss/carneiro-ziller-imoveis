@@ -173,7 +173,7 @@ export function ListaImoveis({ linhas, usuario }: { linhas: LinhaLista[]; usuari
 
   const acoes = (l: LinhaLista, cards: boolean) => {
     const publicado = l.situacao === "publicado";
-    const temMenu = publicado || usuario.admin;
+    const temMenu = publicado || l.podeExcluir;
     return (
       <div className="pn-actions">
         {l.podeEditar ? (
@@ -192,7 +192,7 @@ export function ListaImoveis({ linhas, usuario }: { linhas: LinhaLista[]; usuari
                 <IcExterno />
               </a>
             )}
-            {usuario.admin && (
+            {l.podeExcluir && (
               <button type="button" className="pn-ibtn is-danger" aria-label={`Excluir ${l.codigo}`} onClick={() => setExcluir(l)}>
                 <IcLixeira stroke="#78323D" />
               </button>
@@ -212,7 +212,7 @@ export function ListaImoveis({ linhas, usuario }: { linhas: LinhaLista[]; usuari
                   </a>
                 </MenuItem>
               )}
-              {usuario.admin && (
+              {l.podeExcluir && (
                 <MenuItem as="li">
                   <button type="button" className="is-danger" onClick={() => setExcluir(l)}>
                     <IcLixeira size={16} />

@@ -24,7 +24,7 @@ async function lead(imovelId: string | null, extra: Partial<typeof interesses.$i
 const dono = (id: string, responsavelId: string) => amb.db.update(imoveis).set({ responsavelId }).where(eq(imoveis.id, id));
 
 describe("listarContatos", () => {
-  test("ADMIN vê tudo; corretor só o dos imóveis de que é responsável atual", async () => {
+  test("todo usuário do painel vê todos os contatos, inclusive o geral e o de imóvel excluído", async () => {
     await dono("cz1001", amb.mariana.id);
     await dono("cz1002", amb.ricardo.id);
     const geral = await lead(null, { origem: "contato", url: "/contato" });
@@ -38,14 +38,11 @@ describe("listarContatos", () => {
     expect(adm.itens.find((i) => i.id === geral)).toMatchObject({ imovel: null, origem: "contato", pagina: "/contato" });
     expect(adm.itens.find((i) => i.id === deMariana)?.imovel).toMatchObject({ id: "cz1001", codigo: expect.any(String), titulo: expect.any(String) });
 
-    const m = await listarContatos(amb.mariana, 1, amb.db);
-    expect(m.itens.map((i) => i.id)).toEqual([deMariana]);
-    expect(m.total).toBe(1);
-
-    // O lead segue o responsável atual do imóvel.
-    await dono("cz1001", amb.ricardo.id);
-    expect((await listarContatos(amb.mariana, 1, amb.db)).itens).toEqual([]);
-    expect((await listarContatos(amb.ricardo, 1, amb.db)).itens.map((i) => i.id)).toEqual([deRicardo, deMariana]);
+    for (const corretor of [amb.mariana, amb.ricardo]) {
+      const c = await listarContatos(corretor, 1, amb.db);
+      expect(c.itens.map((i) => i.id)).toEqual([excluido, deRicardo, deMariana, geral]);
+      expect(c.total).toBe(4);
+    }
   });
 
   test("pagina de 30 em 30 e ajusta página fora do intervalo", async () => {

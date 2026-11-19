@@ -1,11 +1,10 @@
-// Contatos (leads) no painel: lista paginada, mais recentes primeiro. O ADMIN
-// vê todos; o corretor só os de imóveis de que é o responsável ATUAL (o filtro
-// é no SQL, então um lead segue o imóvel quando o responsável muda). Contato
-// geral e lead de imóvel excluído só aparecem para o ADMIN.
+// Contatos (leads) no painel: lista paginada, mais recentes primeiro. Todo
+// usuário do painel vê todos, inclusive o contato geral e o lead de imóvel
+// excluído (decisão do usuário, 19/11/2026; ver `podeEditar` em regras.ts).
 import { desc, eq, sql } from "drizzle-orm";
 import { conexao, type Db } from "@/lib/dados/conexao";
 import { imoveis, interesses } from "@/lib/dados/esquema";
-import { ehAdmin, type UsuarioLogado } from "./regras";
+import { podeEditar, type UsuarioLogado } from "./regras";
 
 export const CONTATOS_POR_PAGINA = 30;
 
@@ -29,8 +28,8 @@ export async function listarContatos(
   pagina: number,
   db: Db = conexao(),
 ): Promise<{ itens: LinhaContato[]; total: number; pagina: number; paginas: number }> {
-  // Regra de visibilidade (vive aqui): ADMIN vê todo contato; corretor só os de imóvel de que é o responsável atual.
-  const filtro = ehAdmin(u) ? undefined : eq(imoveis.responsavelId, u.id);
+  // Regra de visibilidade (vive aqui): quem pode editar imóveis vê todo contato.
+  const filtro = podeEditar(u) ? undefined : sql`false`;
 
   const [{ total }] = await db
     .select({ total: sql<number>`count(*)::int` })

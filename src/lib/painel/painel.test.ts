@@ -169,13 +169,20 @@ describe("cadastro de imóvel", () => {
     expect(reg.descricao).toBe("Casa ampla.\n\nPerto de tudo.");
   });
 
-  test("Corretor edita só os próprios e não troca o responsável", async () => {
-    expect(await salvarImovel(amb.mariana, "cz1015", { ...completa, situacao: "publicado" }, "salvar", new Date(), amb.db)).toEqual({ ok: false, proibido: true });
+  test("Corretor edita imóvel de outro responsável, sem virar o responsável", async () => {
+    const deRicardo = (await obterParaEdicao(amb.mariana, "cz1015", amb.db))!;
+    expect(deRicardo.podeEditar).toBe(true);
+    const outro = await salvarImovel(amb.mariana, "cz1015", { ...deRicardo.entrada, titulo: "Editado pela Mariana" }, "salvar", new Date(), amb.db);
+    expect(outro.ok).toBe(true);
+    expect(await imovelDe("cz1015")).toMatchObject({ titulo: "Editado pela Mariana", responsavelId: deRicardo.responsavelId, alteradoPorId: amb.mariana.id });
+    expect((await listarImoveis(amb.mariana, amb.db)).find((l) => l.id === "cz1015")).toMatchObject({ podeEditar: true, podeExcluir: true });
+  });
+
+  test("Corretor não troca o responsável", async () => {
     const entrada = (await obterParaEdicao(amb.mariana, "cz1009", amb.db))!.entrada;
     const r = await salvarImovel(amb.mariana, "cz1009", { ...entrada, responsavelId: amb.ricardo.id }, "salvar", new Date(), amb.db);
     expect(r.ok).toBe(true);
     expect((await imovelDe("cz1009")).responsavelId).toBe(amb.mariana.id);
-    expect((await listarImoveis(amb.mariana, amb.db)).find((l) => l.id === "cz1015")?.podeEditar).toBe(false);
   });
 
   test("ADMIN troca o responsável; id que não é uuid é ignorado", async () => {
@@ -186,8 +193,12 @@ describe("cadastro de imóvel", () => {
     expect((await imovelDe("cz1015")).responsavelId).toBe(amb.mariana.id);
   });
 
-  test("só ADMIN exclui, e a exclusão apaga as fotos do imóvel e os objetos", async () => {
-    expect(await excluirImovel(amb.mariana, "cz1009", amb.db)).toEqual({ ok: false });
+  test("Corretor também exclui, inclusive imóvel de outro responsável", async () => {
+    expect(await excluirImovel(amb.mariana, "cz1015", amb.db)).toMatchObject({ ok: true, codigo: "CZ1015" });
+    expect(await imovelDe("cz1015")).toBeUndefined();
+  });
+
+  test("a exclusão apaga as fotos do imóvel e os objetos", async () => {
     const antes = await contar(fotos);
     const objetosAntes = (armazenamento() as ReturnType<typeof armazenamentoMemoria>).objetos.size;
     expect(await excluirImovel(amb.admin, "cz1026", amb.db)).toMatchObject({ ok: true, codigo: "CZ1026", destaqueSaiu: false });

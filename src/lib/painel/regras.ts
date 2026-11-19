@@ -17,10 +17,16 @@ export type UsuarioLogado = { id: string; nome: string; email: string; papel: Pa
 
 export const ehAdmin = (u: Pick<UsuarioLogado, "papel">) => u.papel === "admin";
 
-/** ADMIN edita qualquer imóvel; Corretor só os que tem como responsável. */
-export function podeEditar(u: UsuarioLogado, imovel: { responsavelId: string }): boolean {
-  return ehAdmin(u) || imovel.responsavelId === u.id;
+/**
+ * Decisão do usuário (19/11/2026): todo usuário do painel, ADMIN ou Corretor, edita, publica e
+ * exclui qualquer imóvel e vê todos os contatos (antes o Corretor só mexia nos que tinha como
+ * responsável). Continuam só do ADMIN: trocar o responsável, usuários e destaques da página inicial.
+ */
+export function podeEditar(u: Pick<UsuarioLogado, "papel">): boolean {
+  return u.papel === "admin" || u.papel === "corretor";
 }
+
+export const podeExcluir = podeEditar;
 
 // ---------- Cadastro de imóvel ----------
 

@@ -77,14 +77,14 @@ test("o site só leva ao painel pelo botão SOU CORRETOR (login)", async ({ page
   for (const href of await links.evaluateAll((els) => els.map((e) => e.getAttribute("href")))) expect(href).toMatch(/^\/painel\/entrar/);
 });
 
-test("Corretor: sem Usuários no menu, sem permissão pelo endereço, imóvel de outro em leitura", async ({ page }) => {
+test("Corretor: sem Usuários no menu, sem permissão pelo endereço, edita imóvel de outro", async ({ page }) => {
   await entrar(page, CORRETOR);
   await expect(page.getByRole("link", { name: "Usuários" })).toHaveCount(0);
   await page.goto("/painel/usuarios");
   await expect(page.getByText("Você não tem acesso a esta página")).toBeVisible();
   await page.goto("/painel/imoveis/cz1015");
-  await expect(page.getByText("Somente leitura")).toBeVisible();
-  await expect(page.getByRole("button", { name: "SALVAR ALTERAÇÕES" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "SALVAR ALTERAÇÕES" })).toBeVisible();
+  await expect(page.getByText("Somente leitura")).toHaveCount(0);
   await sair(page);
 });
 
