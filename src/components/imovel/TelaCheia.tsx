@@ -106,7 +106,7 @@ export function TelaCheia({ fotos, indice, onMudar, onFechar, retornoRef }: Prop
           {/* A moldura tem a proporção da foto: a marca d'água fica sobre a imagem, não na sobra. */}
           <figure className="im-luz-foto" style={{ "--im-prop": proporcao } as CSSProperties}>
             <Image key={atual.src} src={atual.src} alt={atual.alt} fill sizes="(max-width: 1520px) 92vw, 1400px" loading="eager" draggable={false} />
-            <MarcaDagua />
+            <MarcaDagua src={atual.src} />
           </figure>
           <div className="im-luz-vizinhas" aria-hidden="true">
             {vizinhas.map((i) => (

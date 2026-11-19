@@ -35,7 +35,7 @@ export function CardImovel({ imovel: i, de, grid, prioridade }: Props) {
           loading={prioridade ? "eager" : "lazy"}
         />
         <span className="cz-card-tag">{rotuloEtiqueta(i)}</span>
-        <MarcaDagua />
+        <MarcaDagua src={i.foto.src} />
       </div>
       <div className="cz-card-meta">
         {i.bairro} · {i.cidade}

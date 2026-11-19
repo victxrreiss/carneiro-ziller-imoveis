@@ -33,6 +33,12 @@ describe("CardImovel", () => {
     expect(card.querySelector(".cz-card-foto .cz-marca-dagua")).toHaveAttribute("aria-hidden", "true");
   });
 
+  test("foto vinda da Loft (marca já gravada) não recebe a marca d'água do site", () => {
+    const loft = { ...base, foto: { ...base.foto, src: "https://carneiroziller.com.br/cz-fotos/fotos/loft-453c1569e129a841ca601a018881a90591943580.jpg" } };
+    const { container } = render(<CardImovel imovel={loft} />);
+    expect(container.querySelector(".cz-card-foto .cz-marca-dagua")).toBeNull();
+  });
+
   test("card de imóvel tem marca d'água aria-hidden e o preço", () => {
     const { container } = render(<CardImovel imovel={base} />);
     const marca = container.querySelector(".cz-card-foto .cz-marca-dagua")!;

@@ -45,7 +45,7 @@ export function GaleriaMosaico({ fotos, padrao }: { fotos: Foto[]; padrao: Foto 
               loading={i === 0 ? "eager" : "lazy"}
               fetchPriority={i === 0 ? "high" : "auto"}
             />
-            <MarcaDagua />
+            <MarcaDagua src={f.src} />
           </button>
         ))
       )}
