@@ -45,7 +45,14 @@ export function configS3(env: Env = process.env) {
     "FOTOS_URL_PUBLICA",
   ]);
   return {
+    /** Endpoint das URLs assinadas que vão para o navegador (precisa ser público). */
     endpoint: c.S3_ENDPOINT,
+    /**
+     * Endpoint das operações do próprio servidor (conferir, apagar, enviar). Opcional; sem ele,
+     * o mesmo `S3_ENDPOINT`. Na VPS aponta direto para o MinIO: passando pela Cloudflare, ela
+     * acrescenta cabeçalhos fora da assinatura e o MinIO recusa o pedido.
+     */
+    endpointInterno: env.S3_ENDPOINT_INTERNO?.trim() || c.S3_ENDPOINT,
     regiao: c.S3_REGIAO,
     bucket: c.S3_BUCKET,
     accessKeyId: c.S3_ACCESS_KEY_ID,

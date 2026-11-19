@@ -38,6 +38,9 @@ describe("configuração", () => {
   test("normaliza URLs e valores", () => {
     expect(configS3(completo).urlPublica).toBe("https://fotos.exemplo.test");
     expect(configS3({ ...completo, S3_FORCE_PATH_STYLE: "true" }).forcePathStyle).toBe(true);
+    // Sem S3_ENDPOINT_INTERNO o servidor usa o mesmo endpoint das URLs assinadas.
+    expect(configS3(completo).endpointInterno).toBe(configS3(completo).endpoint);
+    expect(configS3({ ...completo, S3_ENDPOINT_INTERNO: " http://minio:9000 " }).endpointInterno).toBe("http://minio:9000");
     expect(urlDoSite(completo)).toBe("https://site.exemplo.test");
     expect(configBanco({ DATABASE_URL: "a" }).urlDireta).toBe("a");
     expect(configBanco({ DATABASE_URL: "a", DATABASE_URL_DIRETA: "b" }).urlDireta).toBe("b");

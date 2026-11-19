@@ -77,6 +77,10 @@ services:
       # é o público (o nginx-proxy repassa /cz-fotos/ ao `s3`). Mesma origem do site:
       # sem CORS.
       S3_ENDPOINT: ${SITE_URL:?defina no .env}
+      # O servidor confere e apaga as fotos direto no MinIO, pela rede do compose (pelo nome
+      # do container, único na proxy-network): passando pela Cloudflare, ela acrescenta
+      # cabeçalhos fora da assinatura S3 e o MinIO recusa.
+      S3_ENDPOINT_INTERNO: http://carneiro-ziller-s3:9000
       S3_REGIAO: us-east-1
       S3_BUCKET: cz-fotos
       S3_FORCE_PATH_STYLE: "true"

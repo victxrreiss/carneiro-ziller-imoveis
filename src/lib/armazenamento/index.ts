@@ -40,23 +40,33 @@ const VALIDADE_URL_S = 300;
 const BYTES_INICIO = 16;
 
 export function armazenamentoS3(): ArmazenamentoFotos {
-  let cliente: S3Client | null = null;
+  // Dois clientes: o público assina as URLs que vão para o navegador; o interno faz o que o
+  // próprio servidor pede ao armazenamento (`S3_ENDPOINT_INTERNO`, ver `configS3`).
+  const clientes = new Map<string, S3Client>();
+  const cliente = (endpoint: string, cfg: ReturnType<typeof configS3>) => {
+    let s3 = clientes.get(endpoint);
+    if (!s3) {
+      s3 = new S3Client({
+        endpoint,
+        region: cfg.regiao,
+        forcePathStyle: cfg.forcePathStyle,
+        credentials: { accessKeyId: cfg.accessKeyId, secretAccessKey: cfg.secretAccessKey },
+        // Evita o checksum extra do SDK novo, que alguns fornecedores S3 não aceitam.
+        requestChecksumCalculation: "WHEN_REQUIRED",
+        responseChecksumValidation: "WHEN_REQUIRED",
+      });
+      clientes.set(endpoint, s3);
+    }
+    return s3;
+  };
   const c = () => {
     const cfg = configS3();
-    cliente ??= new S3Client({
-      endpoint: cfg.endpoint,
-      region: cfg.regiao,
-      forcePathStyle: cfg.forcePathStyle,
-      credentials: { accessKeyId: cfg.accessKeyId, secretAccessKey: cfg.secretAccessKey },
-      // Evita o checksum extra do SDK novo, que alguns fornecedores S3 não aceitam.
-      requestChecksumCalculation: "WHEN_REQUIRED",
-      responseChecksumValidation: "WHEN_REQUIRED",
-    });
-    return { s3: cliente, cfg };
+    return { s3: cliente(cfg.endpointInterno, cfg), cfg };
   };
   return {
     async urlDeEnvio({ chave, tipo, tamanho }) {
-      const { s3, cfg } = c();
+      const cfg = configS3();
+      const s3 = cliente(cfg.endpoint, cfg);
       const url = await getSignedUrl(s3, new PutObjectCommand({ Bucket: cfg.bucket, Key: chave, ContentType: tipo, ContentLength: tamanho }), {
         expiresIn: VALIDADE_URL_S,
         signableHeaders: new Set(["content-type", "content-length"]),
