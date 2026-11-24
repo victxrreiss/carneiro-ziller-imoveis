@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Imovel, ImovelCard } from "@/lib/imoveis";
-import { GRUPOS_CARACTERISTICA } from "@/lib/imoveis/caracteristicas";
+import { GRUPOS_CARACTERISTICA, TIPOS_CASA } from "@/lib/imoveis/caracteristicas";
 import type { ContextoVolta } from "@/lib/imoveis/filtros";
 import { mensagemWhatsAppImovel } from "@/lib/imoveis/whatsapp";
 import { empresa, linkWhatsApp } from "@/lib/site";
@@ -51,8 +51,12 @@ type Props = {
 export function ImovelTela({ imovel, volta, url, semelhantes }: Props) {
   const locacao = imovel.finalidade === "locacao";
   const plural = (n: number, um: string, varios: string) => (n === 1 ? um : varios);
+  // Em casa, a área do terreno sobe para o lado da construída (pedido do cliente, 2026-11-24).
+  const casa = TIPOS_CASA.includes(imovel.tipo);
+  const m2 = (n: number) => formatarArea(n).replace(/ m²$/, "");
   const dados = [
-    { valor: formatarArea(imovel.area).replace(/ m²$/, ""), rotulo: /terreno|lote/i.test(imovel.tipo) ? "m²" : "m² construídos" },
+    { valor: m2(imovel.area), rotulo: /terreno|lote/i.test(imovel.tipo) ? "m²" : "m² construídos" },
+    casa && imovel.areaTotal ? { valor: m2(imovel.areaTotal), rotulo: "m² de terreno" } : null,
     imovel.quartos ? { valor: String(imovel.quartos), rotulo: plural(imovel.quartos, "quarto", "quartos") } : null,
     imovel.suites ? { valor: String(imovel.suites), rotulo: plural(imovel.suites, "suíte", "suítes") } : null,
     imovel.vagas ? { valor: String(imovel.vagas), rotulo: plural(imovel.vagas, "vaga", "vagas") } : null,
@@ -60,7 +64,7 @@ export function ImovelTela({ imovel, volta, url, semelhantes }: Props) {
     imovel.banheiros ? { valor: String(imovel.banheiros), rotulo: plural(imovel.banheiros, "banheiro", "banheiros") } : null,
   ].filter((d) => d !== null);
   const detalhes = [
-    imovel.areaTotal && imovel.areaTotal > imovel.area ? { rotulo: "Área do terreno", valor: formatarArea(imovel.areaTotal) } : null,
+    !casa && imovel.areaTotal && imovel.areaTotal > imovel.area ? { rotulo: "Área do terreno", valor: formatarArea(imovel.areaTotal) } : null,
     // O andar não aparece no site (decisão do usuário, 2026-11-24); segue no painel.
     imovel.anoConstrucao !== null ? { rotulo: "Ano de construção", valor: String(imovel.anoConstrucao) } : null,
     !locacao && imovel.valorLocacao !== null ? { rotulo: "Locação", valor: formatarMensal(imovel.valorLocacao) } : null,
@@ -94,7 +98,7 @@ export function ImovelTela({ imovel, volta, url, semelhantes }: Props) {
                 </h1>
                 {imovel.empreendimento && <p className="im-condo">{imovel.empreendimento}</p>}
               </div>
-              <ul className="im-dados" aria-label="Dados principais">
+              <ul className="im-dados" aria-label="Dados principais" data-n={dados.length}>
                 {dados.map((d) => (
                   <li key={d.rotulo}>
                     <strong>{d.valor}</strong>

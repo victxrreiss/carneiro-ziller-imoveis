@@ -165,6 +165,14 @@
 .cz .im-mos-todas,.cz .im-luz-btn,.cz .im-luz-foto img,.cz .im-cta,.cz .im-ref,.cz .im-alert{border-radius:var(--raio)}
 .cz .im-comp-menu a,.cz .im-comp-menu button{border-radius:calc(var(--raio-lg) - 8px)}
 .cz .im-ref img,.cz .im-sk-line{border-radius:var(--raio-sm)}
+/* Casa com terreno: 6 dados não cabem numa linha em nenhuma largura de desktop; grade de 3 (3 + 3). */
+@media (min-width:1321px){
+  .cz .im-dados[data-n="6"]{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .cz .im-dados[data-n="6"] li{padding:18px 16px;margin-right:0;border-right:1px solid var(--areia-2)}
+  .cz .im-dados[data-n="6"] li:nth-child(3n+1){padding-left:0}
+  .cz .im-dados[data-n="6"] li:nth-child(3n){border-right:0}
+  .cz .im-dados[data-n="6"] li:nth-child(n+4){border-top:1px solid var(--areia-2)}
+}
 /* Telas médias: até 5 dados (área, quartos, suítes, vagas, banheiros) não cabem numa linha; grade de 3, como a de 2 do celular. */
 @media (min-width:901px) and (max-width:1320px){
   .cz .im-dados{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}

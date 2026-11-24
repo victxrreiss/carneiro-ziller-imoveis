@@ -68,10 +68,10 @@ describe("FiltrosImoveis > filtros principais", () => {
 
   test("Bairro tem o grupo Regiões com os pares e escolher um grava regiao", async () => {
     const { onAplicar, unmount } = montar({ local: "Lourdes, Belo Horizonte", quartos: "3", pagina: 2 });
-    // Só os pares (regiões que juntam bairros diferentes com imóvel): Vale do Sereno já é um bairro da lista.
-    expect(textos(screen.getByLabelText("Bairro"), "Regiões")).toEqual(["Belvedere e Vila da Serra", "Lourdes e Savassi"]);
-    await userEvent.selectOptions(screen.getByLabelText("Bairro"), "Belvedere e Vila da Serra");
-    expect(onAplicar).toHaveBeenLastCalledWith({ regiao: "belvedere-vila-da-serra", local: undefined, quartos: "3", pagina: 1 });
+    // Só os pares (regiões que juntam bairros diferentes com imóvel) que passam pela cidade escolhida (BH).
+    expect(textos(screen.getByLabelText("Bairro"), "Regiões")).toEqual(["Lourdes e Savassi"]);
+    await userEvent.selectOptions(screen.getByLabelText("Bairro"), "Lourdes e Savassi");
+    expect(onAplicar).toHaveBeenLastCalledWith({ regiao: "lourdes-savassi", local: undefined, quartos: "3", pagina: 1 });
     expect(onAplicar.mock.lastCall![0].local).toBeUndefined();
     unmount();
 
@@ -89,7 +89,7 @@ describe("FiltrosImoveis > filtros principais", () => {
 
     // Com cidade escolhida, só as regiões que passam por ela.
     const nl = montar({ local: "Nova Lima", pagina: 1 });
-    expect(textos(screen.getByLabelText("Bairro"), "Regiões")).toEqual(["Belvedere e Vila da Serra"]);
+    expect(textos(screen.getByLabelText("Bairro"), "Regiões")).toEqual(["Vale do Sereno e Vila da Serra"]);
     nl.unmount();
 
     // Com imóvel em um bairro só do par, a região seria igual ao bairro: não é oferecida.
@@ -102,11 +102,11 @@ describe("FiltrosImoveis > antes da hidratação", () => {
   const ocultoRegiao = () => document.querySelector<HTMLInputElement>('form input[type="hidden"][name="regiao"]');
 
   test("com região escolhida, o Buscar envia `regiao` num campo oculto", () => {
-    const { unmount } = montar({ regiao: "belvedere-vila-da-serra", pagina: 1 });
-    expect(ocultoRegiao()).toHaveValue("belvedere-vila-da-serra");
+    const { unmount } = montar({ regiao: "vale-do-sereno-vila-da-serra", pagina: 1 });
+    expect(ocultoRegiao()).toHaveValue("vale-do-sereno-vila-da-serra");
     // É o que um GET nativo do formulário enviaria: a região chega em `regiao`, que `lerFiltros` entende.
     const enviado = new FormData(document.querySelector("form")!);
-    expect(enviado.get("regiao")).toBe("belvedere-vila-da-serra");
+    expect(enviado.get("regiao")).toBe("vale-do-sereno-vila-da-serra");
     unmount();
 
     montar({ local: "Nova Lima", pagina: 1 });

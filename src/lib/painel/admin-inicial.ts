@@ -18,7 +18,7 @@ export async function criarAdminInicial(
   if (!emailValido(email)) return { ok: false, erro: "E-mail inválido. Use o formato nome@email.com." };
 
   const [{ n }] = await db.select({ n: count() }).from(usuarios).where(eq(usuarios.papel, "admin"));
-  if (n > 0) return { ok: false, erro: "Já existe um ADMIN. Só pode haver um; novos usuários entram por convite no painel." };
+  if (n > 0) return { ok: false, erro: "Já existe um ADMIN. Novos usuários (inclusive outros ADMINs) entram por convite no painel." };
 
   let id: string;
   try {

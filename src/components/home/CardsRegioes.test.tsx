@@ -14,7 +14,7 @@ describe("CardsRegioes", () => {
 
     expect(screen.getByRole("heading", { level: 2, name: "Onde você quer morar?" })).toBeInTheDocument();
     expect(screen.getAllByRole("link").map((a) => a.getAttribute("href"))).toEqual(REGIOES.map((r) => `/imoveis?regiao=${r.slug}`));
-    const grande = screen.getByRole("link", { name: /Belvedere e Vila da Serra/ });
+    const grande = screen.getByRole("link", { name: /Belvedere/ });
     expect(grande).toHaveAttribute("data-grande", "true");
     expect(screen.getByRole("link", { name: /Vale do Sereno/ })).not.toHaveAttribute("data-grande");
   });

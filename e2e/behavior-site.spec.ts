@@ -135,12 +135,12 @@ test.describe("filtros do grid", () => {
     await escolher(page, "Tipo de imóvel", "Cobertura", "**/imoveis?tipo=Cobertura");
     await escolher(page, "Cidade", "Nova Lima", "**/imoveis?local=Nova+Lima&tipo=Cobertura");
     await escolher(page, "Bairro", "Vila da Serra", "**/imoveis?local=Vila+da+Serra%2C+Nova+Lima&tipo=Cobertura");
-    // A região junta bairros de cidades diferentes: grava `regiao` e tira o `local`.
-    await escolher(page, "Bairro", "Belvedere e Vila da Serra", "**/imoveis?regiao=belvedere-vila-da-serra&tipo=Cobertura");
+    // A região junta dois bairros: grava `regiao` e tira o `local`.
+    await escolher(page, "Bairro", "Vale do Sereno e Vila da Serra", "**/imoveis?regiao=vale-do-sereno-vila-da-serra&tipo=Cobertura");
     await expect(grade(page).getByLabel("Cidade")).toHaveValue("");
-    await expect(grade(page).locator(".res-total")).toHaveText("3 imóveis encontrados");
-    await escolher(page, "Quartos", "4+", "**/imoveis?regiao=belvedere-vila-da-serra&tipo=Cobertura&quartos=4");
-    await page.getByRole("button", { name: "Remover filtro Belvedere e Vila da Serra" }).click();
+    await expect(grade(page).locator(".res-total")).toHaveText("2 imóveis encontrados");
+    await escolher(page, "Quartos", "4+", "**/imoveis?regiao=vale-do-sereno-vila-da-serra&tipo=Cobertura&quartos=4");
+    await page.getByRole("button", { name: "Remover filtro Vale do Sereno e Vila da Serra" }).click();
     await page.waitForURL("**/imoveis?tipo=Cobertura&quartos=4");
     await expect(grade(page).getByLabel("Bairro")).toHaveValue("");
     // Filtro principal não abre os avançados.
@@ -260,14 +260,14 @@ test.describe("páginas institucionais e 404", () => {
 
 test("Buscar antes da hidratação mantém a região que já estava na URL", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/imoveis?regiao=belvedere-vila-da-serra");
+  await page.goto("/imoveis?regiao=vale-do-sereno-vila-da-serra");
   const form = grade(page).getByRole("search", { name: "Filtrar imóveis" });
   await expect(form).toBeVisible();
   // O envio nativo do formulário (GET), sem passar pelo React: é o que o Buscar faz antes da hidratação.
   await form.evaluate((f: HTMLFormElement) => HTMLFormElement.prototype.submit.call(f));
-  await page.waitForURL(/[?&]regiao=belvedere-vila-da-serra/);
-  await expect(grade(page).locator(".res-chips")).toContainText("Belvedere e Vila da Serra");
-  await expect(grade(page).getByLabel("Bairro")).toHaveValue("regiao:belvedere-vila-da-serra");
+  await page.waitForURL(/[?&]regiao=vale-do-sereno-vila-da-serra/);
+  await expect(grade(page).locator(".res-chips")).toContainText("Vale do Sereno e Vila da Serra");
+  await expect(grade(page).getByLabel("Bairro")).toHaveValue("regiao:vale-do-sereno-vila-da-serra");
 });
 
 test.describe("mobile 390px", () => {
@@ -282,8 +282,8 @@ test.describe("mobile 390px", () => {
     await expect(grade(page).locator(".res-total")).toHaveText("9 imóveis encontrados");
     await escolher(page, "Cidade", "Nova Lima", "**/imoveis?finalidade=lancamentos&local=Nova+Lima");
     await expect(page.getByRole("button", { name: "Remover filtro Nova Lima" })).toBeVisible();
-    await escolher(page, "Bairro", "Belvedere e Vila da Serra", "**/imoveis?finalidade=lancamentos&regiao=belvedere-vila-da-serra");
-    await expect(page.getByRole("button", { name: "Remover filtro Belvedere e Vila da Serra" })).toBeVisible();
+    await escolher(page, "Bairro", "Vale do Sereno e Vila da Serra", "**/imoveis?finalidade=lancamentos&regiao=vale-do-sereno-vila-da-serra");
+    await expect(page.getByRole("button", { name: "Remover filtro Vale do Sereno e Vila da Serra" })).toBeVisible();
     expect(await semSobra(page)).toBeLessThanOrEqual(0);
   });
 

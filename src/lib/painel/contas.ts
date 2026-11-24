@@ -5,7 +5,7 @@
 import { and, asc, count, eq, gt, lt, sql } from "drizzle-orm";
 import { conexao, type Db } from "@/lib/dados/conexao";
 import { imoveis, sessoes, tentativasLogin, tokensSenha, usuarios } from "@/lib/dados/esquema";
-import type { RegistroUsuario, TipoToken } from "@/lib/dados/tipos";
+import type { Papel, RegistroUsuario, TipoToken } from "@/lib/dados/tipos";
 import { conferirSenha, gerarHashSenha, gerarSenhaProvisoria, gerarToken, hashToken } from "@/lib/seguranca/senha";
 import { emailConvite, emailRedefinicao, enviar, VALIDADE_CONVITE_H, VALIDADE_REDEFINICAO_H } from "./emails";
 import { LIMITES, emailValido, erroConfirmacao, erroNovaSenha, type UsuarioLogado } from "./regras";
@@ -250,6 +250,8 @@ export type LinhaUsuario = {
   ultimoAcesso: string | null;
   conviteEnviadoEm: string | null;
   imoveis: number;
+  /** ADMIN: recebe por e-mail os contatos de todos os imóveis. */
+  recebeContatos: boolean;
 };
 
 export async function listarUsuarios(db: Db = conexao()): Promise<LinhaUsuario[]> {
@@ -267,6 +269,7 @@ export async function listarUsuarios(db: Db = conexao()): Promise<LinhaUsuario[]
       ultimoAcesso: iso(u.ultimoAcesso),
       conviteEnviadoEm: iso(u.conviteEnviadoEm),
       imoveis: contagem.get(u.id) ?? 0,
+      recebeContatos: u.recebeContatos,
     }))
     .sort((a, b) => (a.papel === "admin" ? -1 : b.papel === "admin" ? 1 : ordem[a.situacao] - ordem[b.situacao] || a.nome.localeCompare(b.nome)));
 }
@@ -282,6 +285,8 @@ export async function convidar(
   email: string,
   agora = Date.now(),
   db: Db = conexao(),
+  /** Decisão do usuário (24/11/2026): pode haver mais de um ADMIN. */
+  papel: Papel = "corretor",
 ): Promise<{ ok: true; usuario: LinhaUsuario } | { ok: false; erros: ErrosUsuario }> {
   const n = nome.replace(/\s+/g, " ").trim();
   const e = normalizarEmail(email);
@@ -302,7 +307,10 @@ export async function convidar(
 
   let criado: LinhaUsuarioBanco;
   try {
-    [criado] = await db.insert(usuarios).values({ nome: n, email: e, papel: "corretor", situacao: "pendente", conviteEnviadoEm: new Date(agora) }).returning();
+    [criado] = await db
+      .insert(usuarios)
+      .values({ nome: n, email: e, papel: papel === "admin" ? "admin" : "corretor", situacao: "pendente", conviteEnviadoEm: new Date(agora) })
+      .returning();
   } catch {
     // Duas pessoas convidando o mesmo e-mail ao mesmo tempo.
     return { ok: false, erros: { email: "Já existe um usuário com este e-mail." } };
@@ -336,6 +344,33 @@ export async function reenviarConvite(admin: UsuarioLogado, usuarioId: string, a
   }
   await db.update(usuarios).set({ conviteEnviadoEm: new Date(agora) }).where(eq(usuarios.id, u.id));
   return true;
+}
+
+export type ErroPapel = "proibido" | "inexistente" | "ultimo-admin";
+
+/**
+ * Torna ADMIN ou volta a Corretor (decisão do usuário, 24/11/2026: pode haver mais de um ADMIN).
+ * Ninguém muda o próprio papel, e o último ADMIN ativo não vira Corretor: o painel nunca fica sem ADMIN.
+ */
+export async function alterarPapel(admin: UsuarioLogado, usuarioId: string, papel: Papel, db: Db = conexao()): Promise<{ ok: true } | { ok: false; erro: ErroPapel }> {
+  if (admin.papel !== "admin" || admin.id === usuarioId) return { ok: false, erro: "proibido" };
+  return db.transaction(async (tx) => {
+    // Trava as linhas dos ADMINs: dois rebaixamentos ao mesmo tempo não deixam o painel sem nenhum.
+    const admins = await tx.select({ id: usuarios.id, situacao: usuarios.situacao }).from(usuarios).where(eq(usuarios.papel, "admin")).for("update");
+    const [u] = await tx.select().from(usuarios).where(eq(usuarios.id, usuarioId)).limit(1);
+    if (!u) return { ok: false as const, erro: "inexistente" as const };
+    if (u.papel === papel) return { ok: true as const };
+    if (papel === "corretor" && !admins.some((a) => a.id !== u.id && a.situacao === "ativo")) return { ok: false as const, erro: "ultimo-admin" as const };
+    await tx.update(usuarios).set({ papel }).where(eq(usuarios.id, u.id));
+    return { ok: true as const };
+  });
+}
+
+/** Liga ou desliga, para um usuário, o e-mail com os contatos de todos os imóveis (vale para ADMIN). */
+export async function definirRecebeContatos(admin: UsuarioLogado, usuarioId: string, recebe: boolean, db: Db = conexao()): Promise<boolean> {
+  if (admin.papel !== "admin") return false;
+  const r = await db.update(usuarios).set({ recebeContatos: recebe }).where(eq(usuarios.id, usuarioId)).returning({ id: usuarios.id });
+  return r.length > 0;
 }
 
 /** O ADMIN não desativa a si mesmo. Os imóveis da pessoa continuam no site. */

@@ -105,6 +105,19 @@ describe("ImovelTela", () => {
     expect(within(container).queryByRole("list", { name: "No condomínio" })).toBeNull();
   });
 
+  test("casa: a área do terreno sobe para os dados principais, ao lado da construída, e sai dos detalhes", () => {
+    montar({ ...imovel, tipo: "Casa", areaTotal: 1200 });
+    const dados = screen.getByRole("list", { name: "Dados principais" });
+    expect(within(dados).getAllByRole("listitem").map((li) => li.textContent).slice(0, 2)).toEqual(["520m² construídos", "1.200m² de terreno"]);
+    expect(screen.queryByText("Área do terreno")).not.toBeInTheDocument();
+  });
+
+  test("apartamento: a área do terreno fica nos detalhes", () => {
+    montar({ ...imovel, areaTotal: 1200 });
+    expect(screen.getByText("Área do terreno")).toBeInTheDocument();
+    expect(screen.queryByText(/m² de terreno/)).not.toBeInTheDocument();
+  });
+
   test("o andar não aparece na ficha, mesmo preenchido", () => {
     montar(imovel);
     expect(imovel.andar).toBe(18);

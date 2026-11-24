@@ -161,7 +161,8 @@ export function lerFiltros(entrada: Entrada): Filtros {
     .filter(Boolean)
     .at(-1);
   const pedidaRegiao = ler(entrada, "regiao");
-  const regiao = pedidaRegiao && regiaoPorSlug(pedidaRegiao) ? pedidaRegiao : undefined;
+  // Slug antigo vira o atual (a URL nova já sai com ele).
+  const regiao = pedidaRegiao ? regiaoPorSlug(pedidaRegiao)?.slug : undefined;
   const preco = faixasPreco(finalidade).find(([v]) => v === ler(entrada, "preco"))?.[0];
   const area = FAIXAS_AREA.find(([v]) => v === ler(entrada, "area"))?.[0];
   const pagina = Number.parseInt(ler(entrada, "pagina") ?? "", 10);

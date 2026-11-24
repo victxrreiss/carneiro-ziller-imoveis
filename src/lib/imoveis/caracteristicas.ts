@@ -122,8 +122,8 @@ export const CARACTERISTICAS: readonly { chave: string; rotulo: string; grupo: G
   doCondominio("zelador", "Zelador"),
 ];
 
-/** Tipos em que piscina e sauna do feed são da própria casa, e não do condomínio. */
-const TIPOS_CASA: readonly string[] = ["Casa", "Casa em condomínio", "Casa comercial"];
+/** Tipos de casa: piscina e sauna do feed são da própria casa; a página mostra a área do terreno em destaque. */
+export const TIPOS_CASA: readonly string[] = ["Casa", "Casa em condomínio", "Casa comercial"];
 
 /** Piscina e sauna sem dizer de quem são (feed VRSync): na casa são privativas; no resto, do condomínio. */
 export function chaveParaTipo(chave: string, tipo: string | null): string {

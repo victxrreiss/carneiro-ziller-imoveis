@@ -16,14 +16,13 @@ export type Regiao = {
 
 export const REGIOES: readonly Regiao[] = [
   {
-    slug: "belvedere-vila-da-serra",
-    nome: "Belvedere e Vila da Serra",
+    slug: "belvedere",
+    nome: "Belvedere",
     img: "/images/imoveis/d4db06613b4c066d84abe7cfea7b132b.jpg",
     bairros: [
       { bairro: "Belvedere", cidade: "Belo Horizonte" },
       // Grafia do feed da Loft: Belvedere cadastrado em Nova Lima.
       { bairro: "Belvedere", cidade: "Nova Lima" },
-      { bairro: "Vila da Serra", cidade: "Nova Lima" },
     ],
     grande: true,
   },
@@ -39,7 +38,7 @@ export const REGIOES: readonly Regiao[] = [
   {
     slug: "alphaville-lagoa-dos-ingleses",
     nome: "Alphaville Lagoa dos Ingleses",
-    img: "/images/regiao-lagoa-dos-ingleses.jpg",
+    img: "/images/regiao-alphaville-lagoa.jpg",
     bairros: [
       { bairro: "Alphaville Lagoa dos Ingleses", cidade: "Nova Lima" },
       // Grafia do feed da Loft.
@@ -53,15 +52,26 @@ export const REGIOES: readonly Regiao[] = [
     bairros: [{ bairro: "Vale dos Cristais", cidade: "Nova Lima" }],
   },
   {
-    slug: "vale-do-sereno",
-    nome: "Vale do Sereno",
+    // Vila da Serra fica com o Vale do Sereno, vizinhos em Nova Lima (pedido do cliente, 2026-11-24).
+    slug: "vale-do-sereno-vila-da-serra",
+    nome: "Vale do Sereno e Vila da Serra",
     img: "/images/imoveis/9e9687278cf5c0bc894a25af3ad26b27.jpg",
-    bairros: [{ bairro: "Vale do Sereno", cidade: "Nova Lima" }],
+    bairros: [
+      { bairro: "Vale do Sereno", cidade: "Nova Lima" },
+      { bairro: "Vila da Serra", cidade: "Nova Lima" },
+    ],
   },
 ];
 
+/** Slugs de antes da troca de 24/11/2026: links antigos (e os já indexados) continuam abrindo a busca. */
+const SLUGS_ANTIGOS: Record<string, string> = {
+  "belvedere-vila-da-serra": "belvedere",
+  "vale-do-sereno": "vale-do-sereno-vila-da-serra",
+};
+
 export function regiaoPorSlug(slug: string): Regiao | undefined {
-  return REGIOES.find((r) => r.slug === slug);
+  const atual = SLUGS_ANTIGOS[slug] ?? slug;
+  return REGIOES.find((r) => r.slug === atual);
 }
 
 /** O imóvel está em algum dos pares bairro + cidade da região? Compara sem acento nem caixa. */

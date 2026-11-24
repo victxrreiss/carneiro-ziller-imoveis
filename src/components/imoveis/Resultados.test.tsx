@@ -48,7 +48,7 @@ describe("Resultados > filtros ativos", () => {
     const filtros: Filtros = {
       finalidade: "comprar",
       q: "vista",
-      regiao: "belvedere-vila-da-serra",
+      regiao: "belvedere",
       tipo: "Cobertura",
       preco: "6m-10m",
       area: "400-800",
@@ -64,7 +64,7 @@ describe("Resultados > filtros ativos", () => {
     expect(chips).toEqual([
       "Comprar",
       "“vista”",
-      "Belvedere e Vila da Serra",
+      "Belvedere",
       "Cobertura",
       "R$ 6 a 10 milhões",
       "400 a 800 m²",
@@ -79,7 +79,7 @@ describe("Resultados > filtros ativos", () => {
       await userEvent.click(screen.getByRole("button", { name: `Remover filtro ${rotulo}` }));
       return onAplicar.mock.lastCall![0] as Filtros;
     };
-    const semRegiao = await remover("Belvedere e Vila da Serra");
+    const semRegiao = await remover("Belvedere");
     expect(semRegiao).toEqual({ ...filtros, regiao: undefined, pagina: 1 });
     expect(semRegiao.regiao).toBeUndefined();
     expect((await remover("Cobertura")).tipo).toBeUndefined();

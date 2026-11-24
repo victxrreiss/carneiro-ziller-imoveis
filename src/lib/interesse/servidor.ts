@@ -110,10 +110,11 @@ export async function registrarInteresse(
 
   const destinos = new Set(emailsDeLeads());
   const equipe = await db
-    .select({ id: usuarios.id, email: usuarios.email, papel: usuarios.papel })
+    .select({ id: usuarios.id, email: usuarios.email, papel: usuarios.papel, recebeContatos: usuarios.recebeContatos })
     .from(usuarios)
     .where(eq(usuarios.situacao, "ativo"));
-  for (const u of equipe) if (u.id === imovel?.responsavelId || u.papel === "admin") destinos.add(u.email);
+  // O responsável sempre recebe; cada ADMIN, só se deixou ligado "receber os contatos" (decisão do usuário, 24/11/2026).
+  for (const u of equipe) if (u.id === imovel?.responsavelId || (u.papel === "admin" && u.recebeContatos)) destinos.add(u.email);
 
   const avisos = [...destinos].map((para) =>
     emailInteresse({ para, imovel, codigo: imovel?.codigo ?? "", nome: d.nome, telefone: d.telefone, email: d.email, observacoes: d.observacoes, agora }),

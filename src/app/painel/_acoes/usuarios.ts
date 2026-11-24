@@ -2,7 +2,7 @@
 
 // Server Actions de usuários (só ADMIN) e de Minha conta (qualquer usuário, só a própria conta).
 import { revalidatePath } from "next/cache";
-import { convidar, definirSenhaProvisoria, desativar, editarNome, reativar, reenviarConvite, trocarSenha, type ErrosTrocaSenha, type ErrosUsuario } from "@/lib/painel/contas";
+import { alterarPapel, convidar, definirRecebeContatos, definirSenhaProvisoria, desativar, editarNome, reativar, reenviarConvite, trocarSenha, type ErrosTrocaSenha, type ErrosUsuario } from "@/lib/painel/contas";
 import { ehAdmin, type UsuarioLogado } from "@/lib/painel/regras";
 import { usuarioDaAcao } from "@/lib/painel/sessao";
 import { painel } from "@/lib/routes";
@@ -14,21 +14,45 @@ async function admin(): Promise<UsuarioLogado | null> {
 
 const txt = (v: unknown, max = 500) => (typeof v === "string" ? v.slice(0, max) : "");
 
-export async function convidarAction(nome: unknown, email: unknown): Promise<{ ok: true } | { ok: false; erros: ErrosUsuario }> {
+const papelDe = (v: unknown) => (v === "admin" ? "admin" : "corretor") as "admin" | "corretor";
+
+export async function convidarAction(nome: unknown, email: unknown, papel?: unknown): Promise<{ ok: true } | { ok: false; erros: ErrosUsuario }> {
   const u = await admin();
   if (!u) return { ok: false, erros: { nome: "Só o ADMIN convida usuários." } };
-  const r = await convidar(u, txt(nome), txt(email));
+  const r = await convidar(u, txt(nome), txt(email), undefined, undefined, papelDe(papel));
   if (!r.ok) return r;
   revalidatePath(painel.usuarios);
   return { ok: true };
 }
 
-export async function editarUsuarioAction(id: unknown, nome: unknown): Promise<{ ok: true } | { ok: false; erro: string }> {
+const ERROS_PAPEL = {
+  proibido: "Você não pode mudar o seu próprio papel.",
+  inexistente: "Usuário não encontrado.",
+  "ultimo-admin": "Este é o último ADMIN ativo. Torne outra pessoa ADMIN antes de mudar o papel dele.",
+} as const;
+
+/** Nome e, quando vier, o papel (nunca o do próprio ADMIN). */
+export async function editarUsuarioAction(
+  id: unknown,
+  nome: unknown,
+  papel?: unknown,
+  recebeContatos?: unknown,
+): Promise<{ ok: true } | { ok: false; erro: string; campo?: "papel" }> {
   const u = await admin();
   if (!u) return { ok: false, erro: "Só o ADMIN edita usuários." };
-  const r = await editarNome(txt(id, 100), txt(nome));
-  if (r.ok) revalidatePath(painel.usuarios);
-  return r;
+  const alvo = txt(id, 100);
+  const r = await editarNome(alvo, txt(nome));
+  if (!r.ok) return r;
+  if (papel !== undefined && alvo !== u.id) {
+    const p = await alterarPapel(u, alvo, papelDe(papel));
+    if (!p.ok) {
+      revalidatePath(painel.usuarios);
+      return { ok: false, erro: ERROS_PAPEL[p.erro], campo: "papel" };
+    }
+  }
+  if (typeof recebeContatos === "boolean") await definirRecebeContatos(u, alvo, recebeContatos);
+  revalidatePath(painel.usuarios);
+  return { ok: true };
 }
 
 export async function reenviarConviteAction(id: unknown): Promise<boolean> {

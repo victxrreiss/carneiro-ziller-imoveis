@@ -34,14 +34,23 @@ const qtd = (n: number) => (n === 1 ? "1 imóvel" : `${n} imóveis`);
 
 type Gaveta = { modo: "convidar" } | { modo: "editar"; usuario: Linha };
 
-function GavetaUsuario({ gaveta, onFechar, onConcluido }: { gaveta: Gaveta; onFechar: () => void; onConcluido: (texto: string) => void }) {
+const PAPEIS = [
+  ["corretor", "Corretor", "Cadastra, edita e publica imóveis e vê os contatos."],
+  ["admin", "ADMIN", "Tudo do Corretor e mais: usuários, responsável pelos imóveis e destaques da página inicial."],
+] as const;
+
+function GavetaUsuario({ gaveta, eu, onFechar, onConcluido }: { gaveta: Gaveta; eu: string; onFechar: () => void; onConcluido: (texto: string) => void }) {
   const router = useRouter();
   const editar = gaveta.modo === "editar" ? gaveta.usuario : null;
   const [nome, setNome] = useState(editar?.nome ?? "");
   const [email, setEmail] = useState("");
-  const [erros, setErros] = useState<{ nome?: string; email?: string }>({});
+  const [papel, setPapel] = useState<"admin" | "corretor">(editar?.papel ?? "corretor");
+  const [recebe, setRecebe] = useState(editar?.recebeContatos ?? true);
+  // Ninguém muda o próprio papel (o servidor também confere).
+  const papelEditavel = !editar || editar.id !== eu;
+  const [erros, setErros] = useState<{ nome?: string; email?: string; papel?: string }>({});
   const [enviando, iniciar] = useTransition();
-  const [enviado, setEnviado] = useState<{ nome: string; email: string } | null>(null);
+  const [enviado, setEnviado] = useState<{ nome: string; email: string; papel: "admin" | "corretor" } | null>(null);
   const [falhou, setFalhou] = useState(false);
   const painelRef = useRef<HTMLDivElement>(null);
   const nomeRef = useRef<HTMLInputElement>(null);
@@ -60,17 +69,20 @@ function GavetaUsuario({ gaveta, onFechar, onConcluido }: { gaveta: Gaveta; onFe
     iniciar(async () => {
       try {
         if (editar) {
-          const r = await editarUsuarioAction(editar.id, nome);
+          const r = await editarUsuarioAction(editar.id, nome, papelEditavel ? papel : undefined, papel === "admin" ? recebe : undefined);
           if (!r.ok) {
-            setErros({ nome: r.erro });
-            nomeRef.current?.focus();
+            if (r.campo === "papel") setErros({ papel: r.erro });
+            else {
+              setErros({ nome: r.erro });
+              nomeRef.current?.focus();
+            }
             return;
           }
           router.refresh();
           onConcluido(`Dados de ${nome.trim()} salvos.`);
           return;
         }
-        const r = await convidarAction(nome, email);
+        const r = await convidarAction(nome, email, papel);
         if (!r.ok) {
           setErros(r.erros);
           if (r.erros.nome) nomeRef.current?.focus();
@@ -78,7 +90,7 @@ function GavetaUsuario({ gaveta, onFechar, onConcluido }: { gaveta: Gaveta; onFe
           return;
         }
         setErros({});
-        setEnviado({ nome: nome.trim(), email: email.trim().toLowerCase() });
+        setEnviado({ nome: nome.trim(), email: email.trim().toLowerCase(), papel });
         router.refresh();
       } catch {
         setFalhou(true);
@@ -126,7 +138,7 @@ function GavetaUsuario({ gaveta, onFechar, onConcluido }: { gaveta: Gaveta; onFe
                   </div>
                   <div>
                     <dt>PAPEL</dt>
-                    <dd>Corretor</dd>
+                    <dd>{enviado.papel === "admin" ? "ADMIN" : "Corretor"}</dd>
                   </div>
                   <div>
                     <dt>SITUAÇÃO</dt>
@@ -143,6 +155,7 @@ function GavetaUsuario({ gaveta, onFechar, onConcluido }: { gaveta: Gaveta; onFe
                   setEnviado(null);
                   setNome("");
                   setEmail("");
+                  setPapel("corretor");
                   setTimeout(() => nomeRef.current?.focus(), 0);
                 }}
               >
@@ -159,7 +172,7 @@ function GavetaUsuario({ gaveta, onFechar, onConcluido }: { gaveta: Gaveta; onFe
               <p className="im-form-intro">
                 {editar
                   ? "Altere o nome. A senha é só da pessoa: ela mesma troca em “Minha conta” ou pelo “Esqueci minha senha”."
-                  : "A pessoa entra como Corretor e recebe um e-mail com o link para criar a própria senha. Você não define nem vê a senha de ninguém."}
+                  : "A pessoa recebe um e-mail com o link para criar a própria senha. Você não define nem vê a senha de ninguém."}
               </p>
               {falhou && (
                 <div className="pn-alert is-error" role="alert">
@@ -227,10 +240,45 @@ function GavetaUsuario({ gaveta, onFechar, onConcluido }: { gaveta: Gaveta; onFe
                   )}
                   {erros.email && <ErroCampo id="pn-u-email-err">{erros.email}</ErroCampo>}
                 </div>
-                {!editar && (
+                {papelEditavel ? (
+                  <fieldset className={erros.papel ? "pn-choices is-invalid" : "pn-choices"} aria-describedby={erros.papel ? "pn-u-papel-err" : undefined}>
+                    <legend className="im-lbl">PAPEL</legend>
+                    {PAPEIS.map(([v, rotulo, ajuda]) => (
+                      <label key={v} className={papel === v ? "pn-radio is-on" : "pn-radio"}>
+                        <input
+                          type="radio"
+                          name="pn-u-papel"
+                          value={v}
+                          checked={papel === v}
+                          disabled={enviando}
+                          onChange={() => {
+                            setPapel(v);
+                            setErros((x) => ({ ...x, papel: undefined }));
+                          }}
+                        />
+                        <span className="pn-radio-txt">
+                          <strong>{rotulo}</strong>
+                          <span>{ajuda}</span>
+                        </span>
+                      </label>
+                    ))}
+                    {erros.papel && <ErroCampo id="pn-u-papel-err">{erros.papel}</ErroCampo>}
+                  </fieldset>
+                ) : (
                   <div className="im-field">
                     <span className="im-lbl">PAPEL</span>
-                    <div className="pn-ro">Corretor</div>
+                    <div className="pn-ro">ADMIN (você)</div>
+                    <p className="pn-hint">Outro ADMIN pode mudar o seu papel; você não muda o próprio.</p>
+                  </div>
+                )}
+                {editar && papel === "admin" && (
+                  <div className="im-field">
+                    <span className="im-lbl">CONTATOS POR E-MAIL</span>
+                    <label className={recebe ? "pn-check is-on" : "pn-check"}>
+                      <input type="checkbox" checked={recebe} disabled={enviando} onChange={(e) => setRecebe(e.target.checked)} />
+                      <span>Receber os contatos de todos os imóveis</span>
+                    </label>
+                    <p className="pn-hint">Desligado, só chegam os contatos dos imóveis em que {editar.id === eu ? "você é" : "a pessoa é"} responsável.</p>
                   </div>
                 )}
               </div>
@@ -478,7 +526,8 @@ export function ListaUsuarios({ usuarios, eu }: { usuarios: Linha[]; eu: string 
                                 </button>
                               </MenuItem>
                             )}
-                            {u.situacao !== "desativado" && (
+                            {/* Senha provisória de outro ADMIN, não: cada ADMIN cuida da própria (servidor também recusa). */}
+                            {u.situacao !== "desativado" && u.papel !== "admin" && (
                               <MenuItem as="li">
                                 <button type="button" onClick={() => pedirProvisoria(u)}>
                                   <IcConta />
@@ -547,7 +596,7 @@ export function ListaUsuarios({ usuarios, eu }: { usuarios: Linha[]; eu: string 
                     REENVIAR CONVITE
                   </button>
                 )}
-                {!souEu && u.situacao !== "desativado" && (
+                {!souEu && u.situacao !== "desativado" && u.papel !== "admin" && (
                   <button type="button" className="btn-plain" disabled={ocupado} onClick={() => pedirProvisoria(u)}>
                     SENHA PROVISÓRIA
                   </button>
@@ -615,6 +664,7 @@ export function ListaUsuarios({ usuarios, eu }: { usuarios: Linha[]; eu: string 
         <GavetaUsuario
           key={gaveta.modo === "editar" ? gaveta.usuario.id : "convidar"}
           gaveta={gaveta}
+          eu={eu}
           onFechar={() => setGaveta(null)}
           onConcluido={(texto) => {
             setGaveta(null);

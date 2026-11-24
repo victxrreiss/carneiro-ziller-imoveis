@@ -30,6 +30,16 @@ describe("interesse (lead)", () => {
     expect(r.avisos[0].texto).toContain("+5531999998888");
   });
 
+  test("vários ADMINs: recebe quem deixou ligado; o responsável recebe sempre, mesmo com a opção desligada", async () => {
+    await amb.db.update(usuarios).set({ papel: "admin" }).where(eq(usuarios.id, amb.ricardo.id));
+    await amb.db.update(usuarios).set({ papel: "admin", recebeContatos: false }).where(eq(usuarios.id, amb.mariana.id));
+    await amb.db.update(usuarios).set({ recebeContatos: false }).where(eq(usuarios.id, amb.admin.id));
+    // Ana (ADMIN) desligou e não é responsável: não recebe. Ricardo (ADMIN, ligado) recebe.
+    await amb.db.update(imoveis).set({ responsavelId: amb.mariana.id, situacao: "publicado" }).where(eq(imoveis.id, "cz1009"));
+    const r = await registrarInteresse(valido, "203.0.113.9", Date.now(), amb.db);
+    expect(r.ok && r.avisos.map((a) => a.para).sort()).toEqual(["mariana@exemplo.test", "ricardo@exemplo.test"]);
+  });
+
   test("contato geral: sem imóvel, grava caminho+query e avisa só ADMIN e LEADS_EMAIL", async () => {
     process.env.LEADS_EMAIL = "leads@imobiliaria.test";
     const geral = { nome: "Beto", telefone: "+5531999999999", email: "beto@x.test", observacoes: "Quero vender", origem: "contato", url: "https://carneiroziller.com.br/contato?x=1" };

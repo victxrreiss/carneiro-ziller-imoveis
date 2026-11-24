@@ -29,6 +29,13 @@
       "when": 1795530496846,
       "tag": "0003_interno_caracteristicas",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795535566643,
+      "tag": "0004_varios_admins",
+      "breakpoints": true
     }
   ]
 }

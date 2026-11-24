@@ -357,16 +357,17 @@ const semelhantes = (id: string) => semelhantesDe(id, amb.db);
 const codigos = (l: { id: string }[]) => l.map((i) => i.id);
 
 describe("regiões", () => {
-  test("regiao válida filtra Belvedere (BH) e Vila da Serra (Nova Lima) juntos", async () => {
+  test("regiao válida filtra Vale do Sereno e Vila da Serra (Nova Lima) juntos; slug antigo ainda vale", async () => {
     await montar({
-      cz1001: { bairro: "Belvedere", cidade: "Belo Horizonte" },
+      cz1001: { bairro: "Vale do Sereno", cidade: "Nova Lima" },
       cz1002: { bairro: "Vila da Serra", cidade: "Nova Lima" },
       cz1003: { bairro: "Vila da Serra", cidade: "Belo Horizonte" },
-      cz1004: { bairro: "Lourdes", cidade: "Belo Horizonte" },
+      cz1004: { bairro: "Belvedere", cidade: "Belo Horizonte" },
     });
-    const r = await buscarImoveis({ regiao: "belvedere-vila-da-serra", pagina: 1 });
+    const r = await buscarImoveis({ regiao: "vale-do-sereno-vila-da-serra", pagina: 1 });
     expect(r.itens.map((i) => i.id).sort()).toEqual(["cz1001", "cz1002"]);
-    expect(await contarImoveis({ regiao: "belvedere-vila-da-serra", pagina: 1 })).toBe(2);
+    expect(await contarImoveis({ regiao: "vale-do-sereno-vila-da-serra", pagina: 1 })).toBe(2);
+    expect((await buscarImoveis({ regiao: "belvedere-vila-da-serra", pagina: 1 })).itens.map((i) => i.id)).toEqual(["cz1004"]);
   });
 
   test("regioesComImoveis omite região sem imóvel publicado", async () => {
@@ -378,8 +379,8 @@ describe("regiões", () => {
     });
     const r = await regioesCom(amb.db);
     expect(r.map((x) => [x.slug, x.total])).toEqual([
-      ["belvedere-vila-da-serra", 2],
-      ["vale-do-sereno", 1],
+      ["belvedere", 1],
+      ["vale-do-sereno-vila-da-serra", 2],
     ]);
   });
 });

@@ -14,7 +14,6 @@ import {
   primaryKey,
   text,
   timestamp,
-  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 import type { AvisoDestaque } from "./tipos";
@@ -44,12 +43,13 @@ export const usuarios = pgTable(
     conviteEnviadoEm: momento("convite_enviado_em"),
     /** Senha provisória (ex.: criada pela importação): obriga a trocar no primeiro acesso. */
     trocarSenha: boolean("trocar_senha").notNull().default(false),
+    /** ADMIN: recebe por e-mail os contatos de todos os imóveis (configurável; o responsável sempre recebe os do imóvel dele). */
+    recebeContatos: boolean("recebe_contatos").notNull().default(true),
     senhaProvisoriaExpiraEm: momento("senha_provisoria_expira_em"),
     criadoEm: momento("criado_em").notNull().defaultNow(),
   },
   (t) => [
-    // Um só ADMIN.
-    uniqueIndex("usuarios_um_admin").on(t.papel).where(sql`${t.papel} = 'admin'`),
+    // Pode haver mais de um ADMIN (decisão do usuário, 24/11/2026; o índice usuarios_um_admin saiu na 0004).
     check("usuarios_email_minusculo", sql`${t.email} = lower(${t.email})`),
   ],
 );

@@ -115,8 +115,8 @@ test.describe("comportamento da Home", () => {
     await page.locator('section[aria-labelledby="tipos-titulo"]').getByRole("link", { name: /Coberturas/ }).click();
     await page.waitForURL("**/imoveis?tipo=Cobertura");
     await page.goto("/");
-    await page.locator('section[aria-labelledby="regioes-titulo"]').getByRole("link", { name: /Belvedere e Vila da Serra/ }).click();
-    await page.waitForURL("**/imoveis?regiao=belvedere-vila-da-serra");
+    await page.locator('section[aria-labelledby="regioes-titulo"]').getByRole("link", { name: /Vale do Sereno e Vila da Serra/ }).click();
+    await page.waitForURL("**/imoveis?regiao=vale-do-sereno-vila-da-serra");
   });
 
   test("Imóveis em destaque mostra só os que o ADMIN escolheu", async ({ page }) => {

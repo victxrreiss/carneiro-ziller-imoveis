@@ -184,7 +184,7 @@ describe("região", () => {
 
   test("a região vira chip com o nome e semFiltro a remove", () => {
     const f = { regiao: "belvedere-vila-da-serra", pagina: 3 };
-    expect(rotulosFiltros(f)).toEqual([{ chave: "regiao", rotulo: "Belvedere e Vila da Serra" }]);
+    expect(rotulosFiltros(f)).toEqual([{ chave: "regiao", rotulo: "Belvedere" }]);
     expect(semFiltro(f, "regiao")).toEqual({ regiao: undefined, pagina: 1 });
   });
 });

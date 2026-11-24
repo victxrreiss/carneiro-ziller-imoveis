@@ -514,9 +514,9 @@ describe("senhas", () => {
 });
 
 describe("usuários", () => {
-  test("só existe um ADMIN: o banco recusa o segundo", async () => {
-    await expect(amb.db.insert(usuarios).values({ nome: "Outro", email: "outro@exemplo.test", papel: "admin" })).rejects.toThrow();
-    expect(await amb.db.select().from(usuarios).where(eq(usuarios.papel, "admin"))).toHaveLength(1);
+  test("pode haver mais de um ADMIN (decisão do usuário, 24/11/2026)", async () => {
+    await amb.db.insert(usuarios).values({ nome: "Outro", email: "outro@exemplo.test", papel: "admin" });
+    expect(await amb.db.select().from(usuarios).where(eq(usuarios.papel, "admin"))).toHaveLength(2);
   });
 
   test("e-mail é gravado em minúsculas (o banco confere)", async () => {
