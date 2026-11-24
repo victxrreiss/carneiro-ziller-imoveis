@@ -5,7 +5,7 @@
 // formato do feed, com a referência prefixada pela origem (`ORIGEM_ZILLER`).
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import { CARACTERISTICA_CRM } from "../../src/lib/imoveis/caracteristicas";
+import { CARACTERISTICA_CRM, CARACTERISTICAS } from "../../src/lib/imoveis/caracteristicas";
 import type { Finalidade, SituacaoImovel } from "../../src/lib/dados/tipos";
 import { LIMITES, validarImovel, type EntradaImovel } from "../../src/lib/painel/regras";
 import { AVISO_SEM_AREA, citaRua, citaRuaENumero, cortarPorPalavra, mapearTipo, tituloGerado, type ImovelLoft } from "./mapear";
@@ -118,10 +118,9 @@ export function mapearFichaCrm(f: FichaCrm, origem: string): ImovelLoft {
   if (citaRuaENumero(textoLivre, rua, c.NUM_ENDERECO ?? "")) avisos.push("Descrição cita o endereço (rua e número)");
   else if (citaRua(textoLivre, rua)) avisos.push("Descrição cita a rua do imóvel.");
 
-  const caracteristicas: string[] = [];
-  for (const [campo, chave] of Object.entries(CARACTERISTICA_CRM)) {
-    if (marcado(campo) && !caracteristicas.includes(chave)) caracteristicas.push(chave);
-  }
+  // Na ordem da lista do site (a mesma que o painel grava).
+  const marcadas = new Set(Object.entries(CARACTERISTICA_CRM).filter(([campo]) => marcado(campo)).map(([, chave]) => chave));
+  const caracteristicas = CARACTERISTICAS.map((c) => c.chave).filter((c) => marcadas.has(c));
 
   const i: ImovelLoft = {
     referencia: `${origem}${f.ref.trim()}`,

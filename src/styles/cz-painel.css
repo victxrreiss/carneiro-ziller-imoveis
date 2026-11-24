@@ -36,6 +36,7 @@
 .cz .pn-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 24px;margin-bottom:24px}
 .cz .pn-head-txt{display:flex;flex-direction:column;gap:8px;min-width:0}
 .cz .pn-title{margin:0;font-family:var(--serif);font-weight:400;font-size:34px;line-height:1.1;color:var(--azul-noite)}
+.cz .pn-sub{margin:0;font-size:14px;line-height:1.6;color:var(--texto-secundario)}
 .cz .pn-head-actions{display:flex;flex-wrap:wrap;gap:10px}
 
 /* ---------- Botões complementares ---------- */
@@ -200,6 +201,13 @@
 .cz .pn-row.is-2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .cz .pn-row.is-loc{grid-template-columns:minmax(0,2fr) minmax(0,2fr) minmax(0,1fr)}
 .cz .pn-span2{grid-column:span 2}
+.cz .pn-span-todo{grid-column:1/-1}
+.cz .pn-sub{margin:4px 0 0;font-size:11px;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--texto-secundario)}
+.cz .pn-sub-n{letter-spacing:.1em;text-transform:none;color:var(--cinza)}
+.cz .pn-checks-grupo{display:flex;flex-direction:column;gap:8px}
+.cz .pn-checks-grupo+.pn-checks-grupo{padding-top:16px;border-top:1px solid var(--areia)}
+.cz .pn-section-interna .pn-section-h h2 svg{vertical-align:-1px;margin-right:6px}
+.cz .pn-textarea-curta{height:auto;min-height:88px;padding:12px 14px;resize:vertical;line-height:1.5}
 .cz .pn-inline{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px}
 .cz .pn-inline .pn-hint{flex:1 1 220px}
 .cz .pn-row.is-4{grid-template-columns:repeat(4,minmax(0,1fr))}

@@ -51,7 +51,10 @@ const imovel: Imovel = {
   andar: 18,
   anoConstrucao: 2019,
   empreendimento: "Edifício Aurora",
-  caracteristicas: [{ chave: "piscina", rotulo: "Piscina" }],
+  caracteristicas: [
+    { chave: "varanda", rotulo: "Varanda", grupo: "imovel" },
+    { chave: "piscina-coletiva", rotulo: "Piscina", grupo: "condominio" },
+  ],
   foto: { src: "/a.jpg", alt: "", largura: 1600, altura: 1067 },
   descricao: ["Cobertura com vista aberta."],
   fotos: [{ src: "/a.jpg", alt: "Sala", largura: 1600, altura: 1067 }],
@@ -88,6 +91,15 @@ describe("ImovelTela", () => {
     expect(resumo).toHaveTextContent("Condomínio R$ 4.900/mês · IPTU R$ 18.000/ano");
     expect(within(resumo).getByRole("link", { name: /WHATSAPP/ })).toHaveAttribute("href", expect.stringContaining("CZ1009"));
     expect(within(resumo).getByRole("button", { name: "AGENDAR VISITA" })).toBeInTheDocument();
+  });
+
+  test("características separadas entre o imóvel e o condomínio", () => {
+    montar(imovel);
+    expect(screen.getByRole("list", { name: "No imóvel" })).toHaveTextContent("Varanda");
+    expect(screen.getByRole("list", { name: "No condomínio" })).toHaveTextContent("Piscina");
+    // Sem item de um grupo, o grupo não aparece.
+    const { container } = montar({ ...imovel, caracteristicas: [{ chave: "varanda", rotulo: "Varanda", grupo: "imovel" }] });
+    expect(within(container).queryByRole("list", { name: "No condomínio" })).toBeNull();
   });
 
   test("o andar não aparece na ficha, mesmo preenchido", () => {

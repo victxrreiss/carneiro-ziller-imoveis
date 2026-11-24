@@ -6,7 +6,7 @@ import { updateTag } from "next/cache";
 import type { SituacaoImovel } from "@/lib/dados/tipos";
 import { TAG_IMOVEIS } from "@/lib/imoveis";
 import { excluirImovel, obterParaEdicao, salvarImovel, type ImovelEdicao } from "@/lib/painel/imoveis";
-import type { EntradaImovel, ErrosImovel, Intencao } from "@/lib/painel/regras";
+import type { EntradaImovel, EntradaInterno, ErrosImovel, Intencao } from "@/lib/painel/regras";
 import { usuarioDaAcao } from "@/lib/painel/sessao";
 
 const SITUACOES: SituacaoImovel[] = ["rascunho", "publicado", "indisponivel"];
@@ -51,6 +51,20 @@ function sanear(e: unknown): EntradaImovel {
     situacao: SITUACOES.includes(o.situacao as SituacaoImovel) ? (o.situacao as SituacaoImovel) : "rascunho",
     responsavelId: typeof o.responsavelId === "string" ? o.responsavelId : undefined,
     destaque: typeof o.destaque === "boolean" ? o.destaque : undefined,
+    interno: sanearInterno(o.interno),
+  };
+}
+
+function sanearInterno(v: unknown): EntradaInterno | undefined {
+  if (!v || typeof v !== "object") return undefined;
+  const o = v as Record<string, unknown>;
+  return {
+    captadorId: str(o.captadorId, 100),
+    captadorNome: str(o.captadorNome, 500),
+    proprietarioNome: str(o.proprietarioNome, 500),
+    proprietarioTelefone: str(o.proprietarioTelefone, 100),
+    proprietarioEmail: str(o.proprietarioEmail, 500),
+    proprietarioObs: str(o.proprietarioObs, 5000),
   };
 }
 

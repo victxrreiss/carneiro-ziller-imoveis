@@ -9,7 +9,7 @@ import { destaquesHome as tabDestaques, imoveis } from "@/lib/dados/esquema";
 import type { RegistroImovel } from "@/lib/dados/tipos";
 import { FAIXAS_AREA, TIPOS, combinaFinalidade, faixasPreco, type Faixa, type FinalidadeFiltro, type Filtros } from "./filtros";
 import { normalizar } from "./formato";
-import { rotuloCaracteristica } from "./caracteristicas";
+import { atendeFiltroCaracteristica, CARACTERISTICAS } from "./caracteristicas";
 import { REGIOES, naRegiao, regiaoPorSlug, type Regiao } from "./regioes";
 import type { Imovel, ImovelCard, ImovelResumo, PaginaImoveis, ResultadoImovel } from "./types";
 
@@ -53,8 +53,8 @@ function paraImovel(r: Completo): Imovel {
     anoConstrucao: r.anoConstrucao,
     empreendimento: r.empreendimento,
     caracteristicas: r.caracteristicas.flatMap((chave) => {
-      const rotulo = rotuloCaracteristica(chave);
-      return rotulo ? [{ chave, rotulo }] : [];
+      const c = CARACTERISTICAS.find((x) => x.chave === chave);
+      return c ? [{ chave, rotulo: c.rotulo, grupo: c.grupo }] : [];
     }),
     foto: capa ? { src: capa.src, alt: capa.alt, largura: capa.largura, altura: capa.altura } : SEM_FOTO,
     descricao: r.descricao
@@ -139,7 +139,7 @@ async function filtrar(filtros: Filtros, db: Db): Promise<Imovel[]> {
         (!filtros.quartos || (i.quartos ?? 0) >= Number(filtros.quartos)) &&
         (!filtros.vagas || (i.vagas ?? 0) >= Number(filtros.vagas)) &&
         (!filtros.suites || (i.suites ?? 0) >= Number(filtros.suites)) &&
-        (filtros.carac ?? []).every((c) => i.caracteristicas.some((x) => x.chave === c)),
+        (filtros.carac ?? []).every((c) => atendeFiltroCaracteristica(c, i.caracteristicas.map((x) => x.chave))),
     );
   return ordenar(lista, filtros);
 }

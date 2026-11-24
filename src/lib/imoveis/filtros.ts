@@ -2,7 +2,7 @@
 // (?finalidade=&q=&local=&regiao=&tipo=&preco=&area=&quartos=&vagas=&suites=&carac=&ordem=&pagina=), para o link ser
 // compartilhável e para o "Voltar aos resultados" da tela do imóvel.
 import { routes } from "@/lib/routes";
-import { CARACTERISTICAS_FILTRO, rotuloCaracteristica } from "./caracteristicas";
+import { CARACTERISTICAS_FILTRO, rotuloFiltroCaracteristica } from "./caracteristicas";
 import { regiaoPorSlug } from "./regioes";
 import type { ImovelResumo } from "./types";
 
@@ -251,7 +251,7 @@ export function rotulosFiltros(filtros: Filtros): RotuloFiltro[] {
   if (filtros.quartos) r.push({ chave: "quartos", rotulo: `${filtros.quartos}+ quartos` });
   if (filtros.vagas) r.push({ chave: "vagas", rotulo: `${filtros.vagas}+ vagas` });
   if (filtros.suites) r.push({ chave: "suites", rotulo: `${filtros.suites}+ suítes` });
-  for (const c of filtros.carac ?? []) r.push({ chave: "carac", valor: c, rotulo: rotuloCaracteristica(c) ?? c });
+  for (const c of filtros.carac ?? []) r.push({ chave: "carac", valor: c, rotulo: rotuloFiltroCaracteristica(c) ?? c });
   return r;
 }
 

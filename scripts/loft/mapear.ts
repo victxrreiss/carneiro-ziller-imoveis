@@ -1,5 +1,5 @@
 // Junta o feed VRSync e as duas planilhas da Loft numa ficha só por imóvel, no formato do site.
-import { CARACTERISTICA_VRSYNC } from "../../src/lib/imoveis/caracteristicas";
+import { CARACTERISTICA_VRSYNC, chaveParaTipo } from "../../src/lib/imoveis/caracteristicas";
 import type { Finalidade, SituacaoImovel } from "../../src/lib/dados/tipos";
 import { LIMITES } from "../../src/lib/painel/regras";
 import type { LinhaPlanilha } from "./planilha";
@@ -125,7 +125,7 @@ function doFeed(a: AnuncioVrsync, planilha: LinhaPlanilha | undefined): ImovelLo
   const caracteristicas: string[] = [];
   for (const f of a.features) {
     if (f === "Number of stories") continue;
-    const chave = CARACTERISTICA_VRSYNC[f];
+    const chave = CARACTERISTICA_VRSYNC[f] && chaveParaTipo(CARACTERISTICA_VRSYNC[f], tipo);
     if (!chave) avisos.push(`Característica desconhecida: ${f}`);
     else if (!caracteristicas.includes(chave)) caracteristicas.push(chave);
   }

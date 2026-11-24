@@ -13,6 +13,7 @@ export default async function NovoImovelPage() {
       imovel={null}
       usuario={{ id: u.id, nome: u.nome, admin: u.papel === "admin" }}
       responsaveis={await opcoesResponsavel(u.id)}
+      captadores={await opcoesResponsavel()}
       avisoInicial={null}
     />
   );

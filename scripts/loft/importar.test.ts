@@ -133,7 +133,7 @@ describe("importarLoft", () => {
     expect(Object.keys(ctl.valores).sort()).not.toContain("referencia");
     expect(ctl.valores).not.toHaveProperty("fotos");
     expect(ctl.valores).not.toHaveProperty("avisos");
-    expect(ctl.valores).toMatchObject({ titulo: f901.titulo, valor: 990_000, situacao: "publicado", caracteristicas: ["piscina", "academia"] });
+    expect(ctl.valores).toMatchObject({ titulo: f901.titulo, valor: 990_000, situacao: "publicado", caracteristicas: ["academia", "piscina-coletiva"] });
     // Mesma forma que o painel grava (a ordem das características é a de CARACTERISTICAS).
     expect((await porRef("901")).caracteristicas).toEqual(ctl.valores.caracteristicas);
   });

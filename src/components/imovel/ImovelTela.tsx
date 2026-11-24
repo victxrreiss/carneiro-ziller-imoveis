@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Imovel, ImovelCard } from "@/lib/imoveis";
+import { GRUPOS_CARACTERISTICA } from "@/lib/imoveis/caracteristicas";
 import type { ContextoVolta } from "@/lib/imoveis/filtros";
 import { mensagemWhatsAppImovel } from "@/lib/imoveis/whatsapp";
 import { empresa, linkWhatsApp } from "@/lib/site";
@@ -112,11 +113,21 @@ export function ImovelTela({ imovel, volta, url, semelhantes }: Props) {
                   <h2 id="im-carac-titulo" className="im-sub">
                     Características
                   </h2>
-                  <ul className="im-carac">
-                    {imovel.caracteristicas.map((c) => (
-                      <li key={c.chave}>{c.rotulo}</li>
-                    ))}
-                  </ul>
+                  {/* Separadas entre o que é da unidade e o que é do condomínio (pedido do cliente, 2026-11-24). */}
+                  {GRUPOS_CARACTERISTICA.map((g) => {
+                    const itens = imovel.caracteristicas.filter((c) => c.grupo === g.grupo);
+                    if (!itens.length) return null;
+                    return (
+                      <div key={g.grupo} className="im-carac-grupo">
+                        <h3 id={`im-carac-${g.grupo}`}>{g.rotulo}</h3>
+                        <ul className="im-carac" aria-labelledby={`im-carac-${g.grupo}`}>
+                          {itens.map((c) => (
+                            <li key={c.chave}>{c.rotulo}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })}
                 </section>
               )}
               {detalhes.length > 0 && (

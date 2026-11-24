@@ -11,7 +11,7 @@ export const UFS = [
 ] as const;
 
 // fotos: todas as de cada imóvel (decisão do usuário); 80 cobre o maior da Ziller (79).
-export const LIMITES = { titulo: 90, alt: 140, nome: 120, textoCurto: 120, fotos: 80, fotoMB: 15 } as const;
+export const LIMITES = { titulo: 90, alt: 140, nome: 120, textoCurto: 120, fotos: 80, fotoMB: 15, observacoes: 2000 } as const;
 export const TIPOS_FOTO = ["image/jpeg", "image/png", "image/webp"] as const;
 
 export type UsuarioLogado = { id: string; nome: string; email: string; papel: Papel; trocarSenha: boolean };
@@ -28,6 +28,14 @@ export function podeEditar(u: Pick<UsuarioLogado, "papel">): boolean {
 }
 
 export const podeExcluir = podeEditar;
+
+/**
+ * Captação e proprietário (decisão do usuário, 24/11/2026): só o ADMIN e o responsável pelo imóvel
+ * veem e editam. Nunca aparecem no site.
+ */
+export function podeVerInterno(u: Pick<UsuarioLogado, "id" | "papel">, responsavelId: string): boolean {
+  return ehAdmin(u) || u.id === responsavelId;
+}
 
 // ---------- Cadastro de imóvel ----------
 
@@ -70,12 +78,33 @@ export type EntradaImovel = {
   responsavelId?: string;
   /** Só ADMIN: destaque na página inicial. */
   destaque?: boolean;
+  /** Captação e proprietário: só ADMIN e responsável (`podeVerInterno`). Ausente: não mexe. */
+  interno?: EntradaInterno;
+};
+
+export type EntradaInterno = {
+  /** Usuário do painel que captou; vazio quando foi alguém de fora (aí vale `captadorNome`). */
+  captadorId: string;
+  captadorNome: string;
+  proprietarioNome: string;
+  proprietarioTelefone: string;
+  proprietarioEmail: string;
+  proprietarioObs: string;
+};
+
+export type InternoValidado = {
+  captadorId: string | null;
+  captadorNome: string | null;
+  proprietarioNome: string | null;
+  proprietarioTelefone: string | null;
+  proprietarioEmail: string | null;
+  proprietarioObs: string | null;
 };
 
 /** Salvar rascunho · Publicar · Salvar alterações (situação do campo). */
 export type Intencao = "rascunho" | "publicar" | "salvar";
 
-export type CampoImovel = "finalidade" | "tipo" | "titulo" | "bairro" | "cidade" | "uf" | "valor" | "area" | "quartos" | "vagas" | "banheiros" | "suites" | "areaTotal" | "condominio" | "iptu" | "valorLocacao" | "andar" | "anoConstrucao" | "empreendimento" | "endereco" | "numero" | "complemento" | "cep" | "descricao" | "fotos";
+export type CampoImovel = "finalidade" | "tipo" | "titulo" | "bairro" | "cidade" | "uf" | "valor" | "area" | "quartos" | "vagas" | "banheiros" | "suites" | "areaTotal" | "condominio" | "iptu" | "valorLocacao" | "andar" | "anoConstrucao" | "empreendimento" | "endereco" | "numero" | "complemento" | "cep" | "descricao" | "fotos" | "captador" | "proprietarioNome" | "proprietarioTelefone" | "proprietarioEmail" | "proprietarioObs";
 
 export type ErrosImovel = Partial<Record<CampoImovel, string>>;
 
@@ -106,6 +135,11 @@ export const ORDEM_CAMPOS: { campo: CampoImovel; rotulo: string }[] = [
   { campo: "cep", rotulo: "CEP" },
   { campo: "descricao", rotulo: "Descrição" },
   { campo: "fotos", rotulo: "Fotos" },
+  { campo: "captador", rotulo: "Captador" },
+  { campo: "proprietarioNome", rotulo: "Nome do proprietário" },
+  { campo: "proprietarioTelefone", rotulo: "Telefone do proprietário" },
+  { campo: "proprietarioEmail", rotulo: "E-mail do proprietário" },
+  { campo: "proprietarioObs", rotulo: "Observações do proprietário" },
 ];
 
 export function situacaoDestino(intencao: Intencao, escolhida: SituacaoImovel): SituacaoImovel {
@@ -226,6 +260,34 @@ export function validarImovel(e: EntradaImovel, destino: SituacaoImovel): { erro
   return {
     erros,
     dados: { finalidade, lancamento: Boolean(e.lancamento), tipo, titulo, bairro, cidade, uf, valor, area, quartos, vagas, banheiros, suites, areaTotal, condominio, iptu, valorLocacao, andar, anoConstrucao, empreendimento, endereco, numero: numeroImovel, complemento, cep, caracteristicas, descricao },
+  };
+}
+
+/** Captação e proprietário: tudo opcional; só o formato é conferido. Vazio vira null. */
+export function validarInterno(e: EntradaInterno): { erros: ErrosImovel; dados: InternoValidado } {
+  const erros: ErrosImovel = {};
+  const texto = (s: string) => s.replace(/\s+/g, " ").trim();
+  const curto = (campo: CampoImovel, v: string) => {
+    const t = texto(v);
+    if (t.length > LIMITES.nome) erros[campo] = `Use até ${LIMITES.nome} caracteres.`;
+    return t || null;
+  };
+  const captadorId = e.captadorId.trim() || null;
+  if (captadorId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(captadorId)) erros.captador = "Escolha quem captou na lista.";
+  // Com um usuário escolhido, o nome livre não vale.
+  const captadorNome = captadorId ? null : curto("captador", e.captadorNome);
+  const proprietarioNome = curto("proprietarioNome", e.proprietarioNome);
+  const telefone = texto(e.proprietarioTelefone);
+  if (telefone && (!/^[\d\s()+.-]+$/.test(telefone) || telefone.replace(/\D/g, "").length < 8 || telefone.length > 30)) {
+    erros.proprietarioTelefone = "Telefone inválido. Use DDD e número.";
+  }
+  const email = e.proprietarioEmail.trim().toLowerCase();
+  if (email && (!emailValido(email) || email.length > LIMITES.nome)) erros.proprietarioEmail = "E-mail inválido.";
+  const obs = e.proprietarioObs.replace(/\r\n/g, "\n").trim();
+  if (obs.length > LIMITES.observacoes) erros.proprietarioObs = `Use até ${LIMITES.observacoes} caracteres.`;
+  return {
+    erros,
+    dados: { captadorId, captadorNome, proprietarioNome, proprietarioTelefone: telefone || null, proprietarioEmail: email || null, proprietarioObs: obs || null },
   };
 }
 

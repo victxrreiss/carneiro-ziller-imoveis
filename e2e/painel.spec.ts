@@ -193,8 +193,17 @@ test("cadastro com a ficha completa aparece na lista e na busca", async ({ page 
   await page.getByRole("radio", { name: "VENDA" }).click();
   await expect(page.getByLabel(/VALOR DE LOCAÇÃO/)).toHaveValue("7.500");
   await page.getByLabel(/^EMPREENDIMENTO/).fill("Edifício Aurora Teste");
-  await page.getByRole("checkbox", { name: "Piscina" }).check();
+  // "Piscina" exato é a do condomínio; a do imóvel é "Piscina privativa".
+  await page.getByRole("checkbox", { name: "Piscina", exact: true }).check();
+  await page.getByRole("checkbox", { name: "Varanda", exact: true }).check();
   await page.getByRole("textbox", { name: /^ENDEREÇO/ }).fill("Rua Teste");
+  // Captação e proprietário (uso interno).
+  await page.getByRole("button", { name: /CAPTADOR/ }).click();
+  await page.getByRole("option", { name: "Outra pessoa (digitar o nome)" }).click();
+  await page.getByLabel("NOME DE QUEM CAPTOU").fill("Parceiro Captador Teste");
+  await page.locator("#pn-f-prop-nome").fill("Proprietário Secreto Teste");
+  await page.locator("#pn-f-prop-tel").fill("(31) 98888-7777");
+  await page.locator("#pn-f-prop-email").fill("dono@exemplo.test");
   await page.getByRole("textbox", { name: /^CEP/ }).fill("34000-000");
   await page.getByLabel(/DESCRIÇÃO/).fill("Ficha completa.");
   await page.locator("#pn-file:visible").setInputFiles({ name: "fachada.png", mimeType: "image/png", buffer: PNG });
@@ -214,8 +223,19 @@ test("cadastro com a ficha completa aparece na lista e na busca", async ({ page 
   await expect(page.getByLabel(/IPTU/)).toHaveValue("9.800");
   await expect(page.getByLabel(/VALOR DE LOCAÇÃO/)).toHaveValue("7.500");
   await expect(page.getByLabel(/^EMPREENDIMENTO/)).toHaveValue("Edifício Aurora Teste");
-  await expect(page.getByRole("checkbox", { name: "Piscina" })).toBeChecked();
-  await expect(page.getByRole("checkbox", { name: "Churrasqueira" })).not.toBeChecked();
+  await expect(page.getByRole("checkbox", { name: "Piscina", exact: true })).toBeChecked();
+  await expect(page.getByLabel("NOME DE QUEM CAPTOU")).toHaveValue("Parceiro Captador Teste");
+  await expect(page.locator("#pn-f-prop-nome")).toHaveValue("Proprietário Secreto Teste");
+  await expect(page.locator("#pn-f-prop-email")).toHaveValue("dono@exemplo.test");
+
+  // No site: características separadas entre imóvel e condomínio; nada do proprietário nem do captador.
+  await page.goto(`/imovel/${cod.toLowerCase()}`);
+  await expect(page.getByRole("list", { name: "No imóvel" })).toContainText("Varanda");
+  await expect(page.getByRole("list", { name: "No condomínio" })).toContainText("Piscina");
+  const html = await page.content();
+  for (const segredo of ["Proprietário Secreto Teste", "98888-7777", "dono@exemplo.test", "Parceiro Captador Teste"]) expect(html).not.toContain(segredo);
+  await page.goto(`/painel/imoveis/${cod.toLowerCase()}`);
+  await expect(page.getByRole("checkbox", { name: "Churrasqueira", exact: true })).not.toBeChecked();
   await expect(page.getByRole("textbox", { name: /^ENDEREÇO/ })).toHaveValue("Rua Teste");
   await expect(page.getByRole("textbox", { name: /^CEP/ })).toHaveValue("34000-000");
 

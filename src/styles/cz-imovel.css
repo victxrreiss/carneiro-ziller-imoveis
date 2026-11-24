@@ -62,6 +62,8 @@
 .cz .im-carac{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 24px;font-size:15px;line-height:1.65}
 .cz .im-carac li{position:relative;padding-left:18px}
 .cz .im-carac li::before{content:"";position:absolute;left:0;top:.8em;width:8px;height:1px;background:var(--champanhe)}
+.cz .im-carac-grupo+.im-carac-grupo{margin-top:24px}
+.cz .im-carac-grupo h3{margin:0 0 12px;font-size:11px;font-weight:400;letter-spacing:.2em;text-transform:uppercase;color:var(--texto-2)}
 .cz .im-det{margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 32px;max-width:520px}
 .cz .im-det div{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--areia-2)}
 .cz .im-det dt{align-self:center;font-size:11px;font-weight:400;letter-spacing:.2em;text-transform:uppercase;color:var(--texto-2)}

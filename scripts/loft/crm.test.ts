@@ -89,7 +89,8 @@ describe("mapearFichaCrm", () => {
       lancamento: true,
       avisos: [],
     });
-    expect(i.caracteristicas).toEqual(["piscina", "academia", "lavanderia"]);
+    // Um campo do CRM por item, na ordem da lista do site (imóvel, depois condomínio).
+    expect(i.caracteristicas).toEqual(["area-de-servico", "academia", "piscina-coletiva", "piscina-aquecida"]);
     expect(i.fotos).toEqual(["https://cdn.exemplo.test/fotos/1/10220-a.jpg"]);
   });
 

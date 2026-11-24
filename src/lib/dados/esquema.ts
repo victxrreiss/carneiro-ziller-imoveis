@@ -105,6 +105,26 @@ export const imoveis = pgTable(
   (t) => [index("imoveis_situacao").on(t.situacao), index("imoveis_responsavel").on(t.responsavelId)],
 );
 
+/**
+ * Dados internos do imóvel (captação e proprietário): só o ADMIN e o responsável veem e editam,
+ * no painel. Ficam fora de `imoveis` de propósito: o catálogo público nunca lê esta tabela.
+ */
+export const imovelInterno = pgTable("imovel_interno", {
+  imovelId: text("imovel_id")
+    .primaryKey()
+    .references(() => imoveis.id, { onDelete: "cascade" }),
+  /** Quem captou, quando é usuário do painel. */
+  captadorId: uuid("captador_id").references(() => usuarios.id, { onDelete: "set null" }),
+  /** Quem captou, quando é alguém de fora (parceiro, indicação). */
+  captadorNome: text("captador_nome"),
+  proprietarioNome: text("proprietario_nome"),
+  proprietarioTelefone: text("proprietario_telefone"),
+  proprietarioEmail: text("proprietario_email"),
+  proprietarioObs: text("proprietario_obs"),
+  alteradoEm: momento("alterado_em").notNull().defaultNow(),
+  alteradoPorId: uuid("alterado_por_id").references(() => usuarios.id, { onDelete: "set null" }),
+});
+
 export const fotos = pgTable(
   "fotos",
   {

@@ -17,7 +17,7 @@ import {
   type Faixa,
   type Filtros,
 } from "@/lib/imoveis/filtros";
-import { CARACTERISTICAS_FILTRO, rotuloCaracteristica } from "@/lib/imoveis/caracteristicas";
+import { CARACTERISTICAS_FILTRO, rotuloFiltroCaracteristica } from "@/lib/imoveis/caracteristicas";
 import { naRegiao, REGIOES } from "@/lib/imoveis/regioes";
 import { routes } from "@/lib/routes";
 
@@ -302,7 +302,7 @@ export function FiltrosImoveis({ filtros, onAplicar, localizacoes, tipos, temLan
                       aria-pressed={marcada}
                       onClick={() => mudar({ carac: marcada ? filtros.carac?.filter((x) => x !== c) : [...(filtros.carac ?? []), c] })}
                     >
-                      {rotuloCaracteristica(c)}
+                      {rotuloFiltroCaracteristica(c)}
                     </button>
                   );
                 })}

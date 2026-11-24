@@ -1,3 +1,4 @@
+import type { GrupoCaracteristica } from "./caracteristicas";
 export type { Finalidade } from "@/lib/dados/tipos";
 import type { Finalidade } from "@/lib/dados/tipos";
 
@@ -43,8 +44,8 @@ export type Imovel = ImovelResumo & {
   andar: number | null;
   anoConstrucao: number | null;
   empreendimento: string | null;
-  /** Só as características conhecidas, na ordem gravada. */
-  caracteristicas: { chave: string; rotulo: string }[];
+  /** Só as características conhecidas, na ordem gravada, cada uma com o grupo (imóvel ou condomínio). */
+  caracteristicas: { chave: string; rotulo: string; grupo: GrupoCaracteristica }[];
   /** Parágrafos. */
   descricao: string[];
   /** Em ordem; a primeira é a capa. Pode ser vazia ("FOTOS EM BREVE"). */

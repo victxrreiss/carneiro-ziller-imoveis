@@ -75,7 +75,8 @@ test("título ausente é gerado; features mapeadas, 'Number of stories' ignorada
   expect(item("904").titulo).toBe("Apartamento à venda no Bairro Exemplo, Cidade Exemplo");
   expect(item("904").avisos).toContain("Título ausente, gerado");
   const a = item("901");
-  expect(a.caracteristicas).toEqual(["academia", "piscina"]);
+  // "Pool" sem dizer de quem é: num apartamento, é do condomínio.
+  expect(a.caracteristicas).toEqual(["academia", "piscina-coletiva"]);
   expect(a.avisos).toContain("Característica desconhecida: Rooftop");
   expect(a.avisos.some((x) => x.includes("Number of stories"))).toBe(false);
 });

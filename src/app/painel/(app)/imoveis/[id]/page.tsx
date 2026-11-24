@@ -24,6 +24,7 @@ export default async function EditarImovelPage({ params, searchParams }: PagePro
       imovel={imovel}
       usuario={{ id: u.id, nome: u.nome, admin: u.papel === "admin" }}
       responsaveis={await opcoesResponsavel(imovel.responsavelId)}
+      captadores={imovel.interno ? await opcoesResponsavel(imovel.interno.captadorId || undefined) : []}
       avisoInicial={aviso}
     />
   );

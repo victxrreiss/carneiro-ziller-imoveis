@@ -282,8 +282,8 @@ describe("ficha completa e privacidade do endereço", () => {
     if (r.situacao !== "disponivel") throw new Error("esperava disponível");
     expect(r.imovel).toMatchObject({ banheiros: 5, suites: 3, areaTotal: 500, condominio: 4200, iptu: 9000, valorLocacao: 25000, andar: 12, anoConstrucao: 2015, empreendimento: "Edifício Aurora" });
     expect(r.imovel.caracteristicas).toEqual([
-      { chave: "piscina", rotulo: "Piscina" },
-      { chave: "academia", rotulo: "Academia" },
+      { chave: "piscina", rotulo: "Piscina privativa", grupo: "imovel" },
+      { chave: "academia", rotulo: "Academia", grupo: "condominio" },
     ]);
   });
 
@@ -302,7 +302,8 @@ describe("ficha completa e privacidade do endereço", () => {
 
   test("filtros de suítes e características", async () => {
     await mudar("cz1009", { suites: 2, caracteristicas: ["piscina", "academia"] });
-    await mudar("cz1010", { suites: 1, caracteristicas: ["piscina"] });
+    // O filtro "Piscina" aceita a do imóvel e a do condomínio.
+    await mudar("cz1010", { suites: 1, caracteristicas: ["piscina-coletiva"] });
     const ids = async (f: Filtros) => (await buscarImoveis(f)).itens.map((i) => i.id).sort();
     expect(await ids({ suites: "2", pagina: 1 })).toEqual(["cz1009"]);
     expect(await ids({ suites: "1", pagina: 1 })).toEqual(["cz1009", "cz1010"]);

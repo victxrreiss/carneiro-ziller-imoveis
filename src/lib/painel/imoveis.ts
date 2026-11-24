@@ -5,7 +5,7 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { armazenamento, assinaturaConfere, type ArmazenamentoFotos, type Envio } from "@/lib/armazenamento";
 import { conexao, type Db } from "@/lib/dados/conexao";
 import { carregarImovel, carregarImoveis } from "@/lib/dados/consultas";
-import { destaquesHome, fotos as tabFotos, imovelFotos, imoveis, usuarios } from "@/lib/dados/esquema";
+import { destaquesHome, fotos as tabFotos, imovelFotos, imovelInterno, imoveis, usuarios } from "@/lib/dados/esquema";
 import type { AvisoDestaque, FotoRegistro, RegistroImovel, SituacaoImovel } from "@/lib/dados/tipos";
 import { ehUuid } from "./contas";
 import { marcarNoFim, tirarDosDestaques } from "./destaques";
@@ -15,9 +15,12 @@ import {
   ehAdmin,
   podeEditar,
   podeExcluir,
+  podeVerInterno,
   situacaoDestino,
   validarImovel,
+  validarInterno,
   type EntradaImovel,
+  type EntradaInterno,
   type ErrosImovel,
   type Intencao,
   type UsuarioLogado,
@@ -98,7 +101,25 @@ export type ImovelEdicao = {
   alteradoPorNome: string;
   podeEditar: boolean;
   destaque: boolean;
+  /** Captação e proprietário: só para o ADMIN e o responsável; para os outros, `null`. */
+  interno: EntradaInterno | null;
 };
+
+const INTERNO_VAZIO: EntradaInterno = { captadorId: "", captadorNome: "", proprietarioNome: "", proprietarioTelefone: "", proprietarioEmail: "", proprietarioObs: "" };
+
+/** Lê a captação e o proprietário. Só chame depois de conferir `podeVerInterno`. */
+async function lerInterno(db: Db, imovelId: string): Promise<EntradaInterno> {
+  const [r] = await db.select().from(imovelInterno).where(eq(imovelInterno.imovelId, imovelId)).limit(1);
+  if (!r) return { ...INTERNO_VAZIO };
+  return {
+    captadorId: r.captadorId ?? "",
+    captadorNome: r.captadorNome ?? "",
+    proprietarioNome: r.proprietarioNome ?? "",
+    proprietarioTelefone: r.proprietarioTelefone ?? "",
+    proprietarioEmail: r.proprietarioEmail ?? "",
+    proprietarioObs: r.proprietarioObs ?? "",
+  };
+}
 
 const digitos = (n: number | null) => (n === null ? "" : String(n));
 
@@ -106,6 +127,7 @@ export async function obterParaEdicao(u: UsuarioLogado, id: string, db: Db = con
   const r = await carregarImovel(db, id.toLowerCase());
   if (!r) return null;
   const [nomeDe, emDestaque] = await Promise.all([nomes(db), idsDestaque(db)]);
+  const interno = podeVerInterno(u, r.responsavelId) ? await lerInterno(db, r.id) : null;
   return {
     id: r.id,
     codigo: r.codigo,
@@ -141,6 +163,7 @@ export async function obterParaEdicao(u: UsuarioLogado, id: string, db: Db = con
       situacao: r.situacao,
       responsavelId: r.responsavelId,
       destaque: emDestaque.has(r.id),
+      ...(interno ? { interno } : {}),
     },
     fotos: r.fotos,
     situacao: r.situacao,
@@ -151,6 +174,7 @@ export async function obterParaEdicao(u: UsuarioLogado, id: string, db: Db = con
     alteradoPorNome: nomeDe.get(r.alteradoPorId) ?? "—",
     podeEditar: podeEditar(u),
     destaque: emDestaque.has(r.id) && r.situacao === "publicado",
+    interno,
   };
 }
 
@@ -273,6 +297,17 @@ export async function salvarImovel(
     if (linha && (jaNeste || livre)) novasFotos.push({ fotoId: f.id, alt: f.alt.trim() });
     else erros.fotos ??= "Uma das fotos não terminou de enviar. Remova-a ou envie de novo.";
   }
+  // Captação e proprietário: só quem pode ver mexe (imóvel novo: quem cria fica responsável ou é o ADMIN).
+  // Para os outros, o que vier é ignorado e o que está gravado fica como está.
+  const mexeInterno = !!e.interno && (!existente || podeVerInterno(u, existente.responsavelId));
+  const interno = mexeInterno ? validarInterno(e.interno!) : null;
+  if (interno) {
+    Object.assign(erros, interno.erros);
+    if (interno.dados.captadorId) {
+      const [c] = await db.select({ id: usuarios.id }).from(usuarios).where(eq(usuarios.id, interno.dados.captadorId)).limit(1);
+      if (!c) erros.captador = "Escolha quem captou na lista.";
+    }
+  }
   if (Object.keys(erros).length) return { ok: false, erros };
 
   let responsavelId = existente?.responsavelId ?? u.id;
@@ -306,6 +341,10 @@ export async function salvarImovel(
         alteradoPorId: u.id,
         publicadoEm: destino === "publicado" ? agora : null,
       });
+    }
+    if (interno) {
+      const linha = { ...interno.dados, alteradoEm: agora, alteradoPorId: u.id };
+      await tx.insert(imovelInterno).values({ imovelId, ...linha }).onConflictDoUpdate({ target: imovelInterno.imovelId, set: linha });
     }
     await tx.delete(imovelFotos).where(eq(imovelFotos.imovelId, imovelId));
     if (novasFotos.length) await tx.insert(imovelFotos).values(novasFotos.map((f, ordem) => ({ imovelId, fotoId: f.fotoId, ordem, alt: f.alt })));

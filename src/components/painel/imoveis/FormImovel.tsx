@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { salvarImovelAction, type RespostaSalvar } from "@/app/painel/_acoes/imoveis";
 import type { Finalidade, SituacaoImovel } from "@/lib/dados/tipos";
-import { CARACTERISTICAS } from "@/lib/imoveis/caracteristicas";
+import { CARACTERISTICAS, GRUPOS_CARACTERISTICA } from "@/lib/imoveis/caracteristicas";
 import { TIPOS } from "@/lib/imoveis/filtros";
 import { data, dataHora } from "@/lib/painel/datas";
 import type { ImovelEdicao } from "@/lib/painel/imoveis";
@@ -48,7 +48,17 @@ type Campos = {
   situacao: SituacaoImovel;
   responsavelId: string;
   destaque: boolean;
+  /** Usuário do painel, `OUTRO_CAPTADOR` (nome digitado) ou vazio. */
+  captadorId: string;
+  captadorNome: string;
+  proprietarioNome: string;
+  proprietarioTelefone: string;
+  proprietarioEmail: string;
+  proprietarioObs: string;
 };
+
+/** Valor da lista de captador para "alguém de fora": o nome vai no campo de texto. */
+const OUTRO_CAPTADOR = "outro";
 
 const NOMES: Record<keyof Campos | "fotos", string> = {
   finalidade: "a finalidade",
@@ -81,6 +91,12 @@ const NOMES: Record<keyof Campos | "fotos", string> = {
   situacao: "a situação",
   responsavelId: "o responsável",
   destaque: "o destaque na página inicial",
+  captadorId: "o captador",
+  captadorNome: "o captador",
+  proprietarioNome: "o nome do proprietário",
+  proprietarioTelefone: "o telefone do proprietário",
+  proprietarioEmail: "o e-mail do proprietário",
+  proprietarioObs: "as observações do proprietário",
 };
 
 const ID_CAMPO: Record<CampoImovel, string> = {
@@ -109,6 +125,11 @@ const ID_CAMPO: Record<CampoImovel, string> = {
   cep: "pn-f-cep",
   descricao: "pn-f-desc",
   fotos: "pn-fotos",
+  captador: "pn-f-captador",
+  proprietarioNome: "pn-f-prop-nome",
+  proprietarioTelefone: "pn-f-prop-tel",
+  proprietarioEmail: "pn-f-prop-email",
+  proprietarioObs: "pn-f-prop-obs",
 };
 
 const milhar = (d: string) => d.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -148,6 +169,12 @@ function camposDe(imovel: ImovelEdicao | null, usuarioId: string): Campos {
     situacao: imovel?.situacao ?? "rascunho",
     responsavelId: imovel?.responsavelId ?? usuarioId,
     destaque: imovel?.destaque ?? false,
+    captadorId: imovel?.interno?.captadorId || (imovel?.interno?.captadorNome ? OUTRO_CAPTADOR : ""),
+    captadorNome: imovel?.interno?.captadorNome ?? "",
+    proprietarioNome: imovel?.interno?.proprietarioNome ?? "",
+    proprietarioTelefone: imovel?.interno?.proprietarioTelefone ?? "",
+    proprietarioEmail: imovel?.interno?.proprietarioEmail ?? "",
+    proprietarioObs: imovel?.interno?.proprietarioObs ?? "",
   };
 }
 
@@ -186,11 +213,14 @@ export function FormImovel({
   imovel: inicial,
   usuario,
   responsaveis,
+  captadores,
   avisoInicial,
 }: {
   imovel: ImovelEdicao | null;
   usuario: Usuario;
   responsaveis: Responsavel[];
+  /** Usuários que podem constar como captador (ativos e o atual). */
+  captadores: Responsavel[];
   avisoInicial: Intencao | null;
 }) {
   const router = useRouter();
@@ -223,6 +253,8 @@ export function FormImovel({
   const jaPublicado = situacaoSalva !== "rascunho";
   const sujo = alterados.size > 0;
   const enviando = fotos.some((f) => f.estado === "enviando");
+  // Captação e proprietário: só o ADMIN e o responsável (o servidor também confere). No cadastro novo, quem cria.
+  const veInterno = novo || salvo.interno !== null;
 
   // Aviso que veio do cadastro (a página nova abre com ?salvo=…).
   useEffect(() => {
@@ -369,6 +401,16 @@ export function FormImovel({
           fotos: fotos.map((f) => ({ id: f.id!, alt: f.alt })),
           responsavelId: usuario.admin ? c.responsavelId : undefined,
           destaque: usuario.admin ? c.destaque && podeMarcarDestaque : undefined,
+          interno: veInterno
+            ? {
+                captadorId: c.captadorId === OUTRO_CAPTADOR ? "" : c.captadorId,
+                captadorNome: c.captadorId === OUTRO_CAPTADOR ? c.captadorNome : "",
+                proprietarioNome: c.proprietarioNome,
+                proprietarioTelefone: c.proprietarioTelefone,
+                proprietarioEmail: c.proprietarioEmail,
+                proprietarioObs: c.proprietarioObs,
+              }
+            : undefined,
         },
         intencao,
       );
@@ -504,6 +546,34 @@ export function FormImovel({
           id={ID_CAMPO[k]}
           className="im-input"
           type="text"
+          maxLength={max}
+          placeholder={placeholder}
+          value={c[k]}
+          onChange={(e) => mudar(k, e.target.value)}
+          aria-invalid={erros[k] ? true : undefined}
+          aria-describedby={descr(k)}
+        />
+      )}
+      {erroDe(k) && <ErroCampo id={`${ID_CAMPO[k]}-err`}>{erroDe(k)}</ErroCampo>}
+    </div>
+  );
+
+  type CampoInterno = "proprietarioNome" | "proprietarioTelefone" | "proprietarioEmail";
+  const campoInterno = (k: CampoInterno, rotulo: string, max: number, extra: string, tipo: "text" | "tel" | "email", auto: string, placeholder?: string) => (
+    <div className={classeCampo(k, extra)}>
+      <label className="im-lbl" htmlFor={ID_CAMPO[k]}>
+        {rotulo}
+        <span className="pn-opt">opcional</span>
+      </label>
+      {so ? (
+        <div className="pn-ro">{c[k] || "—"}</div>
+      ) : (
+        <input
+          id={ID_CAMPO[k]}
+          className="im-input"
+          type={tipo}
+          // Dado do proprietário, não do usuário logado: o navegador não deve preencher com o dele.
+          autoComplete={`section-proprietario ${auto}`}
           maxLength={max}
           placeholder={placeholder}
           value={c[k]}
@@ -881,27 +951,41 @@ export function FormImovel({
           <section className="pn-section" aria-labelledby="pn-s-car">
             <div className="pn-section-h">
               <h2 id="pn-s-car">Características</h2>
-              <p>Marque o que o imóvel ou o condomínio oferece. Aparece na página do imóvel e alimenta os filtros do site.</p>
+              <p>Marque o que a unidade tem e o que o condomínio oferece. Aparece na página do imóvel, separado assim, e alimenta os filtros do site.</p>
             </div>
-            {so ? (
-              <div className="pn-ro is-text">
-                {CARACTERISTICAS.filter((x) => c.caracteristicas.includes(x.chave))
-                  .map((x) => x.rotulo)
-                  .join(", ") || "—"}
-              </div>
-            ) : (
-              <div className="pn-checks" role="group" aria-labelledby="pn-s-car">
-                {CARACTERISTICAS.map((x) => {
-                  const marcada = c.caracteristicas.includes(x.chave);
-                  return (
-                    <label key={x.chave} className={marcada ? "pn-check is-on" : "pn-check"}>
-                      <input type="checkbox" checked={marcada} onChange={(e) => alternarCaracteristica(x.chave, e.target.checked)} />
-                      <span>{x.rotulo}</span>
-                    </label>
-                  );
-                })}
-              </div>
-            )}
+            {GRUPOS_CARACTERISTICA.map((g) => {
+              const itens = CARACTERISTICAS.filter((x) => x.grupo === g.grupo);
+              const idGrupo = `pn-s-car-${g.grupo}`;
+              const marcadas = itens.filter((x) => c.caracteristicas.includes(x.chave)).length;
+              return (
+                <div key={g.grupo} className="pn-checks-grupo">
+                  <h3 id={idGrupo} className="pn-sub">
+                    {g.grupo === "imovel" ? "Do imóvel" : "Do condomínio"}
+                    {marcadas > 0 && <span className="pn-sub-n"> · {marcadas === 1 ? "1 marcada" : `${marcadas} marcadas`}</span>}
+                  </h3>
+                  {so ? (
+                    <div className="pn-ro is-text">
+                      {itens
+                        .filter((x) => c.caracteristicas.includes(x.chave))
+                        .map((x) => x.rotulo)
+                        .join(", ") || "—"}
+                    </div>
+                  ) : (
+                    <div className="pn-checks" role="group" aria-labelledby={idGrupo}>
+                      {itens.map((x) => {
+                        const marcada = c.caracteristicas.includes(x.chave);
+                        return (
+                          <label key={x.chave} className={marcada ? "pn-check is-on" : "pn-check"}>
+                            <input type="checkbox" checked={marcada} onChange={(e) => alternarCaracteristica(x.chave, e.target.checked)} />
+                            <span>{x.rotulo}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </section>
 
           {/* 3c. Endereço (interno) */}
@@ -917,6 +1001,97 @@ export function FormImovel({
               {campoLivre("cep", "CEP", 9, "", "00000-000")}
             </div>
           </section>
+
+          {/* 3d. Captação e proprietário (interno: só ADMIN e responsável) */}
+          {veInterno && (
+            <section className="pn-section pn-section-interna" aria-labelledby="pn-s-int">
+              <div className="pn-section-h">
+                <h2 id="pn-s-int">
+                  <IcCadeado size={16} /> Captação e proprietário (uso interno — não aparece no site)
+                </h2>
+                <p>Só você{usuario.admin ? " (ADMIN) e o responsável pelo imóvel veem" : " e o ADMIN veem"} estes dados. Nunca vão para o site.</p>
+              </div>
+              <div className="pn-row is-2">
+                <div className={classeCampo("captador")} id="pn-f-captador">
+                  {so ? (
+                    <>
+                      <span className="im-lbl">CAPTADOR</span>
+                      <div className="pn-ro">
+                        {c.captadorId === OUTRO_CAPTADOR ? c.captadorNome : captadores.find((x) => x.id === c.captadorId)?.nome || "—"}
+                      </div>
+                    </>
+                  ) : (
+                    <Selecao
+                      className="im-field"
+                      rotulo={
+                        <>
+                          CAPTADOR<span className="pn-opt">opcional</span>
+                        </>
+                      }
+                      vazio="Não informado"
+                      valor={c.captadorId}
+                      onChange={(v) => mudar("captadorId", v)}
+                      opcoes={[
+                        { valor: "", rotulo: "Não informado" },
+                        ...captadores.map((x) => ({ valor: x.id, rotulo: x.desativado ? `${x.nome} (desativado)` : x.nome })),
+                        { valor: OUTRO_CAPTADOR, rotulo: "Outra pessoa (digitar o nome)" },
+                      ]}
+                      invalido={!!erros.captador}
+                      descritoPor={c.captadorId === OUTRO_CAPTADOR ? undefined : descr("captador")}
+                    />
+                  )}
+                  {c.captadorId !== OUTRO_CAPTADOR && erroDe("captador") && <ErroCampo id="pn-f-captador-err">{erroDe("captador")}</ErroCampo>}
+                </div>
+                {c.captadorId === OUTRO_CAPTADOR && !so && (
+                  <div className={classeCampo("captador")}>
+                    <label className="im-lbl" htmlFor="pn-f-captador-nome">
+                      NOME DE QUEM CAPTOU
+                    </label>
+                    <input
+                      id="pn-f-captador-nome"
+                      className="im-input"
+                      type="text"
+                      maxLength={LIMITES.nome}
+                      placeholder="Ex.: parceiro, indicação"
+                      value={c.captadorNome}
+                      onChange={(e) => mudar("captadorNome", e.target.value)}
+                      aria-invalid={erros.captador ? true : undefined}
+                      aria-describedby={descr("captador")}
+                    />
+                    {erroDe("captador") && <ErroCampo id="pn-f-captador-err">{erroDe("captador")}</ErroCampo>}
+                  </div>
+                )}
+              </div>
+              <h3 className="pn-sub">Proprietário</h3>
+              <div className="pn-row">
+                {campoInterno("proprietarioNome", "NOME", LIMITES.nome, "pn-span2", "text", "name")}
+                {campoInterno("proprietarioTelefone", "TELEFONE / WHATSAPP", 30, "", "tel", "tel", "(31) 99999-9999")}
+                {campoInterno("proprietarioEmail", "E-MAIL", LIMITES.nome, "pn-span2", "email", "email")}
+                <div className={classeCampo("proprietarioObs", "pn-span-todo")}>
+                  <label className="im-lbl" htmlFor={ID_CAMPO.proprietarioObs}>
+                    OBSERVAÇÕES
+                    <span className="pn-opt">opcional</span>
+                  </label>
+                  {so ? (
+                    <div className="pn-ro is-text">{c.proprietarioObs || "—"}</div>
+                  ) : (
+                    <textarea
+                      id={ID_CAMPO.proprietarioObs}
+                      className="im-input pn-textarea-curta"
+                      rows={3}
+                      maxLength={LIMITES.observacoes}
+                      placeholder="Melhor horário para contato, chaves, condições combinadas…"
+                      value={c.proprietarioObs}
+                      onChange={(e) => mudar("proprietarioObs", e.target.value)}
+                      aria-invalid={erros.proprietarioObs ? true : undefined}
+                      aria-describedby={descr("proprietarioObs")}
+                    />
+                  )}
+                  {erroDe("proprietarioObs") && <ErroCampo id={`${ID_CAMPO.proprietarioObs}-err`}>{erroDe("proprietarioObs")}</ErroCampo>}
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* 4. Descrição */}
           <section className="pn-section" aria-labelledby="pn-s4">
