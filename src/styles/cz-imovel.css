@@ -129,7 +129,7 @@
 .cz .im-field{display:flex;flex-direction:column;gap:8px}
 .cz .im-lbl{font-size:10px;font-weight:600;letter-spacing:.24em;color:var(--cinza)}
 .cz .im-lbl .req{color:var(--azul-noite);margin-left:2px}
-.cz .im-input{width:100%;height:48px;border:1px solid var(--areia);border-radius:0;background:#FFFFFF;padding:0 14px;font-family:var(--sans);font-size:15px;color:var(--grafite);outline:none;-webkit-appearance:none;appearance:none;transition:border-color .2s ease,box-shadow .2s ease}
+.cz .im-input{width:100%;height:48px;border:1px solid var(--areia);border-radius:var(--raio);background:#FFFFFF;padding:0 14px;font-family:var(--sans);font-size:15px;color:var(--grafite);outline:none;-webkit-appearance:none;appearance:none;transition:border-color .2s ease,box-shadow .2s ease}
 .cz textarea.im-input{height:auto;min-height:112px;padding:12px 14px;line-height:1.6;resize:vertical}
 .cz .im-input::placeholder{color:var(--cinza)}
 .cz .im-input:hover{border-color:var(--prata)}
@@ -155,6 +155,12 @@
 .cz .im-recap div{display:flex;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--areia)}
 .cz .im-recap dt{font-size:10px;letter-spacing:.22em;color:var(--cinza);padding-top:3px}
 .cz .im-recap dd{margin:0;font-size:14px;font-weight:500;color:var(--grafite);text-align:right;overflow-wrap:anywhere}
+/* Cantos (escala --raio-* do :root). Ficam retos: o campo de linha (.im-curto), a barra fixa do
+ * celular (.im-bar) e o painel do formulário (.im-panel), que encosta na borda da tela. */
+.cz .im-mos-item,.cz .im-resumo-card,.cz .im-comp-menu{border-radius:var(--raio-lg)}
+.cz .im-mos-todas,.cz .im-luz-btn,.cz .im-luz-foto img,.cz .im-cta,.cz .im-ref,.cz .im-alert{border-radius:var(--raio)}
+.cz .im-comp-menu a,.cz .im-comp-menu button{border-radius:calc(var(--raio-lg) - 8px)}
+.cz .im-ref img,.cz .im-sk-line{border-radius:var(--raio-sm)}
 @media (max-width:1080px){
   .cz .im-ficha-in{grid-template-columns:minmax(0,1fr) 340px;gap:40px}
   .cz .im-resumo-card{padding:28px 24px 22px}
@@ -166,7 +172,7 @@
   .cz .im-back .wrap{padding-top:2px;padding-bottom:2px;font-size:11px}
   .cz .im-filters{display:none}
   .cz .im-mos,.cz .im-mos:has(.im-mos-vazio){display:block;height:auto;padding:0}
-  .cz .im-mos-item{aspect-ratio:4/3;width:100%}
+  .cz .im-mos-item{aspect-ratio:4/3;width:100%;border-radius:0}
   .cz .im-mos-item + .im-mos-item{display:none}
   .cz .im-mos-item .cz-marca-dagua{font-size:clamp(9px,2.4cqw,14px)}
   .cz .im-mos-todas{right:12px;top:12px;min-height:44px;padding:0 16px;font-size:11px}
@@ -203,7 +209,7 @@
 }
 @media (max-width:560px){
   /* Só o ícone: o rótulo "Compartilhar" continua valendo para leitor de tela. */
-  .cz .im-comp-btn{width:44px;justify-content:center;font-size:0;letter-spacing:0;gap:0;border:1px solid var(--areia-2)}
+  .cz .im-comp-btn{width:44px;justify-content:center;font-size:0;letter-spacing:0;gap:0;border:1px solid var(--areia-2);border-radius:var(--raio)}
 }
 @media (prefers-reduced-motion:reduce){
   .cz .im-progress{animation:none;width:100%;opacity:.5}

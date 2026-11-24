@@ -106,7 +106,7 @@ export function BuscaAbertura({ temLancamentos, tipos, locais }: Props) {
       <TabList label="Finalidade" tabs={finalidades} selected={finalidade} onSelect={setFinalidade} variant="finalidade" />
       <input type="hidden" name="finalidade" value={finalidade} />
 
-      <div className="grid grid-cols-2 items-end gap-x-5 gap-y-4.5 border border-white/22 bg-noite/55 px-4.5 pt-4.5 pb-5 backdrop-blur-[14px] min-[900px]:grid-cols-[1.2fr_1fr_1fr_.8fr_auto] min-[900px]:gap-7 min-[900px]:px-7 min-[900px]:py-5.5">
+      <div className="grid grid-cols-2 items-end gap-x-5 gap-y-4.5 rounded-raio-lg border border-white/22 bg-noite/55 px-4.5 pt-4.5 pb-5 backdrop-blur-[14px] min-[900px]:grid-cols-[1.2fr_1fr_1fr_.8fr_auto] min-[900px]:gap-7 min-[900px]:px-7 min-[900px]:py-5.5">
         <Campo rotulo="Tipo de imóvel" name="tipo" valor={tipo} onChange={setTipo}>
           <option value="">Todos os tipos</option>
           {tipos.map((t) => (
@@ -151,7 +151,7 @@ export function BuscaAbertura({ temLancamentos, tipos, locais }: Props) {
         </Campo>
         <button
           type="submit"
-          className="col-span-full mt-1 inline-flex h-13 cursor-pointer items-center justify-center border border-champanhe bg-champanhe px-7 text-xs font-medium tracking-[0.22em] whitespace-nowrap text-noite uppercase transition-colors duration-250 hover:bg-[#D5BE97] focus-visible:outline-champanhe min-[900px]:col-span-1 min-[900px]:mt-0 min-[900px]:h-11.5"
+          className="col-span-full mt-1 inline-flex h-13 cursor-pointer items-center justify-center rounded-raio border border-champanhe bg-champanhe px-7 text-xs font-medium tracking-[0.22em] whitespace-nowrap text-noite uppercase transition-colors duration-250 hover:bg-[#D5BE97] focus-visible:outline-champanhe min-[900px]:col-span-1 min-[900px]:mt-0 min-[900px]:h-11.5"
         >
           Buscar
         </button>

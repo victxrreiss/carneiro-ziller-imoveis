@@ -21,6 +21,17 @@
   /* Moldura das páginas: 1280px com respiro lateral fluido. */
   --cz-largura: 1280px;
   --cz-respiro: clamp(16px, 4vw, 56px);
+
+  /* Cantos arredondados (pedido do cliente): uma escala só para o site e o painel.
+   * --raio-sm: selos, etiquetas e miniaturas · --raio: botões, campos, menus e avisos ·
+   * --raio-lg: fotos, cards, caixas e modais · --raio-pill: chips de filtro e avatares.
+   * Peça dentro de peça usa o raio de fora menos o respiro (calc), para as curvas ficarem paralelas.
+   * Ficam retos de propósito: campos só com linha embaixo, imagens e faixas de ponta a ponta
+   * e painéis presos à borda da tela. */
+  --raio-sm: 4px;
+  --raio: 8px;
+  --raio-lg: 14px;
+  --raio-pill: 999px;
 }
 
 /* `inline`: os utilitários (bg-noite, text-champanhe…) usam direto as variáveis acima. */
@@ -39,6 +50,12 @@
   --color-areia-2: var(--areia-2);
   --color-fundo: var(--fundo);
   --color-marfim: var(--marfim);
+
+  /* Cantos: rounded-raio-sm, rounded-raio, rounded-raio-lg e rounded-raio-pill. */
+  --radius-raio-sm: var(--raio-sm);
+  --radius-raio: var(--raio);
+  --radius-raio-lg: var(--raio-lg);
+  --radius-raio-pill: var(--raio-pill);
 }
 
 /* `static`: --font-display e --font-sans saem sempre no :root, porque .cz e o painel também os usam.

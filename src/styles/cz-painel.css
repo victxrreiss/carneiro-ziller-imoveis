@@ -36,7 +36,6 @@
 .cz .pn-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 24px;margin-bottom:24px}
 .cz .pn-head-txt{display:flex;flex-direction:column;gap:8px;min-width:0}
 .cz .pn-title{margin:0;font-family:var(--serif);font-weight:400;font-size:34px;line-height:1.1;color:var(--azul-noite)}
-.cz .pn-sub{margin:0;font-size:14px;line-height:1.6;color:var(--texto-secundario)}
 .cz .pn-head-actions{display:flex;flex-wrap:wrap;gap:10px}
 
 /* ---------- Botões complementares ---------- */
@@ -415,6 +414,36 @@
 .pn-menu-flutuante a,.pn-menu-flutuante button{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:0 16px;border:none;background:transparent;font-family:var(--font-sans);font-size:14px;color:#414042;text-align:left;cursor:pointer;white-space:nowrap;text-decoration:none}
 .pn-menu-flutuante [data-focus],.pn-menu-flutuante a:hover,.pn-menu-flutuante button:hover{background:#F6F4F0;color:#0F1D24}
 .pn-menu-flutuante .is-danger,.pn-menu-flutuante .is-danger[data-focus],.pn-menu-flutuante .is-danger:hover{color:#78323D}
+
+/* ---------- Cantos (escala --raio-* do :root, em app/globals.css) ----------
+   Ficam retos: a barra fixa de botões (.pn-fixed-bar), o menu lateral e a barra superior. */
+.cz .pn-skip,.cz .pn-nav a,.cz .pn-nav button,.cz .pn-search,.cz .pn-clear-q,.cz .dd-trigger,.cz .dd-list,.cz .pn-toggle,.cz .pn-ibtn,.cz .pn-modal-ref,.cz .pn-toast,.cz .pn-alert,.cz .pn-ro,.cz .pn-seg button,.cz .pn-photo,.cz .pn-nophotos,.cz .pn-radio,.cz .pn-warn,.cz .pn-account-line,.cz .pn-dest-item{border-radius:var(--raio)}
+.cz .pn-table-box,.cz .pn-table-foot,.cz .pn-box-state,.cz .pn-card,.cz .pn-modal,.cz .pn-section,.cz .pn-drop,.cz .pn-pub,.cz .pn-auth-card,.cz .pn-icon-ring{border-radius:var(--raio-lg)}
+.cz .pn-thumb,.cz .pn-thumb-empty,.cz .pn-you,.cz .pn-status,.cz .pn-toggle .pn-box,.cz .pn-photo-cover,.cz .pn-photo-n,.cz .pn-nophotos strong{border-radius:var(--raio-sm)}
+.cz .pn-avatar,.cz .pn-prog{border-radius:var(--raio-pill)}
+.cz .pn-prog{overflow:hidden}
+/* Peça dentro de peça: raio de fora menos o respiro. */
+.cz .pn-photo-media{border-radius:calc(var(--raio) - 1px) calc(var(--raio) - 1px) 0 0}
+.cz .pn-pass-btn,.cz .pn-toast button{border-radius:calc(var(--raio) - 2px)}
+/* Tabela (> 1280px): busca + tabela + rodapé formam uma caixa só, arredondada por fora e reta nas emendas. */
+@media (min-width:1281px){
+  .cz .pn-toolbar{border-radius:var(--raio-lg) var(--raio-lg) 0 0}
+  .cz .pn-toolbar + .pn-table-box,.cz .pn-toolbar + .pn-box-state,.cz .pn-toolbar + .pn-box-state .notice{border-top-left-radius:0;border-top-right-radius:0}
+  .cz .pn-table-box:has(+ .pn-cards + .pn-table-foot){border-bottom-left-radius:0;border-bottom-right-radius:0}
+  .cz .pn-table-foot{border-top-left-radius:0;border-top-right-radius:0}
+}
+/* Cards (≤ 1280px): a busca vira uma caixa própria, fechada embaixo, como já era no celular. */
+@media (max-width:1280px){
+  .cz .pn-toolbar{border-radius:var(--raio-lg);border-bottom:1px solid var(--areia);margin-bottom:12px}
+}
+@media (max-width:900px){
+  .cz .pn-modal{border-bottom-left-radius:0;border-bottom-right-radius:0}
+}
+/* O filete do topo vira fundo: com borda de 3px o canto arredondado afinava nas pontas. */
+.cz .pn-modal,.cz .pn-pub,.cz .pn-auth-card{border-top-color:transparent;background-repeat:no-repeat;background-origin:border-box;background-size:100% 3px}
+.cz .pn-modal,.cz .pn-pub{background-image:linear-gradient(var(--vinho),var(--vinho))}
+.cz .pn-auth-card{background-image:linear-gradient(var(--champanhe),var(--champanhe));background-size:100% 2px}
+.pn-menu-flutuante{border-radius:var(--raio)}
 
 /* Página inicial: lista ordenada de destaques */
 .cz .pn-dest-h{margin:24px 0 10px;font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--azul-noite)}

@@ -130,6 +130,14 @@
   .cz .notice{padding:48px 20px}
   .cz .notice h2{font-size:26px}
 }
+/* Cantos (escala --raio-* do :root, em app/globals.css). Os campos da busca (.campo) têm só a
+ * linha de baixo e continuam retos. */
+.cz .menu-btn,.cz .icon-btn,.cz .buscar,.cz .btn,.cz .pag button{border-radius:var(--raio)}
+.cz .busca-bar,.cz .notice,.cz .notice-icon,.cz .sk-foto,.cz .ct-form,.cz .ct-success{border-radius:var(--raio-lg)}
+.cz .carac button,.cz .res-chips button{border-radius:var(--raio-pill)}
+.cz .carac button{padding:0 16px}
+.cz .res-chips button{padding:0 14px}
+.cz .sk-linha{border-radius:var(--raio-sm)}
 /* Páginas institucionais (Contato, Sobre, Política de privacidade): corpo sob a faixa de título. */
 .cz .inst-body{padding-top:clamp(40px,6vw,80px);padding-bottom:clamp(64px,9vw,128px)}
 .cz .inst-leitura{max-width:68ch;font-weight:300}
@@ -170,7 +178,7 @@ footer.cz-rodape .cz-logo{width:320px}
 header.cz-topo *,div.cz-menu *,footer.cz-rodape *{box-sizing:border-box}
 
 /* Botões do cabeçalho e do menu */
-.cz-btn-linha,.cz-btn-champanhe{display:inline-flex;align-items:center;justify-content:center;min-height:50px;padding:0 28px;border:1px solid transparent;font-family:var(--font-sans);font-size:12px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;text-align:center;white-space:nowrap;cursor:pointer;transition:background-color .25s ease,color .25s ease,border-color .25s ease}
+.cz-btn-linha,.cz-btn-champanhe{border-radius:var(--raio);display:inline-flex;align-items:center;justify-content:center;min-height:50px;padding:0 28px;border:1px solid transparent;font-family:var(--font-sans);font-size:12px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;text-align:center;white-space:nowrap;cursor:pointer;transition:background-color .25s ease,color .25s ease,border-color .25s ease}
 header.cz-topo a.cz-btn-linha,div.cz-menu a.cz-btn-linha{border-color:rgba(255,255,255,.55);background:transparent;color:#FFFFFF}
 header.cz-topo a.cz-btn-linha:hover,div.cz-menu a.cz-btn-linha:hover{background:#FFFFFF;color:var(--noite)}
 div.cz-menu a.cz-btn-champanhe{background:var(--champanhe);border-color:var(--champanhe);color:var(--noite)}
@@ -186,13 +194,13 @@ header.cz-topo .nav{display:flex;gap:36px;font-size:13px;font-weight:400;letter-
 header.cz-topo .nav a{padding:6px 0;border-bottom:1px solid transparent;color:inherit;transition:border-color .2s ease}
 header.cz-topo .nav a:hover,header.cz-topo .nav a[aria-current="page"]{color:#FFFFFF;border-bottom-color:var(--champanhe)}
 header.cz-topo .cz-topo-acoes{display:flex;align-items:center;gap:16px;flex:none}
-header.cz-topo .cz-hamb{display:none;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:44px;height:44px;padding:0;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer}
+header.cz-topo .cz-hamb{border-radius:var(--raio);display:none;flex-direction:column;align-items:center;justify-content:center;gap:6px;width:44px;height:44px;padding:0;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer}
 header.cz-topo .cz-hamb span{display:block;width:20px;height:1px;background:currentColor}
 header.cz-topo a:focus-visible,header.cz-topo button:focus-visible,div.cz-menu a:focus-visible,div.cz-menu button:focus-visible,footer.cz-rodape a:focus-visible{outline:2px solid var(--champanhe);outline-offset:3px}
 
 /* Menu do celular, em tela cheia */
 div.cz-menu{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;padding:90px var(--cz-respiro) 40px;overflow-y:auto;background:var(--noite);color:#FFFFFF;font-family:var(--font-sans)}
-div.cz-menu .cz-menu-fechar{position:absolute;top:18px;right:var(--cz-respiro);display:flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:1px solid rgba(255,255,255,.5);background:transparent;color:#FFFFFF;cursor:pointer}
+div.cz-menu .cz-menu-fechar{border-radius:var(--raio);position:absolute;top:18px;right:var(--cz-respiro);display:flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border:1px solid rgba(255,255,255,.5);background:transparent;color:#FFFFFF;cursor:pointer}
 div.cz-menu .cz-menu-fechar:hover{border-color:#FFFFFF}
 div.cz-menu .cz-menu-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 div.cz-menu .cz-menu-lista a{display:block;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.12);font-family:var(--font-display);font-size:38px;font-weight:300;line-height:1.65;color:#FFFFFF}
@@ -212,18 +220,19 @@ footer.cz-rodape .cz-rodape-col h2{margin:0 0 8px;font-family:var(--font-sans);f
 footer.cz-rodape a{color:inherit;overflow-wrap:anywhere}
 footer.cz-rodape a:hover{color:#FFFFFF}
 footer.cz-rodape .cz-rodape-social{display:flex;gap:10px;margin-top:22px}
-footer.cz-rodape .cz-rodape-social a{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid rgba(255,255,255,.2)}
+footer.cz-rodape .cz-rodape-social a{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:1px solid rgba(255,255,255,.2);border-radius:var(--raio)}
 .cz-rodape-base{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;max-width:var(--cz-largura);margin:0 auto;padding:22px var(--cz-respiro);border-top:1px solid rgba(255,255,255,.1);font-size:12px;color:rgba(255,255,255,.5)}
 
 /* Card de imóvel (CardImovel): grid, destaques da Home e semelhantes. Sem fundo, sem borda. */
-.cz-card{position:relative;display:flex;flex-direction:column;gap:16px;color:var(--texto);font-family:var(--font-sans);font-weight:300;line-height:1.65}
+/* O raio no card é para o contorno de foco (focus-within) acompanhar a foto. */
+.cz-card{border-radius:var(--raio-lg);position:relative;display:flex;flex-direction:column;gap:16px;color:var(--texto);font-family:var(--font-sans);font-weight:300;line-height:1.65}
 .cz-card *{box-sizing:border-box}
 .cz-card:focus-within{outline:2px solid var(--noite);outline-offset:6px}
-.cz-card-foto{position:relative;aspect-ratio:4/3;overflow:hidden;background:var(--areia)}
+.cz-card-foto{position:relative;aspect-ratio:4/3;overflow:hidden;border-radius:var(--raio-lg);background:var(--areia)}
 .cz-card-foto img{width:100%;height:100%;object-fit:cover;transition:transform 1.2s cubic-bezier(.2,.6,.2,1)}
 .cz-card:hover .cz-card-foto img{transform:scale(1.05)}
 .cz-card-foto .cz-marca-dagua{font-size:9px}
-.cz-card-tag{position:absolute;top:14px;left:14px;z-index:2;padding:6px 10px;background:rgba(251,250,247,.92);color:var(--noite);font-size:10px;font-weight:400;line-height:1.5;letter-spacing:.26em;text-transform:uppercase}
+.cz-card-tag{position:absolute;top:14px;left:14px;z-index:2;padding:6px 10px;border-radius:var(--raio-sm);background:rgba(251,250,247,.92);color:var(--noite);font-size:10px;font-weight:400;line-height:1.5;letter-spacing:.26em;text-transform:uppercase}
 .cz-card-meta{font-size:11px;font-weight:400;letter-spacing:.26em;text-transform:uppercase;color:var(--bronze)}
 .cz-card-titulo{margin:0;font-family:var(--font-display);font-weight:400;font-size:26px;line-height:1.15}
 .cz-card-titulo a{color:var(--noite);outline:none;transition:color .2s ease}

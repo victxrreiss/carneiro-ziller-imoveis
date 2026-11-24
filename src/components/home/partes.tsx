@@ -56,7 +56,7 @@ export function CardCategoria({ href, img, nome, sizes, grande, vao, className =
       href={href}
       data-grande={grande ? "true" : undefined}
       data-vao={vao}
-      className={`group relative block overflow-hidden bg-noite text-white hover:text-white focus-visible:outline-offset-[-4px] focus-visible:outline-champanhe ${className}`}
+      className={`group relative block overflow-hidden rounded-raio-lg bg-noite text-white hover:text-white focus-visible:outline-offset-[-4px] focus-visible:outline-champanhe ${className}`}
     >
       <Image
         src={img}

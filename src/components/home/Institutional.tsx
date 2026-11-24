@@ -5,7 +5,7 @@ import { linkWhatsApp } from "@/lib/site";
 import { moldura, Rotulo, tituloSecao } from "./partes";
 
 const botao =
-  "inline-flex min-h-12.5 w-full items-center justify-center border px-7 text-xs font-medium tracking-[0.22em] whitespace-nowrap uppercase transition-colors duration-250 focus-visible:outline-champanhe min-[900px]:w-auto";
+  "inline-flex min-h-12.5 w-full items-center justify-center rounded-raio border px-7 text-xs font-medium tracking-[0.22em] whitespace-nowrap uppercase transition-colors duration-250 focus-visible:outline-champanhe min-[900px]:w-auto";
 
 /** Foto de fundo do bloco (nenhuma foto se repete na Home: ver fotos-home.test.ts). */
 export const FOTO_INSTITUCIONAL = "/images/institucional.jpg";
