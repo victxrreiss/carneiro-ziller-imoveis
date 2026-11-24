@@ -15,6 +15,9 @@
 //   por sair da Loft também sai da lista de destaques.
 // - Feed truncado: se menos de 80% dos importados como publicados aparecem na rodada, aborta antes de gravar
 //   (a menos que `forcar`).
+// - Origem: cada CRM tem o seu prefixo de referência (`origemDe`): sem prefixo, a Loft da Carneiro (feed
+//   VRSync); "ZL-", a da Ziller (fichas lidas da tela do CRM, `crm.ts`). Uma rodada só trata a sua origem:
+//   o "sumiu da rodada" e a trava de feed truncado nunca olham as referências do outro CRM.
 //
 // Apagar só alvos identificados: imóveis pelo id, fotos pelos ids (e só as sem vínculo).
 import { asc, eq, inArray } from "drizzle-orm";
@@ -57,6 +60,14 @@ export type Progresso = {
   fotos?: { ok: number; total: number };
 };
 
+/** Prefixo de referência de cada CRM importado; a Carneiro (primeira importação) não tem prefixo. */
+export const ORIGEM_ZILLER = "ZL-";
+
+/** Origem de uma referência: o prefixo "XX-" (maiúsculas), ou "" para as sem prefixo. */
+export function origemDe(referencia: string): string {
+  return /^[A-Z]{2,}-/.exec(referencia)?.[0] ?? "";
+}
+
 export type OpcoesLoft = {
   /** Responsável dos imóveis criados (e autor das alterações da importação). */
   responsavelId: string;
@@ -75,10 +86,12 @@ export type OpcoesLoft = {
   forcar?: boolean;
   /** Limite de cada envio de foto ao armazenamento (padrão 60 s). */
   tempoEnvioMs?: number;
+  /** Prefixo das referências desta rodada (`origemDe`); padrão "" (Loft da Carneiro). */
+  origem?: string;
 };
 
 /** Campos do snapshot: exatamente as chaves de `ImovelLoft` que viram colunas de `imoveis`. */
-type Campo = Exclude<keyof ImovelLoft, "referencia" | "fotos" | "avisos">;
+type Campo = Exclude<keyof ImovelLoft, "referencia" | "fotos" | "avisos" | "lancamento">;
 const TODOS_OS_CAMPOS: Record<Campo, true> = {
   situacao: true, finalidade: true, tipo: true, titulo: true, descricao: true, bairro: true, cidade: true, uf: true,
   valor: true, valorLocacao: true, area: true, areaTotal: true, quartos: true, suites: true, banheiros: true, vagas: true,
@@ -242,7 +255,16 @@ export async function importarLoft(db: Db, lista: ImovelLoft[], o: OpcoesLoft): 
   };
   const aviso = (referencia: string, texto: string) => r.avisos.push({ referencia, aviso: texto });
 
-  const controle = new Map((await db.select().from(importacaoLoft)).map((c) => [c.referencia, c]));
+  const origem = o.origem ?? "";
+  const alheias = lista.filter((i) => origemDe(i.referencia) !== origem).map((i) => i.referencia);
+  if (alheias.length) {
+    throw new Error(`Referências de outra origem nesta rodada (esperado "${origem || "sem prefixo"}"): ${alheias.slice(0, 5).join(", ")}. Nada foi alterado.`);
+  }
+  // Só o controle desta origem: o de outro CRM não conta para a trava nem para "sumiu da rodada".
+  const controle = new Map(
+    (await db.select().from(importacaoLoft)).filter((c) => origemDe(c.referencia) === origem).map((c) => [c.referencia, c]),
+  );
+  const primeiraRodada = (await db.select({ referencia: importacaoLoft.referencia }).from(importacaoLoft).limit(1)).length === 0;
 
   // Proteção contra feed truncado: antes de gravar qualquer coisa.
   if (!o.forcar) {
@@ -258,7 +280,6 @@ export async function importarLoft(db: Db, lista: ImovelLoft[], o: OpcoesLoft): 
     }
   }
 
-  const primeiraRodada = controle.size === 0;
   if (primeiraRodada) await removerExemplos(db, o, r);
 
   const vistos = new Set<string>();
@@ -314,7 +335,8 @@ export async function importarLoft(db: Db, lista: ImovelLoft[], o: OpcoesLoft): 
           ...valores,
           id,
           codigo,
-          lancamento: false,
+          // Só na criação: depois, o Lançamento é da equipe (a importação nunca mexe nele).
+          lancamento: i.lancamento ?? false,
           referenciaLoft: ref,
           responsavelId: o.responsavelId,
           criadoEm: agora,

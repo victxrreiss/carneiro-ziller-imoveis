@@ -1,6 +1,10 @@
 // npm run loft:importar -- --feed <url|arquivo> --ativos <csv> --pendentes <csv> --responsavel <email> [--simular] [--forcar]
+// npm run loft:importar -- --crm <pasta> --responsavel <email> [--pular <ref,ref>] [--simular] [--forcar]
 // Importa os imóveis da Loft (feed VRSync + as duas planilhas do CRM) para o banco e
 // o S3 do ambiente atual. Em produção, rode por `deploy/deploy.sh importar-loft ...`.
+// `--crm`: em vez do feed, a pasta com as fichas lidas da tela do CRM da Ziller (`loft/crm.ts`);
+// as referências ganham o prefixo "ZL-" e a rodada só trata os imóveis dessa origem. `--pular`:
+// referências do CRM (com ou sem o prefixo) que ficam de fora, ex.: os que já estão no site pela Carneiro.
 // `--simular` lê, junta e mostra o resumo sem gravar nada. O relatório da rodada real
 // também vai para `relatorio-loft-<data>.json` na pasta atual (fora do git).
 // `--forcar` segue mesmo se o feed parecer truncado (menos de 80% dos publicados de antes).
@@ -14,19 +18,24 @@ import sharp from "sharp";
 import { armazenamentoS3 } from "../src/lib/armazenamento";
 import { configBanco } from "../src/lib/config";
 import { criarConexao } from "../src/lib/dados/criar-conexao";
-import { usuarios } from "../src/lib/dados/esquema";
-import { importarLoft, type BaixarFoto, type LerDimensoes, type Progresso, type Relatorio } from "./loft/importar";
+import { imoveis, usuarios } from "../src/lib/dados/esquema";
+import { juntarCrm, lerFichasCrm, provaveisDuplicados } from "./loft/crm";
+import { importarLoft, ORIGEM_ZILLER, type BaixarFoto, type LerDimensoes, type Progresso, type Relatorio } from "./loft/importar";
 import { juntarDetalhado, type ImovelLoft, type Ignorados } from "./loft/mapear";
 import { lerPlanilha } from "./loft/planilha";
 import { lerVrsync } from "./loft/vrsync";
 
-export type Argumentos = { feed: string; ativos: string; pendentes: string; responsavel: string; simular: boolean; forcar: boolean };
+export type Argumentos =
+  | { fonte: "feed"; feed: string; ativos: string; pendentes: string; responsavel: string; simular: boolean; forcar: boolean }
+  | { fonte: "crm"; crm: string; pular: string[]; responsavel: string; simular: boolean; forcar: boolean };
 
 export function lerArgumentos(argv: string[]): Argumentos {
   const { values } = parseArgs({
     args: argv,
     options: {
       feed: { type: "string" },
+      crm: { type: "string" },
+      pular: { type: "string" },
       ativos: { type: "string" },
       pendentes: { type: "string" },
       responsavel: { type: "string" },
@@ -34,10 +43,19 @@ export function lerArgumentos(argv: string[]): Argumentos {
       forcar: { type: "boolean", default: false },
     },
   });
-  for (const nome of ["feed", "ativos", "pendentes", "responsavel"] as const) {
+  const simular = values.simular ?? false;
+  const forcar = values.forcar ?? false;
+  if (!values.responsavel) throw new Error("Informe --responsavel.");
+  if (values.crm) {
+    if (values.feed || values.ativos || values.pendentes) throw new Error("Informe --crm ou --feed/--ativos/--pendentes, não os dois.");
+    const pular = (values.pular ?? "").split(",").map((r) => r.trim()).filter(Boolean);
+    return { fonte: "crm", crm: values.crm, pular, responsavel: values.responsavel, simular, forcar };
+  }
+  if (values.pular) throw new Error("--pular só vale com --crm.");
+  for (const nome of ["feed", "ativos", "pendentes"] as const) {
     if (!values[nome]) throw new Error(`Informe --${nome}.`);
   }
-  return { feed: values.feed!, ativos: values.ativos!, pendentes: values.pendentes!, responsavel: values.responsavel!, simular: values.simular ?? false, forcar: values.forcar ?? false };
+  return { fonte: "feed", feed: values.feed!, ativos: values.ativos!, pendentes: values.pendentes!, responsavel: values.responsavel, simular, forcar };
 }
 
 const ehUrl = (s: string) => /^https?:\/\//i.test(s);
@@ -138,7 +156,7 @@ async function main() {
   } catch (e) {
     // Mensagem própria (nunca a do parseArgs, que poderia repetir a URL do feed).
     const falta = e instanceof Error && e.message.startsWith("Informe --") ? `${e.message} ` : "";
-    console.error(`${falta}Argumentos inválidos. Uso: npm run loft:importar -- --feed <url|arquivo> --ativos <csv> --pendentes <csv> --responsavel <email> [--simular] [--forcar]`);
+    console.error(`${falta}Argumentos inválidos. Uso: npm run loft:importar -- (--feed <url|arquivo> --ativos <csv> --pendentes <csv> | --crm <pasta>) --responsavel <email> [--simular] [--forcar]`);
     process.exit(1);
   }
 
@@ -150,16 +168,39 @@ async function main() {
     if (!resp) throw new Error(`Responsável não encontrado: ${email}. Crie o usuário no painel antes.`);
     if (resp.situacao === "desativado") throw new Error(`O responsável ${email} está desativado: use um usuário ativo ou pendente.`);
 
-    const feed = await lerFeed(args.feed);
-    console.log(`feed: ${feed.nome}`);
-    const { lista, ignorados } = juntarDetalhado(
-      lerVrsync(feed.xml),
-      lerPlanilha(await readFile(args.ativos, "utf8")),
-      lerPlanilha(await readFile(args.pendentes, "utf8")),
-    );
+    let lista: ImovelLoft[];
+    let ignorados: Ignorados = { feed: 0, ativos: 0, pendentes: 0 };
+    let origem = "";
+    if (args.fonte === "crm") {
+      origem = ORIGEM_ZILLER;
+      const pular = new Set(args.pular.map((r) => (r.startsWith(origem) ? r : `${origem}${r}`)));
+      const todas = juntarCrm(await lerFichasCrm(args.crm), origem);
+      const desconhecidas = [...pular].filter((r) => !todas.some((i) => i.referencia === r));
+      if (desconhecidas.length) throw new Error(`--pular com referência que não está nas fichas: ${desconhecidas.join(", ")}`);
+      lista = todas.filter((i) => !pular.has(i.referencia));
+      console.log(`fichas do CRM: ${path.basename(path.resolve(args.crm))} (origem ${origem}); de fora por --pular: ${pular.size}`);
+    } else {
+      const feed = await lerFeed(args.feed);
+      console.log(`feed: ${feed.nome}`);
+      ({ lista, ignorados } = juntarDetalhado(
+        lerVrsync(feed.xml),
+        lerPlanilha(await readFile(args.ativos, "utf8")),
+        lerPlanilha(await readFile(args.pendentes, "utf8")),
+      ));
+    }
 
     if (args.simular) {
       console.log(resumoSimulacao(lista, ignorados));
+      if (args.fonte === "crm") {
+        // Só referência, código e o aviso: nada de endereço no terminal.
+        for (const i of lista) for (const a of i.avisos) console.log(`  ${i.referencia}: ${a}`);
+        const existentes = await db
+          .select({ codigo: imoveis.codigo, referenciaLoft: imoveis.referenciaLoft, endereco: imoveis.endereco, numero: imoveis.numero, complemento: imoveis.complemento, empreendimento: imoveis.empreendimento, area: imoveis.area })
+          .from(imoveis);
+        const dup = provaveisDuplicados(lista, existentes, origem);
+        console.log(`  prováveis duplicados de imóveis já no site: ${dup.length}`);
+        for (const d of dup) console.log(`    ${d.referencia} ~ ${d.codigo} (${d.motivo})`);
+      }
       return;
     }
 
@@ -171,6 +212,7 @@ async function main() {
       baixar,
       dimensoes,
       forcar: args.forcar,
+      origem,
       aoProgredir: (p) => console.log(linhaProgresso(p)),
       aoGravarParcial: gravar,
     });

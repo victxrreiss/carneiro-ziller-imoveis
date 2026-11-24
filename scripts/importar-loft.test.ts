@@ -5,7 +5,7 @@ const base = ["--feed", "f.xml", "--ativos", "a.csv", "--pendentes", "p.csv", "-
 
 describe("lerArgumentos", () => {
   it("lê os quatro argumentos e simular começa desligado", () => {
-    expect(lerArgumentos(base)).toEqual({ feed: "f.xml", ativos: "a.csv", pendentes: "p.csv", responsavel: "x@y.test", simular: false, forcar: false });
+    expect(lerArgumentos(base)).toEqual({ fonte: "feed", feed: "f.xml", ativos: "a.csv", pendentes: "p.csv", responsavel: "x@y.test", simular: false, forcar: false });
   });
   it("liga --simular", () => {
     expect(lerArgumentos([...base, "--simular"]).simular).toBe(true);
@@ -18,6 +18,13 @@ describe("lerArgumentos", () => {
   });
   it("liga --forcar", () => {
     expect(lerArgumentos([...base, "--forcar"]).forcar).toBe(true);
+  });
+  it("--crm dispensa feed e planilhas, e não aceita os dois juntos", () => {
+    expect(lerArgumentos(["--crm", "fichas", "--responsavel", "x@y.test", "--simular"])).toEqual({ fonte: "crm", crm: "fichas", pular: [], responsavel: "x@y.test", simular: true, forcar: false });
+    expect(lerArgumentos(["--crm", "fichas", "--responsavel", "x@y.test", "--pular", "10163, ZL-PI0301,"])).toMatchObject({ pular: ["10163", "ZL-PI0301"] });
+    expect(() => lerArgumentos([...base, "--pular", "1"])).toThrow(/só vale com --crm/);
+    expect(() => lerArgumentos(["--crm", "fichas", "--feed", "f.xml", "--responsavel", "x@y.test"])).toThrow(/não os dois/);
+    expect(() => lerArgumentos(["--crm", "fichas"])).toThrow("Informe --responsavel");
   });
 });
 

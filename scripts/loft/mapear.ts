@@ -37,13 +37,18 @@ export type ImovelLoft = {
   cep: string | null;
   fotos: string[];
   avisos: string[];
+  /** Só na criação do imóvel (a Loft da Carneiro não tem; o CRM da Ziller tem "Lançamento"). */
+  lancamento?: boolean;
 };
 
 const TIPO_POR_CATEGORIA: Record<string, string> = {
   Apartamento: "Apartamento",
   "Apartamento Duplex": "Apartamento",
+  // "Área privativa" em BH é o apartamento com área externa privativa (térreo ou cobertura de baixo).
+  "Área Privativa": "Apartamento",
   "Casa em Condomínio": "Casa em condomínio",
   Terreno: "Terreno",
+  "Terreno em Condomínio": "Terreno",
   Área: "Terreno",
   Cobertura: "Cobertura",
   Casa: "Casa",
@@ -73,7 +78,7 @@ export function mapearTipo(categoria: string | undefined, tipoVrsync: string | u
 }
 
 /** Corta em `max` caracteres sem partir palavra. */
-function cortarPorPalavra(s: string, max: number): string {
+export function cortarPorPalavra(s: string, max: number): string {
   const t = s.trim();
   if (t.length <= max) return t;
   const corte = t.slice(0, max + 1);
@@ -81,12 +86,12 @@ function cortarPorPalavra(s: string, max: number): string {
   return (espaco > 0 ? corte.slice(0, espaco) : t.slice(0, max)).replace(/[\s,;:.\-–]+$/, "");
 }
 
-const AVISO_SEM_AREA = "Sem área: não aparece no site até ser preenchida.";
+export const AVISO_SEM_AREA = "Sem área: não aparece no site até ser preenchida.";
 const semAcento = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 const vazioParaNull = (s: string) => (s.trim() === "" ? null : s.trim());
 
 /** O texto cita a rua do imóvel seguida do número dele (ex.: "Rua X, 500" ou "Rua X nº 500")? */
-function citaRuaENumero(texto: string, rua: string, numero: string): boolean {
+export function citaRuaENumero(texto: string, rua: string, numero: string): boolean {
   const r = semAcento(rua).trim();
   const n = semAcento(numero).trim();
   if (r.length < 4 || !/^\d+$/.test(n)) return false;
@@ -101,12 +106,12 @@ function citaRuaENumero(texto: string, rua: string, numero: string): boolean {
 }
 
 /** O texto cita o nome da rua do imóvel (com ou sem número)? */
-function citaRua(texto: string, rua: string): boolean {
+export function citaRua(texto: string, rua: string): boolean {
   const r = semAcento(rua).trim();
   return r.length >= 4 && semAcento(texto).includes(r);
 }
 
-function tituloGerado(tipo: string | null, finalidade: Finalidade | null, bairro: string, cidade: string): string {
+export function tituloGerado(tipo: string | null, finalidade: Finalidade | null, bairro: string, cidade: string): string {
   const base = `${tipo ?? "Imóvel"} ${finalidade === "locacao" ? "para alugar" : "à venda"}`;
   const local = [bairro, cidade].filter(Boolean).join(", ");
   return local ? `${base} no ${local}` : base;

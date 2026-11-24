@@ -68,6 +68,57 @@ export const CARACTERISTICA_VRSYNC: Record<string, string> = {
   Warehouse: "deposito",
 };
 
+/**
+ * Campos marcados na ficha do CRM da Loft (tela "Características"/"Infraestrutura", nome do
+ * campo sem o "imo.") → chave. Vários campos levam à mesma chave; o que não está aqui é ignorado.
+ */
+export const CARACTERISTICA_CRM: Record<string, string> = {
+  PISCINA_COLETIVA: "piscina",
+  PISCINA_AQUECIDA: "piscina",
+  PISCINA_INFANTIL: "piscina",
+  LIVING_PISCINA: "piscina",
+  SALA_GINASTICA: "academia",
+  ESPACO_GOURMET: "area-gourmet",
+  SACADA_CHU: "area-gourmet",
+  LIVING_SACADA: "varanda",
+  MOBILIADO: "mobiliado",
+  CONDOMINIO_FECHADO: "condominio-fechado",
+  CHURRASQUEIRA_COLETIVA: "churrasqueira",
+  ELEVADOR_COM: "elevador",
+  ELEVADOR_SERVICO: "elevador",
+  SALAO_FESTAS: "salao-de-festas",
+  SALA_JOGOS: "salao-de-jogos",
+  PLAYGROUD: "playground",
+  QUADRA_TENIS: "quadra-de-tenis",
+  SAUNA: "sauna",
+  SAUNA_COL: "sauna",
+  SPA: "spa",
+  AR_CONDICIONADO: "ar-condicionado",
+  AR_CENTRAL: "ar-condicionado",
+  SPLIT: "ar-condicionado",
+  AQUECIMENTO_CENTRAL: "aquecimento",
+  AQUECEDOR_SOLAR: "aquecimento",
+  LIVING_LAREIRA: "lareira",
+  COZINHA: "cozinha",
+  COPA_COZINHA: "cozinha",
+  COZINHA_PLANEJADA: "cozinha",
+  COZINHA_AMERICANA: "cozinha",
+  AREA_SERVICO: "lavanderia",
+  LIVING_LAVANDERIA: "lavanderia",
+  ESCRITORIO: "escritorio",
+  DEPENDENCIA: "dependencia-de-empregada",
+  WC_EMPREGADA: "dependencia-de-empregada",
+  JARDIM: "jardim",
+  JARDIM_INVERNO: "jardim",
+  QUINTAL: "quintal",
+  VISTA: "vista-panoramica",
+  INTERFONE: "interfone",
+  CIRCUITO_INTERNO_TV: "circuito-de-tv",
+  INTERNET: "internet",
+  SALA_RECEPCAO: "recepcao",
+  DEPOSITO: "deposito",
+};
+
 export function rotuloCaracteristica(chave: string): string | undefined {
   return CARACTERISTICAS.find((c) => c.chave === chave)?.rotulo;
 }

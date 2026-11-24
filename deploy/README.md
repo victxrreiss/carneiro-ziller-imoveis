@@ -106,6 +106,18 @@ Como ler o relatório (impresso e salvo em `relatorio-loft-<data>.json` na raiz 
 | `ignorados` | Registros sem referência no feed/planilhas (por origem): não foram importados |
 | `exemplosRemovidos` | Exemplos apagados na primeira rodada |
 
+### Ziller (fichas lidas da tela do CRM)
+
+O CRM da Ziller Negócios Imobiliários não tem portal ativo, então não há feed. Por decisão do usuário (23/11/2026), nada foi alterado nesse CRM: as fichas foram lidas imóvel por imóvel na tela (extensão do Chrome, só leitura) e salvas uma por arquivo em `../ziller-crm/` (fora do git: têm endereço e proprietário). Formato e mapeamento: `scripts/loft/crm.ts`.
+
+```bash
+deploy/deploy.sh importar-loft --simular --crm "$HOME/.../ziller-crm" --responsavel socio@dominio.com [--pular 10163,10183]
+```
+
+- As referências ganham o prefixo `ZL-` (ex.: `ZL-10220`) e a rodada só olha os imóveis dessa origem: a da Ziller nunca indisponibiliza um da Carneiro (nem conta na trava de feed truncado), e vice-versa.
+- "Exibir no site" marcado → publicado; senão, rascunho. Publicado sem o que o painel exige (tipo, valor, área, descrição) entra como rascunho, com aviso. "Lançamento" do CRM vale só na criação.
+- A simulação lista os avisos por referência e os **prováveis duplicados** (mesmo endereço e complemento, ou mesmo empreendimento e área) de imóveis que já estão no site; os que a equipe confirmar como o mesmo imóvel ficam de fora com `--pular`.
+
 Antes da virada: pode repetir a importação à vontade, trazendo o feed e as planilhas mais recentes. O que a equipe já ajustou no painel é preservado. Depois da virada, a equipe cadastra só pelo painel e a importação deixa de ser usada.
 
 ## Relatório de cadastro

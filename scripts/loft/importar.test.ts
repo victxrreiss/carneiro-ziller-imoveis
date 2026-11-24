@@ -384,6 +384,33 @@ describe("importarLoft", () => {
     expect(r.fotosFalhas[0].erro).toMatch(/Envio da foto passou/);
   });
 
+  test("outra origem (Ziller, \"ZL-\"): não indisponibiliza nem conta na trava da Carneiro, e vice-versa", async () => {
+    await importarLoft(amb.db, lista(), opcoes());
+    const ziller = (): ImovelLoft[] =>
+      lista()
+        .filter((i) => i.situacao === "publicado")
+        .slice(0, 2)
+        .map((i) => ({ ...i, referencia: `ZL-${i.referencia}`, fotos: i.fotos.map((u) => `${u}?z`), lancamento: true }));
+
+    // Só 2 imóveis da Ziller: não é "feed truncado" para a Carneiro, e nada da Carneiro some.
+    const r = await importarLoft(amb.db, ziller(), { ...opcoes(), origem: "ZL-" });
+    expect(r.criados).toEqual(ziller().map((i) => i.referencia));
+    expect(r.indisponibilizados).toEqual([]);
+    expect(r.exemplosRemovidos).toEqual([]);
+    expect((await porRef("905")).situacao).toBe("publicado");
+    expect(await porRef(ziller()[0].referencia)).toMatchObject({ lancamento: true, situacao: "publicado" });
+
+    // A rodada da Carneiro também não toca nos da Ziller.
+    const r2 = await importarLoft(amb.db, lista(), opcoes());
+    expect(r2.indisponibilizados).toEqual([]);
+    expect(r2.ausentesRascunho).toEqual([]);
+    expect((await porRef(ziller()[0].referencia)).situacao).toBe("publicado");
+
+    // Referência de outra origem na rodada: recusa antes de gravar.
+    await expect(importarLoft(amb.db, [...ziller(), lista()[0]], { ...opcoes(), origem: "ZL-" })).rejects.toThrow(/outra origem/);
+    await expect(importarLoft(amb.db, ziller(), opcoes())).rejects.toThrow(/outra origem/);
+  });
+
   test("lista vazia é recusada (feed vazio indisponibilizaria tudo)", async () => {
     await expect(importarLoft(amb.db, [], opcoes())).rejects.toThrow(/vazia/);
   });
