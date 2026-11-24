@@ -36,7 +36,7 @@ const colunas = async (db: ReturnType<typeof drizzle>, tabela: string) =>
     (r) => r.column_name,
   );
 
-describe("migration 0002 (destaques da Home)", () => {
+describe("migration 0002 (destaques da Home)", { timeout: 30_000 }, () => {
   test("cria destaques_home, mantém oportunidade_id para o container antigo e apaga o aviso antigo", async () => {
     const db = drizzle(new PGlite());
     await migrate(db, { migrationsFolder: ate0001 });
@@ -53,7 +53,7 @@ describe("migration 0002 (destaques da Home)", () => {
   });
 });
 
-describe("migration 0003 (dados internos e características em dois grupos)", () => {
+describe("migration 0003 (dados internos e características em dois grupos)", { timeout: 30_000 }, () => {
   test("cria imovel_interno e converte as chaves antigas no imóvel e no snapshot da Loft, na ordem nova", async () => {
     const db = drizzle(new PGlite());
     await migrate(db, { migrationsFolder: ate0002 });

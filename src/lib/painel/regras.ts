@@ -122,7 +122,7 @@ export const ORDEM_CAMPOS: { campo: CampoImovel; rotulo: string }[] = [
   { campo: "vagas", rotulo: "Vagas" },
   { campo: "banheiros", rotulo: "Banheiros" },
   { campo: "suites", rotulo: "Suítes" },
-  { campo: "areaTotal", rotulo: "Área total" },
+  { campo: "areaTotal", rotulo: "Área do terreno" },
   { campo: "condominio", rotulo: "Condomínio" },
   { campo: "iptu", rotulo: "IPTU" },
   { campo: "valorLocacao", rotulo: "Valor de locação" },

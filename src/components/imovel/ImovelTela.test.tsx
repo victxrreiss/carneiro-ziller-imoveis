@@ -81,11 +81,14 @@ describe("ImovelTela", () => {
     expect(screen.getByText("Cobertura · Belvedere, Belo Horizonte")).toBeInTheDocument();
     const dados = screen.getByRole("list", { name: "Dados principais" });
     expect(within(dados).getAllByRole("listitem").map((li) => li.textContent)).toEqual([
-      "520m² privativos",
+      "520m² construídos",
       "4quartos",
       "4suítes",
       "6vagas",
+      "5banheiros",
     ]);
+    // Banheiros sobem para os dados principais; não se repetem nos detalhes.
+    expect(screen.queryByText("Banheiros", { exact: true })).not.toBeInTheDocument();
     const resumo = screen.getByRole("complementary", { name: "Valor e contato" });
     expect(resumo).toHaveTextContent("R$ 9.800.000");
     expect(resumo).toHaveTextContent("Condomínio R$ 4.900/mês · IPTU R$ 18.000/ano");

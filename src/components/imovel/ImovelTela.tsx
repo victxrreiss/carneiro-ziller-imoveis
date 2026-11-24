@@ -52,14 +52,15 @@ export function ImovelTela({ imovel, volta, url, semelhantes }: Props) {
   const locacao = imovel.finalidade === "locacao";
   const plural = (n: number, um: string, varios: string) => (n === 1 ? um : varios);
   const dados = [
-    { valor: formatarArea(imovel.area).replace(/ m²$/, ""), rotulo: /terreno|lote/i.test(imovel.tipo) ? "m²" : "m² privativos" },
+    { valor: formatarArea(imovel.area).replace(/ m²$/, ""), rotulo: /terreno|lote/i.test(imovel.tipo) ? "m²" : "m² construídos" },
     imovel.quartos ? { valor: String(imovel.quartos), rotulo: plural(imovel.quartos, "quarto", "quartos") } : null,
     imovel.suites ? { valor: String(imovel.suites), rotulo: plural(imovel.suites, "suíte", "suítes") } : null,
     imovel.vagas ? { valor: String(imovel.vagas), rotulo: plural(imovel.vagas, "vaga", "vagas") } : null,
+    // Banheiros sobem para os dados principais (pedido do cliente, 2026-11-24).
+    imovel.banheiros ? { valor: String(imovel.banheiros), rotulo: plural(imovel.banheiros, "banheiro", "banheiros") } : null,
   ].filter((d) => d !== null);
   const detalhes = [
-    imovel.banheiros ? { rotulo: "Banheiros", valor: String(imovel.banheiros) } : null,
-    imovel.areaTotal && imovel.areaTotal > imovel.area ? { rotulo: "Área total", valor: formatarArea(imovel.areaTotal) } : null,
+    imovel.areaTotal && imovel.areaTotal > imovel.area ? { rotulo: "Área do terreno", valor: formatarArea(imovel.areaTotal) } : null,
     // O andar não aparece no site (decisão do usuário, 2026-11-24); segue no painel.
     imovel.anoConstrucao !== null ? { rotulo: "Ano de construção", valor: String(imovel.anoConstrucao) } : null,
     !locacao && imovel.valorLocacao !== null ? { rotulo: "Locação", valor: formatarMensal(imovel.valorLocacao) } : null,

@@ -110,7 +110,7 @@ test("ADMIN cadastra: rascunho incompleto, publicar exige os obrigatórios, publ
   await page.getByLabel(/CIDADE/).fill("Nova Lima");
   await page.getByLabel(/^VALOR(?! DE)/).fill("2500000");
   await expect(page.getByLabel(/^VALOR(?! DE)/)).toHaveValue("2.500.000");
-  await page.getByLabel(/ÁREA PRIVATIVA/).fill("320");
+  await page.getByLabel(/ÁREA CONSTRUÍDA/).fill("320");
   await page.getByLabel(/DESCRIÇÃO/).fill("Casa ampla.\n\nPerto de tudo.");
   await page.locator("#pn-file:visible").setInputFiles({ name: "fachada.png", mimeType: "image/png", buffer: PNG });
   await expect(page.locator(".pn-photo-cover")).toHaveText("CAPA");
@@ -179,8 +179,8 @@ test("cadastro com a ficha completa aparece na lista e na busca", async ({ page 
   await page.getByLabel(/BAIRRO/).fill("Belvedere");
   await page.getByLabel(/CIDADE/).fill("Nova Lima");
   await page.getByLabel(/^VALOR(?! DE)/).fill("1800000");
-  await page.getByLabel(/ÁREA PRIVATIVA/).fill("210");
-  await page.getByLabel(/ÁREA TOTAL/).fill("260");
+  await page.getByLabel(/ÁREA CONSTRUÍDA/).fill("210");
+  await page.getByLabel(/ÁREA DO TERRENO/).fill("260");
   await page.getByLabel(/^QUARTOS/).fill("4");
   await page.getByLabel(/^SUÍTES/).fill("2");
   await page.getByLabel(/^BANHEIROS/).fill("5");
@@ -216,7 +216,7 @@ test("cadastro com a ficha completa aparece na lista e na busca", async ({ page 
 
   // Reabrir: os valores voltam preenchidos.
   await page.goto(`/painel/imoveis/${cod.toLowerCase()}`);
-  await expect(page.getByLabel(/ÁREA TOTAL/)).toHaveValue("260");
+  await expect(page.getByLabel(/ÁREA DO TERRENO/)).toHaveValue("260");
   await expect(page.getByLabel(/^SUÍTES/)).toHaveValue("2");
   await expect(page.getByLabel(/^BANHEIROS/)).toHaveValue("5");
   await expect(page.getByLabel(/CONDOMÍNIO/)).toHaveValue("2.300");

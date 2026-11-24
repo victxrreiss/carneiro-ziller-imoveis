@@ -62,8 +62,10 @@
 .cz .im-carac{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 24px;font-size:15px;line-height:1.65}
 .cz .im-carac li{position:relative;padding-left:18px}
 .cz .im-carac li::before{content:"";position:absolute;left:0;top:.8em;width:8px;height:1px;background:var(--champanhe)}
-.cz .im-carac-grupo+.im-carac-grupo{margin-top:24px}
-.cz .im-carac-grupo h3{margin:0 0 12px;font-size:11px;font-weight:400;letter-spacing:.2em;text-transform:uppercase;color:var(--texto-2)}
+.cz .im-carac-grupo+.im-carac-grupo{margin-top:32px}
+/* Título do grupo com o peso e a cor do eyebrow (bronze, filete), bem diferente dos itens. */
+.cz .im-carac-grupo h3{margin:0 0 16px;display:flex;align-items:center;gap:12px;font-size:12px;font-weight:500;letter-spacing:.24em;text-transform:uppercase;color:var(--bronze)}
+.cz .im-carac-grupo h3::before{content:"";width:24px;height:1px;background:currentColor}
 .cz .im-det{margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 32px;max-width:520px}
 .cz .im-det div{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--areia-2)}
 .cz .im-det dt{align-self:center;font-size:11px;font-weight:400;letter-spacing:.2em;text-transform:uppercase;color:var(--texto-2)}
@@ -163,6 +165,14 @@
 .cz .im-mos-todas,.cz .im-luz-btn,.cz .im-luz-foto img,.cz .im-cta,.cz .im-ref,.cz .im-alert{border-radius:var(--raio)}
 .cz .im-comp-menu a,.cz .im-comp-menu button{border-radius:calc(var(--raio-lg) - 8px)}
 .cz .im-ref img,.cz .im-sk-line{border-radius:var(--raio-sm)}
+/* Telas médias: até 5 dados (área, quartos, suítes, vagas, banheiros) não cabem numa linha; grade de 3, como a de 2 do celular. */
+@media (min-width:901px) and (max-width:1320px){
+  .cz .im-dados{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .cz .im-dados li{padding:18px 16px;margin-right:0;border-right:1px solid var(--areia-2)}
+  .cz .im-dados li:nth-child(3n+1){padding-left:0}
+  .cz .im-dados li:nth-child(3n),.cz .im-dados li:last-child{border-right:0}
+  .cz .im-dados li:nth-child(n+4){border-top:1px solid var(--areia-2)}
+}
 @media (max-width:1080px){
   .cz .im-ficha-in{grid-template-columns:minmax(0,1fr) 340px;gap:40px}
   .cz .im-resumo-card{padding:28px 24px 22px}

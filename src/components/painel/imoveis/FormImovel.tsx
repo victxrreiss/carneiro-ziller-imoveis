@@ -74,7 +74,7 @@ const NOMES: Record<keyof Campos | "fotos", string> = {
   vagas: "as vagas",
   banheiros: "os banheiros",
   suites: "as suítes",
-  areaTotal: "a área total",
+  areaTotal: "a área do terreno",
   condominio: "o condomínio",
   iptu: "o IPTU",
   valorLocacao: "o valor de locação",
@@ -876,7 +876,7 @@ export function FormImovel({
           <section className="pn-section" aria-labelledby="pn-s3">
             <div className="pn-section-h">
               <h2 id="pn-s3">Valores e medidas</h2>
-              <p>Tudo é opcional, exceto valor e área privativa. Deixe em branco o que não se aplica (terreno, sala, laje): o site só mostra o que estiver preenchido.</p>
+              <p>Tudo é opcional, exceto valor e área construída. Deixe em branco o que não se aplica (terreno, sala, laje): o site só mostra o que estiver preenchido.</p>
             </div>
             <div className={c.finalidade === "venda" ? "pn-row is-4" : "pn-row"}>
               <div className={classeCampo("valor")}>
@@ -918,7 +918,7 @@ export function FormImovel({
             <div className="pn-row is-4">
               <div className={classeCampo("area")}>
                 <label className="im-lbl" htmlFor="pn-f-area">
-                  ÁREA PRIVATIVA (M²) <span className="req" aria-hidden="true">*</span>
+                  ÁREA CONSTRUÍDA (M²) <span className="req" aria-hidden="true">*</span>
                 </label>
                 {so ? (
                   <div className="pn-ro">{c.area ? `${milhar(c.area)} m²` : "—"}</div>
@@ -937,7 +937,7 @@ export function FormImovel({
                 )}
                 {erros.area && <ErroCampo id="pn-f-area-err">{erros.area}</ErroCampo>}
               </div>
-              {campoNumero("areaTotal", "ÁREA TOTAL (M²)", 7, true)}
+              {campoNumero("areaTotal", "ÁREA DO TERRENO (M²)", 7, true)}
               {campoNumero("quartos", "QUARTOS", 2, false)}
               {campoNumero("suites", "SUÍTES", 2, false)}
               {campoNumero("banheiros", "BANHEIROS", 2, false)}
