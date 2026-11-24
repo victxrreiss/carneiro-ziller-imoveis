@@ -5,7 +5,7 @@ import { routes } from "@/lib/routes";
 
 export const metadata: Metadata = {
   title: "Sobre nós — Carneiro & Ziller Imóveis",
-  description: "Conheça a Carneiro & Ziller, imobiliária de alto padrão em Belo Horizonte e Nova Lima.",
+  description: "Conheça a Ziller Negócios & Carneiro Invest: André Ziller e Matheus Carneiro, mais de uma década no mercado imobiliário em Belo Horizonte, Nova Lima e São Paulo.",
 };
 
 export default function SobrePage() {
@@ -13,16 +13,17 @@ export default function SobrePage() {
     <PaginaInstitucional current="sobre" rotulo="Sobre nós" titulo="Sobre a Carneiro & Ziller">
       <div className="inst-leitura">
         <p>
-          A Carneiro &amp; Ziller Imóveis nasceu da união de duas imobiliárias com atuação em Belo Horizonte e Nova Lima.
-          Hoje somos uma única empresa, com uma única equipe e o mesmo compromisso com cada cliente.
+          A Ziller Negócios &amp; Carneiro Invest nasceu da união de André Ziller e Matheus Carneiro, profissionais com
+          mais de uma década de experiência no mercado imobiliário, com atuação em Belo Horizonte, Nova Lima e São Paulo.
         </p>
         <p>
-          Trabalhamos com imóveis de alto padrão: apartamentos, coberturas, casas em condomínio e terrenos nos bairros e
-          condomínios mais desejados da região.
+          Com uma sólida rede de relacionamentos e profundo conhecimento do mercado, os sócios oferecem um atendimento
+          próximo, personalizado e focado em bons negócios.
         </p>
         <p>
-          Cada atendimento é conduzido de perto, da primeira visita à entrega das chaves, com conhecimento do mercado
-          local e discrição.
+          <strong>Ziller Negócios &amp; Carneiro Invest</strong>
+          <br />
+          Experiência, confiança e bons negócios.
         </p>
         <div className="notice-actions inst-acoes">
           <Link href={routes.imoveis} className="btn">

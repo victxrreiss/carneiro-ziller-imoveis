@@ -90,6 +90,13 @@ describe("ImovelTela", () => {
     expect(within(resumo).getByRole("button", { name: "AGENDAR VISITA" })).toBeInTheDocument();
   });
 
+  test("o andar não aparece na ficha, mesmo preenchido", () => {
+    montar(imovel);
+    expect(imovel.andar).toBe(18);
+    expect(screen.queryByText("Andar")).not.toBeInTheDocument();
+    expect(screen.queryByText("18º")).not.toBeInTheDocument();
+  });
+
   test("semelhantes aparecem no fim e somem sem itens", () => {
     const { unmount } = montar(imovel);
     expect(screen.getByRole("region", { name: "Imóveis semelhantes" })).toBeInTheDocument();

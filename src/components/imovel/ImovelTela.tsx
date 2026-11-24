@@ -59,7 +59,7 @@ export function ImovelTela({ imovel, volta, url, semelhantes }: Props) {
   const detalhes = [
     imovel.banheiros ? { rotulo: "Banheiros", valor: String(imovel.banheiros) } : null,
     imovel.areaTotal && imovel.areaTotal > imovel.area ? { rotulo: "Área total", valor: formatarArea(imovel.areaTotal) } : null,
-    imovel.andar !== null ? { rotulo: "Andar", valor: `${imovel.andar}º` } : null,
+    // O andar não aparece no site (decisão do usuário, 2026-11-24); segue no painel.
     imovel.anoConstrucao !== null ? { rotulo: "Ano de construção", valor: String(imovel.anoConstrucao) } : null,
     !locacao && imovel.valorLocacao !== null ? { rotulo: "Locação", valor: formatarMensal(imovel.valorLocacao) } : null,
     imovel.condominio !== null ? { rotulo: "Condomínio", valor: formatarMensal(imovel.condominio) } : null,
