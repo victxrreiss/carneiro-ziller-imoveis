@@ -7,7 +7,8 @@ export default defineConfig({
   plugins: [tsconfigPaths(), react()],
   resolve: {
     // `server-only` lança fora do Next; nos testes vira um módulo vazio.
-    alias: { "server-only": path.resolve(__dirname, "vitest.server-only.ts") },
+    // `next/font/local` só funciona compilado pelo Next: nos testes, classes vazias.
+    alias: { "server-only": path.resolve(__dirname, "vitest.server-only.ts"), "next/font/local": path.resolve(__dirname, "vitest.next-font.ts") },
   },
   test: {
     environment: "jsdom",

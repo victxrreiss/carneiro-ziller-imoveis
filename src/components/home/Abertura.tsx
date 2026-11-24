@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState, type ReactNode } from "react";
+import { newsreader } from "@/app/fonte-abertura";
 import { abertura } from "@/lib/site";
 import { ANCORA_CONTEUDO, moldura } from "./partes";
 
@@ -29,7 +30,7 @@ export function Abertura({ config = abertura, children }: { config?: Config; chi
   }, []);
 
   return (
-    <section aria-label="Apresentação" className="relative flex min-h-svh flex-col justify-end overflow-hidden bg-noite text-white">
+    <section aria-label="Apresentação" className={`${newsreader.variable} relative flex min-h-svh flex-col justify-end overflow-hidden bg-noite text-white`}>
       <div className="absolute inset-0">
         {imagens.map((img, k) => {
           const ativa = k === passo % imagens.length;
@@ -76,7 +77,8 @@ export function Abertura({ config = abertura, children }: { config?: Config; chi
         <div className="flex max-w-215 flex-col gap-5.5">
           {/* O h1 é só a primeira frase, estável para leitores de tela e buscadores; as outras se
               alternam por cima dela, na mesma célula da grade, como decoração (aria-hidden). */}
-          <div className="grid font-display [text-shadow:0_2px_24px_rgba(15,29,36,.45)] text-[clamp(36px,10.5vw,54px)] leading-[1.02] font-light tracking-[-0.015em] min-[900px]:text-[clamp(40px,6.2vw,92px)]">
+          {/* Newsreader 400 (traço mais firme que a Cormorant): tamanhos e entrelinha calibrados no comparativo de fontes. */}
+          <div className="grid font-(family-name:--font-abertura) [text-shadow:0_2px_24px_rgba(15,29,36,.45)] text-[clamp(33px,9.4vw,50px)] leading-[1.04] font-normal tracking-[-0.02em] min-[900px]:text-[clamp(38px,5.7vw,84px)]">
             {frases.map((frase, k) => {
               const ativa = k === passo % frases.length;
               const [primeira, segunda] = frase.split("\n");
