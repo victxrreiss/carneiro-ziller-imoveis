@@ -8,12 +8,12 @@ import { CabecalhoSecao, CardCategoria, linkSeta, moldura } from "./partes";
 const MAX_CARDS = 4;
 
 /** Cada card com uma foto que não se repete na Home (fotos-home.test.ts). */
-export const CARDS: readonly { tipo: string; legenda: string; img: string }[] = [
-  { tipo: "Apartamento", legenda: "Belo Horizonte · Nova Lima", img: "/images/imoveis/83078fec9317d4739d499615a6faacfb.jpg" },
-  { tipo: "Cobertura", legenda: "Vista e terraço", img: "/images/imoveis/5e5a1046b6796c80c7e2af56ae2db8e0.jpg" },
-  { tipo: "Casa em condomínio", legenda: "Nova Lima", img: "/images/venda-residencial-das-minas.jpg" },
-  { tipo: "Casa", legenda: "Belo Horizonte", img: "/images/venda-cidade-jardim.jpg" },
-  { tipo: "Terreno", legenda: "Para construir", img: "/images/hero-predio.png" },
+export const CARDS: readonly { tipo: string; img: string }[] = [
+  { tipo: "Apartamento", img: "/images/imoveis/83078fec9317d4739d499615a6faacfb.jpg" },
+  { tipo: "Cobertura", img: "/images/imoveis/5e5a1046b6796c80c7e2af56ae2db8e0.jpg" },
+  { tipo: "Casa em condomínio", img: "/images/venda-residencial-das-minas.jpg" },
+  { tipo: "Casa", img: "/images/venda-cidade-jardim.jpg" },
+  { tipo: "Terreno", img: "/images/hero-predio.png" },
 ];
 
 const colunas: Record<number, string> = {
@@ -51,7 +51,6 @@ export async function CardsTipos() {
                 key={c.tipo}
                 href={urlGrid({ tipo: c.tipo, pagina: 1 })}
                 img={c.img}
-                legenda={c.legenda}
                 nome={pluralTipo(c.tipo) ?? c.tipo}
                 sizes={largo ? "(max-width: 899px) 100vw, 420px" : "(max-width: 899px) 50vw, 320px"}
                 // Com menos de 4 cards a coluna alarga: a altura para de acompanhar a largura.

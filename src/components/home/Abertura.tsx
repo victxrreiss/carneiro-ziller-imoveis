@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState, type ReactNode } from "react";
 import { abertura } from "@/lib/site";
-import { ANCORA_CONTEUDO, moldura, Rotulo } from "./partes";
+import { ANCORA_CONTEUDO, moldura } from "./partes";
 
 type Config = typeof abertura;
 
@@ -12,7 +12,7 @@ const TROCA_MS = 6000;
 
 /**
  * Abertura em tela cheia: imagens alternando com zoom lento (ou o vídeo de `site.ts`), véu
- * azul-noite, frases alternando e, embaixo, a busca (`children`). O HTML do servidor já traz a
+ * azul-noite, só a frase (em branco) alternando e, embaixo, a busca (`children`). O HTML do servidor já traz a
  * primeira imagem e a primeira frase ativas; a troca só começa no cliente e não acontece com
  * `prefers-reduced-motion`. O h1 é sempre a primeira frase; as outras são decoração.
  */
@@ -67,16 +67,16 @@ export function Abertura({ config = abertura, children }: { config?: Config; chi
         )}
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,29,36,.55)_0%,rgba(15,29,36,.15)_35%,rgba(15,29,36,.35)_65%,rgba(15,29,36,.9)_100%)]"
+          // Véu mais escuro para a frase em branco ler bem sobre qualquer foto (pedido do cliente, 2026-11-24).
+          className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,29,36,.6)_0%,rgba(15,29,36,.4)_35%,rgba(15,29,36,.55)_65%,rgba(15,29,36,.92)_100%)]"
         />
       </div>
 
       <div className={`${moldura} relative z-2 flex flex-col gap-7.5 pt-27.5 pb-[clamp(56px,8vh,84px)] min-[900px]:gap-[clamp(34px,5vh,64px)] min-[900px]:pt-35`}>
         <div className="flex max-w-215 flex-col gap-5.5">
-          <Rotulo escuro>Belo Horizonte · Nova Lima</Rotulo>
           {/* O h1 é só a primeira frase, estável para leitores de tela e buscadores; as outras se
               alternam por cima dela, na mesma célula da grade, como decoração (aria-hidden). */}
-          <div className="grid font-display text-[clamp(36px,10.5vw,54px)] leading-[1.02] font-light tracking-[-0.015em] min-[900px]:text-[clamp(40px,6.2vw,92px)]">
+          <div className="grid font-display [text-shadow:0_2px_24px_rgba(15,29,36,.45)] text-[clamp(36px,10.5vw,54px)] leading-[1.02] font-light tracking-[-0.015em] min-[900px]:text-[clamp(40px,6.2vw,92px)]">
             {frases.map((frase, k) => {
               const ativa = k === passo % frases.length;
               const [primeira, segunda] = frase.split("\n");
@@ -94,16 +94,13 @@ export function Abertura({ config = abertura, children }: { config?: Config; chi
                     <>
                       {" "}
                       <br />
-                      <em className="text-champanhe italic">{segunda}</em>
+                      <em className="italic">{segunda}</em>
                     </>
                   )}
                 </Tag>
               );
             })}
           </div>
-          <p className="m-0 max-w-[46ch] text-[15px] leading-[1.65] font-light text-white/80 min-[900px]:text-[17px]">
-            Apartamentos, coberturas e casas selecionados em Belo Horizonte e Nova Lima.
-          </p>
         </div>
         {children}
       </div>

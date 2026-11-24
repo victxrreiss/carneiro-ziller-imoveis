@@ -58,7 +58,6 @@ export async function CardsRegioes() {
                 key={r.slug}
                 href={urlGrid({ regiao: r.slug, pagina: 1 })}
                 img={r.img}
-                legenda={r.legenda}
                 nome={r.nome}
                 // O nome maior é do card largo da proposta, que só existe com as 5 regiões.
                 grande={r.grande && desktop === 4}

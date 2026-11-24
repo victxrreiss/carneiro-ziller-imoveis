@@ -40,7 +40,6 @@ export function CabecalhoSecao({ id, rotulo, titulo, lado }: { id: string; rotul
 type PropsCategoria = {
   href: string;
   img: string;
-  legenda: string;
   nome: string;
   sizes: string;
   /** Card-âncora (ocupa duas colunas): nome maior e mais respiro. */
@@ -50,8 +49,8 @@ type PropsCategoria = {
   className?: string;
 };
 
-/** Card de categoria (tipo ou região): foto, véu azul-noite embaixo e o texto por cima. */
-export function CardCategoria({ href, img, legenda, nome, sizes, grande, vao, className = "" }: PropsCategoria) {
+/** Card de categoria (tipo ou região): foto, véu azul-noite embaixo e só o nome por cima (decisão do usuário, 2026-11-24). */
+export function CardCategoria({ href, img, nome, sizes, grande, vao, className = "" }: PropsCategoria) {
   return (
     <Link
       href={href}
@@ -74,11 +73,9 @@ export function CardCategoria({ href, img, legenda, nome, sizes, grande, vao, cl
             : "right-4.5 bottom-4.5 left-4.5 min-[900px]:right-6.5 min-[900px]:bottom-6.5 min-[900px]:left-6.5"
         }`}
       >
-        <span className="text-[11px] tracking-[0.28em] text-champanhe uppercase">{legenda}</span>
         <span className={`font-display leading-[1.05] font-light ${grande ? "text-[32px] min-[900px]:text-[44px]" : "text-2xl min-[900px]:text-3xl"}`}>
           {nome}
         </span>
-        <span className="mt-1.5 text-xs tracking-[0.16em] uppercase opacity-85 after:content-['_→']">Ver imóveis</span>
       </span>
     </Link>
   );

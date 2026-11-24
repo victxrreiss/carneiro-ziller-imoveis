@@ -33,9 +33,10 @@ export default async function Home() {
         </Abertura>
         {/* Cada seção leva o respiro embaixo (qualquer uma pode não aparecer); o de cima fica aqui. */}
         <div id={ANCORA_CONTEUDO} className="pt-[clamp(72px,9vw,128px)]">
+          {/* Destaques primeiro, logo depois da abertura (decisão do usuário, 2026-11-24). */}
+          <Destaques />
           <CardsTipos />
           <CardsRegioes />
-          <Destaques />
         </div>
         <Institutional />
       </main>
